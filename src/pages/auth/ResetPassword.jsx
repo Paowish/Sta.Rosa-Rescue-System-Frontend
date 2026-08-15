@@ -12,7 +12,7 @@ export default function ResetPassword() {
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // ✅ THIS STOPS THE PAGE FROM RELOADING AND REDIRECTING
+        e.preventDefault();
         if (newPassword !== confirmPassword) {
             setError("Passwords do not match.");
             return;
@@ -22,7 +22,9 @@ export default function ResetPassword() {
         setError("");
 
         try {
+            // ✅ Make sure token is coming from useParams()
             const response = await authService.resetPassword(token, newPassword);
+
             if (response.success) {
                 setMessage("Password reset successfully! Redirecting to login...");
                 setTimeout(() => navigate('/login'), 3000);
