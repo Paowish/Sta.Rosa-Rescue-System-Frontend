@@ -1,0 +1,312 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes scale-in {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+}
+
+/* ===== Mobile Keyboard Fixes ===== */
+
+/* ✅ FIXED: Allow scrolling while preventing viewport shrink */
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* ✅ Allow body to scroll */
+body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ Root should be a flex container but NOT overflow hidden */
+#root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    /* ✅ Allow root to scroll when needed */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ✅ Remove overflow hidden from root */
+/* #root { overflow: hidden; }  ← REMOVE THIS */
+
+/* iOS Safari height fix */
+@supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* Ensure sticky elements work properly */
+.sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* Better touch targets on mobile */
+input,
+select,
+textarea,
+button {
+    font-size: 16px !important;
+    /* Prevents iOS zoom on focus */
+}
+
+/* Smooth scrolling */
+/* .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+} */
+
+
+.overflow-x-hidden {
+    overflow-x: hidden;
+}
+
+/* ✅ Allow admin dashboard scrolling */
+.admin-dashboard-content,
+.dashboard-content {
+    overflow-y: auto !important;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ Fix for any container with overflow-hidden that needs scrolling */
+.overflow-hidden-scroll {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile responsive adjustments */
+@media screen and (max-width: 640px) {
+
+    /* Better spacing for mobile */
+    .px-3 {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .py-2\.5 {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    /* Sticky footer adjustments */
+    .sticky.bottom-0 {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        z-index: 10;
+    }
+}
+
+/* Add to your index.css */
+
+/* Modal animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes backdropFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Modal animation classes */
+.modal-backdrop {
+    animation: backdropFadeIn 0.25s ease-out forwards;
+}
+
+.modal-content {
+    animation: modalSlideUp 0.3s ease-out forwards;
+}
+
+/* Smooth sidebar transition */
+.sidebar-transition {
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+/* Edit profile transition */
+.edit-profile-enter {
+    animation: modalSlideUp 0.4s ease-out forwards;
+}
+
+.edit-profile-exit {
+    animation: modalFadeIn 0.3s ease-out reverse forwards;
+}
+
+/* Notification slide-in animation */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.animate-slide-out {
+    animation: slideOut 0.5s ease-in forwards;
+}
+
+/* Prevent duplicate car markers */
+.volunteer-car-marker {
+    z-index: 1000 !important;
+}
+
+/* Pulse animation for car marker */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Ensure markers are properly cleaned up */
+.leaflet-marker-pane .volunteer-car-marker {
+    transition: all 0.3s ease;
+}
+
+
+
+/* ==========================================================
+   PROFESSIONAL MODAL SLIDE ANIMATIONS
+   ========================================================== */
+
+/* Slide Up Animation (Entrance) */
+@keyframes slideUpModal {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Slide Down Animation (Exit) */
+@keyframes slideDownModal {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* Apply these classes exactly as used in your Modal */
+.modal-slide-up {
+    animation: slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-slide-down {
+    animation: slideDownModal 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Fade-in animation for content blocks inside the modal */
+@keyframes fadeInContent {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content-fade-in {
+    animation: fadeInContent 0.4s ease-out forwards;
+}
