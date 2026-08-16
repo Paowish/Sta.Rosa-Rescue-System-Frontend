@@ -27,6 +27,10 @@ export default function GuestReport() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState('');
 
+    // ✅ Success Modal State
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [submittedReportId, setSubmittedReportId] = useState('');
+
     // --- LOGIC FOR STEP 1: LOCATION ---
     const getAddressFromCoordinates = async (lat, lng) => {
         try {
@@ -153,16 +157,13 @@ export default function GuestReport() {
             });
 
             const data = await response.json();
-            setSubmitStatus('Report submitted!');
+            setIsSubmitting(false);
 
             if (data.success) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                alert("✅ Your report has been submitted to the Rescue Team!");
-                navigate('/');
+                setSubmittedReportId(data.data.incidentId);
+                setShowSuccessModal(true);
             } else {
                 alert("Failed to submit report: " + (data.message || 'Unknown error'));
-                setIsSubmitting(false);
             }
         } catch (error) {
             setSubmitStatus('❌ Submission failed');
@@ -448,6 +449,33 @@ export default function GuestReport() {
                                 Cancel
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ✅ SUCCESS MODAL (New!) */}
+            {showSuccessModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center text-center">
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                                <Icon icon="gg:check-o" width="48" style={{ color: "#0C7FDA" }} />
+                            </div>
+                        </div>
+
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Report Submitted</h2>
+                        <p className="text-[#4285F4] font-semibold text-xl break-all mb-2">{submittedReportId}</p>
+                        <p className="text-[#5D7285] font-light text-sm mb-6">
+                            Your incident report has been received.<br />
+                            Responders have been notified.
+                        </p>
+
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full bg-[#0C7FDA] hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors shadow-sm"
+                        >
+                            Back to Home
+                        </button>
                     </div>
                 </div>
             )}
