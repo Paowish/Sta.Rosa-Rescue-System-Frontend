@@ -4,17 +4,11 @@ import { AuthProvider } from './context/AuthContext';
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
-<<<<<<< HEAD
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
 
 // RESCUE TEAM LAYOUT
 import DashboardLayout from "./components/layout/DashboardLayout";
 import GuestLayout from "./components/layout/GuestLayout";
-=======
-
-// RESCUE TEAM LAYOUT
-import DashboardLayout from "./components/layout/DashboardLayout";
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
 // NEW Admin / Rescue Team Pages
 import AdminOverview from './pages/admin/AdminOverview';
@@ -31,22 +25,14 @@ import IncidentManagement from "./pages/rescueTeam/IncidentManagement.jsx";
 
 // ✅ FIXED: Separate Route for Volunteers
 import VolunteerApproval from "./pages/rescueTeam/VolunteerApproval";
-<<<<<<< HEAD
-=======
-import GuestReportIncident from "./pages/guest/GuestReportIncident";
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
 // Civilian Pages
 import CivilianDashboard from "./pages/civilian/CivilianDashboard";
 import Overview from "./pages/civilian/Overview";
 import EditProfile from "./pages/civilian/EditProfile";
-<<<<<<< HEAD
 
 // ✅ SHARED TRACK REPORTS PAGE (Works for both Civilian & Guest)
 import TrackReports from "./pages/shared/TrackReports";
-=======
-import TrackReports from "./pages/civilian/TrackReports";
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
 // ✅ NEW: Unified Incident Reporting Flow
 import ReportIncident from './pages/civilian/reportIncident/ReportIncident';
@@ -58,20 +44,12 @@ import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
 
 // ✅ GUEST PAGES
 import GuestDashboard from "./pages/guest/GuestDashboard";
-<<<<<<< HEAD
 import GuestReportIncident from "./pages/guest/GuestReportIncident";
 import GuestSubmitSuccess from "./pages/guest/GuestSubmitSuccess";
-=======
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
 
-<<<<<<< HEAD
-=======
-import ResetPassword from "./pages/auth/ResetPassword.jsx";
-
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 function App() {
   return (
     <AuthProvider>
@@ -86,7 +64,6 @@ function App() {
           {/* ==================== GUEST ROUTES ==================== */}
           <Route path="/Guest" element={<GuestDashboard />} />
           <Route path="/Guest/Report" element={<GuestReportIncident />} />
-<<<<<<< HEAD
           <Route path="/Guest/Submit" element={<GuestSubmitSuccess />} />
           {/* ✅ Guest uses the SHARED TrackReports component */}
           <Route
@@ -97,9 +74,6 @@ function App() {
               </GuestLayout>
             }
           />
-=======
-          <Route path="/Guest/Track" element={<GuestDashboard />} />
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
           {/* ==================== ADMIN DASHBOARD REDIRECT ==================== */}
           <Route
@@ -267,10 +241,7 @@ function App() {
             }
           />
 
-<<<<<<< HEAD
           {/* ✅ Civilian uses the SHARED TrackReports component */}
-=======
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
           <Route
             path="/Track-Reports"
             element={
