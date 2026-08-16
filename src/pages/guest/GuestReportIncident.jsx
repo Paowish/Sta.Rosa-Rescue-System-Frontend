@@ -156,7 +156,8 @@ export default function GuestReportIncident() {
                     reporterNumber: '',
                     reporterEmail: '',
                     victimsAffected: incidentDetails.victimsAffected,
-                    image: selectedImage
+                    image: selectedImage,
+                    isGuest: true
                 })
             });
 
@@ -169,14 +170,14 @@ export default function GuestReportIncident() {
 
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                navigate('/Guest/Track', {
+                // ✅ Redirect to SubmitSuccess page FIRST
+                navigate('/Guest/Submit', {
                     state: {
                         reportId: data.data.incidentId,
                         incidentType: incidentDetails.incidentType,
                         location: locationData.address,
                         victims: incidentDetails.victimsAffected,
-                        submittedDate: new Date().toLocaleDateString(),
-                        success: true
+                        submittedDate: new Date().toLocaleDateString()
                     }
                 });
             } else {
