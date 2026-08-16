@@ -33,14 +33,7 @@ export default function GuestDashboard() {
             setLoading(true);
             const apiUrl = getApiUrl();
 
-            // ✅ Guest fetch uses the stored guestSessionId
-            const guestSessionId = localStorage.getItem('guestSessionId');
-
-            const response = await fetch(`${apiUrl}/incidents`, {
-                headers: {
-                    'X-Guest-Session-Id': guestSessionId
-                }
-            });
+            const response = await fetch(`${apiUrl}/incidents`);
             const data = await response.json();
 
             console.log("📡 Guest Dashboard fetch result:", data);

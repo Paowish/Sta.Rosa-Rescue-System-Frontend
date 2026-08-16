@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import GuestLayout from '../../components/layout/GuestLayout';
+import { incidentService } from '../../services/api';
 
 export default function GuestReportIncident() {
     const navigate = useNavigate();
@@ -136,16 +137,12 @@ export default function GuestReportIncident() {
             const apiUrl = getApiUrl();
             const token = localStorage.getItem('token') || '';
 
-            // ✅ GET THE GUEST SESSION ID HERE
-            const guestSessionId = localStorage.getItem('guestSessionId');
-
-            const guestEmail = localStorage.getItem('guestEmail'); // ✅ Get email
-
+            // Submit the report
             const response = await fetch(`${apiUrl}/incidents`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Guest-Email': guestEmail // ✅ Send header
+                    ...(token && { 'Authorization': `Bearer ${token}` })
                 },
                 body: JSON.stringify({
                     type: incidentDetails.incidentType,
@@ -157,10 +154,10 @@ export default function GuestReportIncident() {
                     severity: 'Medium',
                     reporterName: 'Guest User',
                     reporterNumber: '',
+                    reporterEmail: '',
                     victimsAffected: incidentDetails.victimsAffected,
                     image: selectedImage,
-                    isGuest: true,
-                    otpEmail: guestEmail // ✅ Send inside body too
+                    isGuest: true
                 })
             });
 
