@@ -1,6 +1,5 @@
 // src/pages/guest/GuestDashboard.jsx
 import { useState, useEffect } from "react";
-<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import GuestLayout from "../../components/layout/GuestLayout";
@@ -18,24 +17,6 @@ export default function GuestDashboard() {
         }
         return '/api';
     };
-=======
-import { useNavigate, useLocation } from "react-router-dom";
-import { Icon } from "@iconify/react";
-import GuestLayout from "../../components/layout/GuestLayout";
-import GuestTrackReport from "./GuestTrackReport";
-import { incidentService } from "../../services/api";
-
-export default function GuestDashboard() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [greeting, setGreeting] = useState("Good Morning");
-    const [recentIncidents, setRecentIncidents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
-
-    // Check if we're on the Track page
-    const isTrackPage = location.pathname.includes('/Guest/Track');
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -43,21 +24,13 @@ export default function GuestDashboard() {
         else if (hour < 18) setGreeting("Good Afternoon");
         else setGreeting("Good Evening");
 
-<<<<<<< HEAD
         // ✅ Load reports
         loadRecentIncidents();
     }, []);
-=======
-        if (!isTrackPage) {
-            loadRecentIncidents();
-        }
-    }, [isTrackPage]);
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
 
     const loadRecentIncidents = async () => {
         try {
             setLoading(true);
-<<<<<<< HEAD
             const apiUrl = getApiUrl();
 
             const response = await fetch(`${apiUrl}/incidents`);
@@ -68,18 +41,6 @@ export default function GuestDashboard() {
             if (data && data.success) {
                 const incidents = data.data || [];
                 setRecentIncidents(incidents.slice(0, 5));
-=======
-            const response = await incidentService.getAllIncidents();
-            if (response && response.success) {
-                const incidents = response.data || [];
-                setRecentIncidents(incidents.slice(0, 5));
-                setStats({
-                    total: incidents.length,
-                    active: incidents.filter(i => i.status === 'Active' || i.status === 'En Route' || i.status === 'Dispatched').length,
-                    pending: incidents.filter(i => i.status === 'Pending').length,
-                    resolved: incidents.filter(i => i.status === 'Resolved').length
-                });
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
             }
         } catch (error) {
             console.error("Failed to load incidents:", error);
@@ -105,18 +66,6 @@ export default function GuestDashboard() {
         return date.toLocaleString();
     };
 
-<<<<<<< HEAD
-=======
-    // ✅ If on Track page, show only the track report
-    if (isTrackPage) {
-        return (
-            <GuestLayout>
-                <GuestTrackReport />
-            </GuestLayout>
-        );
-    }
-
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
     if (loading) {
         return (
             <GuestLayout>
@@ -129,11 +78,7 @@ export default function GuestDashboard() {
 
     return (
         <GuestLayout>
-<<<<<<< HEAD
             {/* ✅ Greeting Section */}
-=======
-            {/* ✅ Greeting Section - Fixed margin for mobile */}
->>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
             <div className="bg-[#DFF1FF] w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg mb-4 mt-2 sm:mt-0">
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-semibold text-[#474C53]">
                     {greeting}, Guest
