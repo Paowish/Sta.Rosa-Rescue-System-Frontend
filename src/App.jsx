@@ -8,7 +8,6 @@ import ResetPassword from "./pages/auth/ResetPassword.jsx";
 
 // RESCUE TEAM LAYOUT
 import DashboardLayout from "./components/layout/DashboardLayout";
-import GuestLayout from "./components/layout/GuestLayout";
 
 // NEW Admin / Rescue Team Pages
 import AdminOverview from './pages/admin/AdminOverview';
@@ -31,8 +30,8 @@ import CivilianDashboard from "./pages/civilian/CivilianDashboard";
 import Overview from "./pages/civilian/Overview";
 import EditProfile from "./pages/civilian/EditProfile";
 
-// ✅ SHARED TRACK REPORTS PAGE (Works for both Civilian & Guest)
-import TrackReports from "./pages/shared/TrackReports";
+// ✅ Civilian Track Reports (You kept the civilian version, right?)
+import TrackReports from "./pages/civilian/TrackReports";
 
 // ✅ NEW: Unified Incident Reporting Flow
 import ReportIncident from './pages/civilian/reportIncident/ReportIncident';
@@ -42,10 +41,8 @@ import SubmitSuccess from "./pages/civilian/reportIncident/Submit";
 import VolunteerApplication from "./pages/rescueTeam/VolunteerApplication";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
 
-// ✅ GUEST PAGES
-import GuestDashboard from "./pages/guest/GuestDashboard";
-import GuestReportIncident from "./pages/guest/GuestReportIncident";
-import GuestSubmitSuccess from "./pages/guest/GuestSubmitSuccess";
+// ✅ NEW GUEST REPORT PAGE (Replaces GuestReportIncident)
+import GuestReport from "./pages/guest/GuestReport";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -62,18 +59,9 @@ function App() {
           <Route path="/Volunteer-Application" element={<VolunteerApplication />} />
 
           {/* ==================== GUEST ROUTES ==================== */}
-          <Route path="/Guest" element={<GuestDashboard />} />
-          <Route path="/Guest/Report" element={<GuestReportIncident />} />
-          <Route path="/Guest/Submit" element={<GuestSubmitSuccess />} />
-          {/* ✅ Guest uses the SHARED TrackReports component */}
-          <Route
-            path="/Guest/Track"
-            element={
-              <GuestLayout>
-                <TrackReports />
-              </GuestLayout>
-            }
-          />
+          {/* Entry point for Guest reporting - Only the form */}
+          <Route path="/Guest" element={<GuestReport />} />
+          <Route path="/Guest/Report" element={<GuestReport />} />
 
           {/* ==================== ADMIN DASHBOARD REDIRECT ==================== */}
           <Route
@@ -241,7 +229,7 @@ function App() {
             }
           />
 
-          {/* ✅ Civilian uses the SHARED TrackReports component */}
+          {/* ✅ Civilian uses the TRACK REPORTS component from civilian folder */}
           <Route
             path="/Track-Reports"
             element={
