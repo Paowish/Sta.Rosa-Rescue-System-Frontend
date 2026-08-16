@@ -44,6 +44,7 @@ import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
 
 // ✅ GUEST PAGES
 import GuestDashboard from "./pages/guest/GuestDashboard";
+import GuestOtpLogin from "./pages/guest/GuestOtpLogin"; // ✅ Added OTP Login
 import GuestReportIncident from "./pages/guest/GuestReportIncident";
 import GuestSubmitSuccess from "./pages/guest/GuestSubmitSuccess";
 
@@ -61,11 +62,14 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/Volunteer-Application" element={<VolunteerApplication />} />
 
-          {/* ==================== GUEST ROUTES ==================== */}
-          <Route path="/Guest" element={<GuestDashboard />} />
+          {/* ==================== GUEST OTP ROUTES ==================== */}
+          {/* Entry point for Guests - Goes to OTP Login first */}
+          <Route path="/Guest" element={<GuestOtpLogin />} />
+
+          {/* Protected Guest Pages (Only accessible after OTP) */}
+          <Route path="/Guest/Dashboard" element={<GuestDashboard />} />
           <Route path="/Guest/Report" element={<GuestReportIncident />} />
           <Route path="/Guest/Submit" element={<GuestSubmitSuccess />} />
-          {/* ✅ Guest uses the SHARED TrackReports component */}
           <Route
             path="/Guest/Track"
             element={

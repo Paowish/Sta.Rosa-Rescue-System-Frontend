@@ -140,9 +140,9 @@ export default function GuestTrackReport() {
                         >
                             <div className="p-4 relative">
                                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${incident.status === 'Resolved' ? 'bg-green-500' :
-                                        incident.status === 'Active' ? 'bg-red-500' :
-                                            incident.status === 'En Route' || incident.status === 'Dispatched' ? 'bg-blue-500' :
-                                                'bg-yellow-500'
+                                    incident.status === 'Active' ? 'bg-red-500' :
+                                        incident.status === 'En Route' || incident.status === 'Dispatched' ? 'bg-blue-500' :
+                                            'bg-yellow-500'
                                     }`}></div>
                                 <div className="pl-3">
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 mb-2">

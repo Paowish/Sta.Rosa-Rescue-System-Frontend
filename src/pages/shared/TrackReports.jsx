@@ -197,9 +197,8 @@ export default function TrackReports() {
         setLastUpdate(new Date());
     }, []);
 
-    // ✅ FETCH INCIDENTS - with loading lock to prevent double updates
+    // ✅ FETCH INCIDENTS
     const loadIncidents = useCallback(async () => {
-        // ✅ Prevent concurrent loads
         if (isLoadingRef.current) {
             console.log('⏳ Load already in progress, skipping...');
             return;
@@ -213,9 +212,14 @@ export default function TrackReports() {
             let responseData;
 
             if (isGuest) {
-                // 🔵 GUEST: Fetch without token
                 const apiUrl = getApiUrl();
-                const response = await fetch(`${apiUrl}/incidents`);
+                const guestEmail = localStorage.getItem('guestEmail'); // ✅ Get email
+
+                const response = await fetch(`${apiUrl}/incidents`, {
+                    headers: {
+                        'X-Guest-Email': guestEmail // ✅ Send Email Header
+                    }
+                });
                 responseData = await response.json();
             } else {
                 // 🟢 CIVILIAN: Fetch with token
@@ -245,14 +249,10 @@ export default function TrackReports() {
         loadIncidents();
     }, [loadIncidents]);
 
-    // ✅ POLLING - EVERY 20 SECONDS with lock to prevent double updates
+    // ✅ POLLING - EVERY 20 SECONDS
     const startPolling = useCallback(() => {
-        if (isPollingRef.current) {
-            console.log('⏰ Polling already running, skipping...');
-            return;
-        }
+        if (isPollingRef.current) return;
 
-        // Clear any existing interval
         if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
@@ -262,37 +262,29 @@ export default function TrackReports() {
         console.log('⏰ Starting polling every 20 seconds...');
 
         pollIntervalRef.current = setInterval(() => {
-            // ✅ Only poll if not already loading and document is visible
             if (!isLoadingRef.current && !document.hidden) {
                 console.log('⏰ Polling: fetching incidents...');
                 if (loadRef.current) {
                     loadRef.current();
                 }
-            } else if (isLoadingRef.current) {
-                console.log('⏰ Skipping poll - load in progress');
             }
-        }, 20000); // ✅ 20 seconds
+        }, 20000);
     }, []);
 
     const stopPolling = useCallback(() => {
         if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
-            console.log('🛑 Polling stopped');
         }
         isPollingRef.current = false;
     }, []);
 
     // ✅ Start polling after initial load
     useEffect(() => {
-        // Start polling after a delay
         const timer = setTimeout(() => {
             if (incidents.length > 0) {
-                console.log('✅ Incidents found, starting background polling');
                 startPolling();
             } else {
-                console.log('⏳ No incidents yet, waiting...');
-                // Check again after 5 seconds
                 setTimeout(() => {
                     if (incidents.length > 0) {
                         startPolling();
@@ -309,7 +301,7 @@ export default function TrackReports() {
 
     // ✅ BROADCAST LISTENER (Civilians Only)
     useEffect(() => {
-        if (isGuest) return; // Guests don't have BroadcastChannel
+        if (isGuest) return;
 
         try {
             const channel = new BroadcastChannel('incident_updates');
@@ -317,7 +309,6 @@ export default function TrackReports() {
                 const data = event.data;
                 console.log('📡 Broadcast message received:', data);
 
-                // Stop polling on any incident update
                 stopPolling();
 
                 if (data && data.type === 'FORCE_STATUS_UPDATE') {
@@ -350,7 +341,7 @@ export default function TrackReports() {
     useEffect(() => {
         if (isGuest) {
             console.log("👤 Guest mode: Skipping Socket connection");
-            return; // Guests don't connect to sockets
+            return;
         }
 
         const token = localStorage.getItem('token');
@@ -365,10 +356,7 @@ export default function TrackReports() {
         const maxReconnectAttempts = 5;
 
         const connectSocket = () => {
-            if (!token || !user.id) {
-                console.warn('⚠️ No token or user ID, skipping socket connection');
-                return;
-            }
+            if (!token || !user.id) return;
 
             try {
                 socket = io(socketUrl, {
@@ -387,28 +375,17 @@ export default function TrackReports() {
                     reconnectAttempts = 0;
                 });
 
-                // ✅ Listen for ALL possible event names
                 const eventNames = [
-                    'incident-updated',
-                    'incident_status_update',
-                    'new_incident',
-                    'incident_resolved',
-                    'dispatch_created',
-                    'volunteer_assigned',
-                    'volunteer_arrived',
-                    'incident_updated',
-                    'status_changed',
-                    'dispatch_notification'
+                    'incident-updated', 'incident_status_update', 'new_incident',
+                    'incident_resolved', 'dispatch_created', 'volunteer_assigned',
+                    'volunteer_arrived', 'incident_updated', 'status_changed', 'dispatch_notification'
                 ];
 
                 eventNames.forEach(eventName => {
                     socket.on(eventName, (data) => {
                         console.log(`📡 Socket event "${eventName}" received:`, data);
-
-                        // ✅ Stop polling on any incident event
                         stopPolling();
 
-                        // Extract incident ID
                         const incidentId = data?.incidentId || data?.incident?._id || data?._id || data?.id;
                         const status = data?.status || data?.newStatus || data?.incident?.status;
                         const responderName = data?.responderName || data?.volunteerName || data?.responder?.name || data?.name;
@@ -416,7 +393,6 @@ export default function TrackReports() {
                         if (incidentId && status) {
                             manuallyUpdateIncidentStatus(incidentId, status, responderName);
 
-                            // Show notification for dispatch/arrival
                             if (status === 'Dispatched' || status === 'En Route' || eventName === 'dispatch_created') {
                                 setDispatchNotification({
                                     incidentId: incidentId,
@@ -447,7 +423,6 @@ export default function TrackReports() {
                                 setTimeout(() => setDispatchNotification(null), 8000);
                             }
                         } else {
-                            // If we can't extract data, do a full refresh
                             if (loadRef.current && !isLoadingRef.current) {
                                 setTimeout(() => loadRef.current(), 300);
                             }
@@ -455,26 +430,10 @@ export default function TrackReports() {
                     });
                 });
 
-                // ✅ Also listen to generic 'notification' events
-                socket.on('notification', (data) => {
-                    console.log('📡 Generic notification received:', data);
-                    stopPolling();
-                    if (data?.incidentId || data?.incident?._id) {
-                        const incidentId = data.incidentId || data.incident?._id;
-                        if (data.status || data.newStatus) {
-                            manuallyUpdateIncidentStatus(incidentId, data.status || data.newStatus, data.responderName || data.volunteerName);
-                        }
-                        if (loadRef.current && !isLoadingRef.current) {
-                            setTimeout(() => loadRef.current(), 500);
-                        }
-                    }
-                });
-
                 socket.on('connect_error', (error) => {
                     console.warn('Socket connection error:', error.message);
                     reconnectAttempts++;
                     if (reconnectAttempts >= maxReconnectAttempts) {
-                        console.log('⚠️ Max reconnect attempts reached, using polling fallback');
                         startPolling();
                     }
                 });
