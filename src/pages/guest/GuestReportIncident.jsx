@@ -156,8 +156,12 @@ export default function GuestReportIncident() {
                     reporterNumber: '',
                     reporterEmail: '',
                     victimsAffected: incidentDetails.victimsAffected,
+<<<<<<< HEAD
                     image: selectedImage,
                     isGuest: true
+=======
+                    image: selectedImage
+>>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
                 })
             });
 
@@ -170,14 +174,23 @@ export default function GuestReportIncident() {
 
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
+<<<<<<< HEAD
                 // ✅ Redirect to SubmitSuccess page FIRST
                 navigate('/Guest/Submit', {
+=======
+                navigate('/Guest/Track', {
+>>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
                     state: {
                         reportId: data.data.incidentId,
                         incidentType: incidentDetails.incidentType,
                         location: locationData.address,
                         victims: incidentDetails.victimsAffected,
+<<<<<<< HEAD
                         submittedDate: new Date().toLocaleDateString()
+=======
+                        submittedDate: new Date().toLocaleDateString(),
+                        success: true
+>>>>>>> 3106177c4bdaea0e7d5d0545cf03ccc8a2c48969
                     }
                 });
             } else {
