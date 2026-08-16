@@ -104,7 +104,7 @@ export default function GuestLayout({ children }) {
                         {/* MENU */}
                         <div className="space-y-2 text-gray-600 text-sm">
                             <NavLink
-                                to="/Guest"
+                                to="/Guest/Dashboard"
                                 end
                                 onClick={() => setOpen(false)}
                                 className={({ isActive }) =>
