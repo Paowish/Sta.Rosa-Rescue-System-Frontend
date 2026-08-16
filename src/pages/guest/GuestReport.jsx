@@ -474,7 +474,7 @@ export default function GuestReport() {
                             onClick={() => navigate('/')}
                             className="w-full bg-[#0C7FDA] hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors shadow-sm"
                         >
-                            Back to Home
+                            Back to Login
                         </button>
                     </div>
                 </div>
