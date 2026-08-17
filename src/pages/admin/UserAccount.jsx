@@ -12,9 +12,12 @@ export default function UserAccount() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
-    // ✅ New Error Modal State
+
+    // ✅ New Error & Success Modal States
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
 
     // Edit form state
     const [editForm, setEditForm] = useState({
@@ -120,7 +123,8 @@ export default function UserAccount() {
             });
             const data = await response.json();
             if (data.success) {
-                alert("✅ User verified successfully!");
+                setSuccessMessage("✅ User verified successfully!");
+                setShowSuccessModal(true);
                 setShowVerifyModal(false);
                 loadUsers();
             } else {
@@ -159,11 +163,11 @@ export default function UserAccount() {
             const data = await response.json();
 
             if (data.success) {
-                alert("✅ User updated successfully!");
+                setSuccessMessage("✅ User updated successfully!");
+                setShowSuccessModal(true);
                 setShowEditModal(false);
                 loadUsers();
             } else {
-                // ✅ Show the error in the Modal instead of alert()
                 setErrorMessage(data.message || "Failed to update user.");
                 setShowErrorModal(true);
             }
@@ -190,7 +194,8 @@ export default function UserAccount() {
             });
             const data = await response.json();
             if (data.success) {
-                alert("✅ User deleted successfully!");
+                setSuccessMessage("✅ User deleted successfully!");
+                setShowSuccessModal(true);
                 setShowDeleteModal(false);
                 loadUsers();
             } else {
@@ -322,6 +327,61 @@ export default function UserAccount() {
             </div>
 
             {/* ============================================================ */}
+            {/* ✅ MODALS (PORTAL TO BODY) */}
+            {/* ============================================================ */}
+
+            {/* ✅ SUCCESS MODAL */}
+            {showSuccessModal && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b-4 border-green-500 flex justify-between items-start bg-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center">
+                                    <Icon icon="mdi:check-circle" className="w-5 h-5 text-green-500" />
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800">Success</h2>
+                            </div>
+                            <button onClick={() => setShowSuccessModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
+                                <Icon icon="mdi:close" className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-600 text-sm">{successMessage}</p>
+                        </div>
+                        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
+                            <button onClick={() => setShowSuccessModal(false)} className="px-6 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition">OK</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* ✅ ERROR MODAL */}
+            {showErrorModal && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b-4 border-red-500 flex justify-between items-start bg-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
+                                    <Icon icon="mdi:close-circle" className="w-5 h-5 text-red-500" />
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800">Error</h2>
+                            </div>
+                            <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
+                                <Icon icon="mdi:close" className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-600 text-sm">{errorMessage}</p>
+                        </div>
+                        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
+                            <button onClick={() => setShowErrorModal(false)} className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">OK</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* ✅ EDIT USER MODAL */}
             {showEditModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -379,34 +439,6 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ============================================================ */}
-            {/* ✅ ERROR MODAL (Replaces the ugly alerts!) */}
-            {showErrorModal && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-6 py-4 border-b-4 border-red-500 flex justify-between items-start bg-white">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
-                                    <Icon icon="mdi:close-circle" className="w-5 h-5 text-red-500" />
-                                </div>
-                                <h2 className="text-lg font-semibold text-gray-800">Error</h2>
-                            </div>
-                            <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
-                                <Icon icon="mdi:close" className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="p-6">
-                            <p className="text-gray-600 text-sm">{errorMessage}</p>
-                        </div>
-                        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button onClick={() => setShowErrorModal(false)} className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">OK</button>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
-
-            {/* ============================================================ */}
             {/* ✅ DELETE USER MODAL */}
             {showDeleteModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -434,7 +466,6 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ============================================================ */}
             {/* ✅ VERIFY USER MODAL */}
             {showVerifyModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

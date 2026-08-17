@@ -32,7 +32,7 @@ export default function SystemMaintenance() {
             setError(null);
             const token = localStorage.getItem('token');
 
-            // Load system logs
+            // 1. Load system logs
             const logsResponse = await fetch('/api/admin/system-logs', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -44,7 +44,7 @@ export default function SystemMaintenance() {
                 }
             }
 
-            // Load backups
+            // 2. Load backups
             const backupsResponse = await fetch('/api/admin/backups', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -56,11 +56,60 @@ export default function SystemMaintenance() {
                 }
             }
 
+            // 3. Load the CURRENT saved schedule
+            const scheduleResponse = await fetch('/api/admin/backup-schedule', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (scheduleResponse.ok) {
+                const scheduleDataJson = await scheduleResponse.json();
+                if (scheduleDataJson.success && scheduleDataJson.data) {
+                    // ✅ Load the saved schedule into the state
+                    const saved = scheduleDataJson.data;
+                    setScheduleData({
+                        frequency: saved.frequency || 'Daily',
+                        time: saved.time || '3:00 AM',
+                        retentionDays: saved.retentionDays || 30,
+                        storagePath: saved.storagePath || '/var/backups/whatatops',
+                        emailNotification: saved.emailNotification !== undefined ? saved.emailNotification : true
+                    });
+                }
+            }
+
         } catch (error) {
             console.error("Failed to load data:", error);
             setError("Failed to load system data. Please refresh.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Load schedule specifically when the modal OPENS
+    const handleOpenScheduleModal = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/admin/backup-schedule', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    // Update state with the ACTUAL saved values from DB
+                    setScheduleData({
+                        frequency: data.data.frequency || 'Daily',
+                        time: data.data.time || '3:00 AM',
+                        retentionDays: data.data.retentionDays || 30,
+                        storagePath: data.data.storagePath || '/var/backups/whatatops',
+                        emailNotification: data.data.emailNotification !== undefined ? data.data.emailNotification : true
+                    });
+                }
+            }
+            setIsScheduleModalOpen(true);
+        } catch (error) {
+            console.error("Failed to load schedule:", error);
+            setError("Failed to load current schedule.");
+            setTimeout(() => setError(null), 5000);
         }
     };
 
@@ -289,6 +338,8 @@ export default function SystemMaintenance() {
             if (data.success) {
                 setSuccessMessage("Backup schedule saved successfully!");
                 setIsScheduleModalOpen(false);
+                // ✅ Reload the data to update the summary text on the dashboard
+                loadData();
                 setTimeout(() => setSuccessMessage(null), 5000);
             } else {
                 setError(data.message || "Failed to save schedule");
@@ -516,7 +567,7 @@ export default function SystemMaintenance() {
                                 Retention: <span className="font-medium text-[#262D31]">{scheduleData.retentionDays} days</span>
                             </p>
                             <button
-                                onClick={() => setIsScheduleModalOpen(true)}
+                                onClick={handleOpenScheduleModal}
                                 className="flex items-center gap-2 px-4 py-2 border border-[#0C7FDA] text-[#0C7FDA] rounded-lg text-sm font-medium hover:bg-[#0C7FDA] hover:text-white transition"
                             >
                                 <Icon icon="uil:setting" className="w-4 h-4" />
