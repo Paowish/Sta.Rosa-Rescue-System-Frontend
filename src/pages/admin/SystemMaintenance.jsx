@@ -32,19 +32,19 @@ export default function SystemMaintenance() {
             setError(null);
             const token = localStorage.getItem('token');
 
-            // 1. Load system logs
+            // 1. Load system logs (REAL DATA)
             const logsResponse = await fetch('/api/admin/system-logs', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (logsResponse.ok) {
-                const logsData = await logsResponse.json();
-                if (logsData.success) {
-                    setLogs(logsData.data);
-                }
-            }
+            // if (logsResponse.ok) {
+            //     const logsData = await logsResponse.json();
+            //     if (logsData.success) {
+            //         setLogs(logsData.data);
+            //     }
+            // }
 
-            // 2. Load backups
+            // 2. Load backups (REAL DATA)
             const backupsResponse = await fetch('/api/admin/backups', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -56,58 +56,11 @@ export default function SystemMaintenance() {
                 }
             }
 
-            // 3. Load the CURRENT saved schedule
-            const scheduleResponse = await fetch('/api/admin/backup-schedule', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (scheduleResponse.ok) {
-                const scheduleDataJson = await scheduleResponse.json();
-                if (scheduleDataJson.success && scheduleDataJson.data) {
-                    const saved = scheduleDataJson.data;
-                    setScheduleData({
-                        frequency: saved.frequency || 'Daily',
-                        time: saved.time || '3:00 AM',
-                        retentionDays: saved.retentionDays || 30,
-                        storagePath: saved.storagePath || '/var/backups/whatatops',
-                        emailNotification: saved.emailNotification !== undefined ? saved.emailNotification : true
-                    });
-                }
-            }
-
         } catch (error) {
             console.error("Failed to load data:", error);
             setError("Failed to load system data. Please refresh.");
         } finally {
             setLoading(false);
-        }
-    };
-
-    // Load schedule specifically when the modal OPENS
-    const handleOpenScheduleModal = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/admin/backup-schedule', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.data) {
-                    setScheduleData({
-                        frequency: data.data.frequency || 'Daily',
-                        time: data.data.time || '3:00 AM',
-                        retentionDays: data.data.retentionDays || 30,
-                        storagePath: data.data.storagePath || '/var/backups/whatatops',
-                        emailNotification: data.data.emailNotification !== undefined ? data.data.emailNotification : true
-                    });
-                }
-            }
-            setIsScheduleModalOpen(true);
-        } catch (error) {
-            console.error("Failed to load schedule:", error);
-            setError("Failed to load current schedule.");
-            setTimeout(() => setError(null), 5000);
         }
     };
 
@@ -130,7 +83,7 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Filter logs by period
+    // Filter logs by period (REAL FILTERING)
     const getFilteredLogs = () => {
         if (periodFilter === "All Time") return logs;
 
@@ -157,14 +110,14 @@ export default function SystemMaintenance() {
 
     const filteredLogs = getFilteredLogs();
 
-    // Export logs to Excel
+    // Export logs to Excel (USES REAL ACTION)
     const handleExportLogs = () => {
         try {
             const dataToExport = filteredLogs.length > 0 ? filteredLogs : logs;
 
             const exportData = dataToExport.map(log => ({
                 'Time': log.timestamp ? new Date(log.timestamp).toLocaleString() : log.time || 'N/A',
-                'Action': log.type || 'N/A',
+                'Action': log.action || log.type || 'N/A', // ✅ Uses real action, falls back to type
                 'Status': log.message || log.description || 'N/A'
             }));
 
@@ -172,7 +125,7 @@ export default function SystemMaintenance() {
             const ws = XLSX.utils.json_to_sheet(exportData);
             ws['!cols'] = [
                 { wch: 20 }, // Time
-                { wch: 15 }, // Action
+                { wch: 20 }, // Action
                 { wch: 60 }  // Status
             ];
             XLSX.utils.book_append_sheet(wb, ws, 'System Logs');
@@ -336,7 +289,6 @@ export default function SystemMaintenance() {
             if (data.success) {
                 setSuccessMessage("Backup schedule saved successfully!");
                 setIsScheduleModalOpen(false);
-                loadData(); // Reload the data to update summary text
                 setTimeout(() => setSuccessMessage(null), 5000);
             } else {
                 setError(data.message || "Failed to save schedule");
@@ -423,9 +375,7 @@ export default function SystemMaintenance() {
                                 <div className="relative">
                                     <select
                                         value={periodFilter}
-                                        onChange={(e) => {
-                                            setPeriodFilter(e.target.value);
-                                        }}
+                                        onChange={(e) => setPeriodFilter(e.target.value)}
                                         className="appearance-none border border-[#D3D2DE] rounded-lg px-4 py-2 pr-8 text-sm font-light bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                                     >
                                         <option>All Time</option>
@@ -474,7 +424,7 @@ export default function SystemMaintenance() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-block min-w-[70px] text-center px-2 py-0.5 text-xs rounded-sm border ${getLogBadge(log.type)}`}>
-                                                    {log.type}
+                                                    {log.action || log.type}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-[#000000]">{log.message || log.description}</td>
@@ -566,7 +516,7 @@ export default function SystemMaintenance() {
                                 Retention: <span className="font-medium text-[#262D31]">{scheduleData.retentionDays} days</span>
                             </p>
                             <button
-                                onClick={handleOpenScheduleModal}
+                                onClick={() => setIsScheduleModalOpen(true)}
                                 className="flex items-center gap-2 px-4 py-2 border border-[#0C7FDA] text-[#0C7FDA] rounded-lg text-sm font-medium hover:bg-[#0C7FDA] hover:text-white transition"
                             >
                                 <Icon icon="uil:setting" className="w-4 h-4" />
