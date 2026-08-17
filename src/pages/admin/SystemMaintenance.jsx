@@ -37,12 +37,12 @@ export default function SystemMaintenance() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            // if (logsResponse.ok) {
-            //     const logsData = await logsResponse.json();
-            //     if (logsData.success) {
-            //         setLogs(logsData.data);
-            //     }
-            // }
+            if (logsResponse.ok) {
+                const logsData = await logsResponse.json();
+                if (logsData.success) {
+                    setLogs(logsData.data);
+                }
+            }
 
             // 2. Load backups (REAL DATA)
             const backupsResponse = await fetch('/api/admin/backups', {
