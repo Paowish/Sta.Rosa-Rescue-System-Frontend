@@ -64,7 +64,6 @@ export default function SystemMaintenance() {
             if (scheduleResponse.ok) {
                 const scheduleDataJson = await scheduleResponse.json();
                 if (scheduleDataJson.success && scheduleDataJson.data) {
-                    // ✅ Load the saved schedule into the state
                     const saved = scheduleDataJson.data;
                     setScheduleData({
                         frequency: saved.frequency || 'Daily',
@@ -95,7 +94,6 @@ export default function SystemMaintenance() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.data) {
-                    // Update state with the ACTUAL saved values from DB
                     setScheduleData({
                         frequency: data.data.frequency || 'Daily',
                         time: data.data.time || '3:00 AM',
@@ -338,8 +336,7 @@ export default function SystemMaintenance() {
             if (data.success) {
                 setSuccessMessage("Backup schedule saved successfully!");
                 setIsScheduleModalOpen(false);
-                // ✅ Reload the data to update the summary text on the dashboard
-                loadData();
+                loadData(); // Reload the data to update summary text
                 setTimeout(() => setSuccessMessage(null), 5000);
             } else {
                 setError(data.message || "Failed to save schedule");
@@ -426,7 +423,9 @@ export default function SystemMaintenance() {
                                 <div className="relative">
                                     <select
                                         value={periodFilter}
-                                        onChange={(e) => setPeriodFilter(e.target.value)}
+                                        onChange={(e) => {
+                                            setPeriodFilter(e.target.value);
+                                        }}
                                         className="appearance-none border border-[#D3D2DE] rounded-lg px-4 py-2 pr-8 text-sm font-light bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                                     >
                                         <option>All Time</option>
