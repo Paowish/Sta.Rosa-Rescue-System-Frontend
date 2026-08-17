@@ -423,13 +423,23 @@ export default function Dashboard({ onIncidentClick }) {
                 const volunteerStatus = getVolunteerStatusForIncident(incident._id);
                 const timeAgo = getTimeAgo(incident.reportedAt);
 
-                const borderColor = incident.severity === 'Critical' ? 'border-red-500' :
-                  incident.severity === 'High' ? 'border-orange-500' :
-                    incident.severity === 'Medium' ? 'border-yellow-500' : 'border-green-500';
+                // ✅ NEW BORDER COLOR LOGIC BASED ON STATUS
+                const getStatusBorderColor = (status) => {
+                  if (status === 'Resolved') return 'border-green-500';
+                  if (status === 'On Scene') return 'border-blue-500';
+                  if (status === 'En Route') return 'border-blue-500';
+                  if (status === 'Dispatched') return 'border-blue-500';
+                  if (status === 'Active') return 'border-red-500';
+                  // Default for Pending and everything else
+                  return 'border-yellow-500';
+                };
 
+                const borderColor = getStatusBorderColor(incident.status);
+
+                // Keep severity for the text badge only
                 const severityText = incident.severity || 'Medium';
                 const statusText = volunteerStatus?.status === 'en-route' ? 'En Route' :
-                  volunteerStatus?.status === 'arrived' ? 'Arrived' :
+                  volunteerStatus?.status === 'arrived' ? 'On Scene' :
                     incident.status || 'Pending';
 
                 return (
