@@ -145,7 +145,10 @@ export default function GuestReport() {
                     description: incidentDetails.description,
                     location: {
                         address: locationData.address,
-                        coordinates: locationData.coordinates
+                        coordinates: {
+                            latitude: locationData.coordinates.lat,
+                            longitude: locationData.coordinates.lng
+                        }
                     },
                     severity: 'Medium',
                     reporterName: 'Guest User',
