@@ -12,6 +12,9 @@ export default function UserAccount() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
+    // ✅ New Error Modal State
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     // Edit form state
     const [editForm, setEditForm] = useState({
@@ -19,7 +22,7 @@ export default function UserAccount() {
         lastName: '',
         email: '',
         phoneNumber: '',
-        role: '',
+        role: 'volunteer',
         isApproved: true,
         password: ''
     });
@@ -47,7 +50,6 @@ export default function UserAccount() {
             const data = await response.json();
             if (data.success) {
                 const formattedUsers = data.data.map(user => {
-                    // Determine user status
                     let status = 'PENDING';
                     if (user.isApproved) {
                         status = 'ACTIVE';
@@ -56,7 +58,6 @@ export default function UserAccount() {
                     } else if (user.applicationStatus === 'pending') {
                         status = 'PENDING';
                     }
-
                     return {
                         id: user._id,
                         firstName: user.firstName || '',
@@ -90,7 +91,7 @@ export default function UserAccount() {
             lastName: user.lastName,
             email: user.email,
             phoneNumber: user.phoneNumber === 'N/A' ? '' : user.phoneNumber,
-            role: user.role.toLowerCase(),
+            role: 'volunteer',
             isApproved: user.isApproved,
             password: ''
         });
@@ -115,10 +116,7 @@ export default function UserAccount() {
             const apiUrl = getApiUrl();
             const response = await fetch(`${apiUrl}/admin/approve-volunteer/${selectedUser.id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
             if (data.success) {
@@ -126,14 +124,16 @@ export default function UserAccount() {
                 setShowVerifyModal(false);
                 loadUsers();
             } else {
-                alert("❌ Failed to verify: " + data.message);
+                setErrorMessage(data.message || "Failed to verify user.");
+                setShowErrorModal(true);
             }
         } catch (error) {
-            console.error("Error verifying user:", error);
-            alert("❌ Error verifying user.");
+            setErrorMessage("Error verifying user.");
+            setShowErrorModal(true);
         }
     };
 
+    // ✅ Fixed Save with Duplicate Error Handling
     const handleSaveEdit = async () => {
         if (!selectedUser) return;
         try {
@@ -144,7 +144,7 @@ export default function UserAccount() {
                 lastName: editForm.lastName,
                 email: editForm.email,
                 phoneNumber: editForm.phoneNumber,
-                role: editForm.role,
+                role: 'volunteer',
                 isApproved: editForm.isApproved
             };
             if (editForm.password && editForm.password.trim() !== '') {
@@ -153,23 +153,29 @@ export default function UserAccount() {
 
             const response = await fetch(`${apiUrl}/admin/update-user/${selectedUser.id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(updateData)
             });
             const data = await response.json();
+
             if (data.success) {
                 alert("✅ User updated successfully!");
                 setShowEditModal(false);
                 loadUsers();
             } else {
-                alert("❌ Failed to update: " + data.message);
+                // ✅ Show the error in the Modal instead of alert()
+                setErrorMessage(data.message || "Failed to update user.");
+                setShowErrorModal(true);
             }
         } catch (error) {
             console.error("Error updating user:", error);
-            alert("❌ Error updating user.");
+            // ✅ Handle the specific MongoDB duplicate key error gracefully
+            if (error.message && error.message.includes("E11000 duplicate key error")) {
+                setErrorMessage("This email is already in use by another account. Please use a different email.");
+            } else {
+                setErrorMessage(error.message || "Error updating user.");
+            }
+            setShowErrorModal(true);
         }
     };
 
@@ -180,9 +186,7 @@ export default function UserAccount() {
             const apiUrl = getApiUrl();
             const response = await fetch(`${apiUrl}/admin/delete-user/${selectedUser.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
             if (data.success) {
@@ -190,11 +194,12 @@ export default function UserAccount() {
                 setShowDeleteModal(false);
                 loadUsers();
             } else {
-                alert("❌ Failed to delete: " + data.message);
+                setErrorMessage(data.message || "Failed to delete user.");
+                setShowErrorModal(true);
             }
         } catch (error) {
-            console.error("Error deleting user:", error);
-            alert("❌ Error deleting user.");
+            setErrorMessage("Error deleting user.");
+            setShowErrorModal(true);
         }
     };
 
@@ -242,7 +247,7 @@ export default function UserAccount() {
                         <Icon icon="mdi:account-group" className="w-7 h-7 text-[#262D31]" />
                         User Account
                     </h1>
-                    <p className="text-gray-500 text-sm">Manage all registered accounts across all roles</p>
+                    <p className="text-gray-500 text-sm">Manage all registered volunteers</p>
                 </div>
 
                 {/* Users Table */}
@@ -288,27 +293,15 @@ export default function UserAccount() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEditClick(user)}
-                                                        className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600 transition"
-                                                        title="Edit User"
-                                                    >
+                                                    <button onClick={() => handleEditClick(user)} className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600 transition" title="Edit User">
                                                         <Icon icon="mdi:pencil-outline" className="w-4 h-4" />
                                                     </button>
                                                     {!user.isApproved && user.status !== 'REJECTED' && (
-                                                        <button
-                                                            onClick={() => handleVerifyClick(user)}
-                                                            className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600 transition"
-                                                            title="Verify User"
-                                                        >
+                                                        <button onClick={() => handleVerifyClick(user)} className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600 transition" title="Verify User">
                                                             <Icon icon="mdi:check" className="w-4 h-4 text-green-600" />
                                                         </button>
                                                     )}
-                                                    <button
-                                                        onClick={() => handleDeleteClick(user)}
-                                                        className="p-1.5 bg-white border border-gray-300 rounded hover:bg-red-50 text-gray-600 transition"
-                                                        title="Delete User"
-                                                    >
+                                                    <button onClick={() => handleDeleteClick(user)} className="p-1.5 bg-white border border-gray-300 rounded hover:bg-red-50 text-gray-600 transition" title="Delete User">
                                                         <Icon icon="mdi:trash-can-outline" className="w-4 h-4 text-red-500" />
                                                     </button>
                                                 </div>
@@ -329,120 +322,92 @@ export default function UserAccount() {
             </div>
 
             {/* ============================================================ */}
-            {/* ✅ MODALS (PORTAL TO BODY FOR PERFECT CENTERING)              */}
-            {/* ============================================================ */}
-
-            {/* EDIT USER MODAL */}
+            {/* ✅ EDIT USER MODAL */}
             {showEditModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="px-6 py-4 border-b flex justify-between items-center bg-[#EAE9F9]">
-                            <h2 className="text-lg font-semibold text-[#262D31]">
-                                Edit User - {selectedUser.name}
-                            </h2>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition"
-                            >
+                            <h2 className="text-lg font-semibold text-[#262D31]">Edit User - {selectedUser.name}</h2>
+                            <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-gray-700 transition">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
-
                         <div className="p-6 max-h-[70vh] overflow-y-auto">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.firstName}
-                                        onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                                    <input type="text" value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.lastName}
-                                        onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                                    <input type="text" value={editForm.lastName} onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                                    <input
-                                        type="text"
-                                        value={editForm.phoneNumber}
-                                        onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                                    <input type="text" value={editForm.phoneNumber} onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                    <input
-                                        type="email"
-                                        value={editForm.email}
-                                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                                    <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                                    <select
-                                        value={editForm.role}
-                                        onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                    >
+                                    <select value="volunteer" disabled={true} className="w-full border border-gray-300 rounded p-2 text-sm bg-gray-100 cursor-not-allowed focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                         <option value="volunteer">Volunteer</option>
-                                        <option value="responder">Responder</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="civilian">Civilian</option>
                                     </select>
+                                    <p className="text-[10px] text-gray-400 mt-1">Roles are fixed to Volunteer.</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                    <select
-                                        value={editForm.isApproved ? 'active' : 'inactive'}
-                                        onChange={(e) => setEditForm({ ...editForm, isApproved: e.target.value === 'active' })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                    >
+                                    <select value={editForm.isApproved ? 'active' : 'inactive'} onChange={(e) => setEditForm({ ...editForm, isApproved: e.target.value === 'active' })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white">
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
                                 <div className="col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Leave blank to keep current password"
-                                        value={editForm.password}
-                                        onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                                        className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                    />
+                                    <input type="password" placeholder="Leave blank to keep current password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                             </div>
                         </div>
-
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveEdit}
-                                className="px-6 py-2 bg-[#007bff] text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                            >
-                                Save Account
-                            </button>
+                            <button onClick={() => setShowEditModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                            <button onClick={handleSaveEdit} className="px-6 py-2 bg-[#007bff] text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition">Save Account</button>
                         </div>
                     </div>
                 </div>,
                 document.body
             )}
 
-            {/* DELETE USER MODAL */}
+            {/* ============================================================ */}
+            {/* ✅ ERROR MODAL (Replaces the ugly alerts!) */}
+            {showErrorModal && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b-4 border-red-500 flex justify-between items-start bg-white">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
+                                    <Icon icon="mdi:close-circle" className="w-5 h-5 text-red-500" />
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800">Error</h2>
+                            </div>
+                            <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
+                                <Icon icon="mdi:close" className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-600 text-sm">{errorMessage}</p>
+                        </div>
+                        <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
+                            <button onClick={() => setShowErrorModal(false)} className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">OK</button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* ============================================================ */}
+            {/* ✅ DELETE USER MODAL */}
             {showDeleteModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -451,44 +416,26 @@ export default function UserAccount() {
                                 <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
                                     <Icon icon="mdi:close" className="w-5 h-5 text-red-500" />
                                 </div>
-                                <h2 className="text-lg font-semibold text-gray-800">
-                                    Delete user {selectedUser.name}
-                                </h2>
+                                <h2 className="text-lg font-semibold text-gray-800">Delete user {selectedUser.name}</h2>
                             </div>
-                            <button
-                                onClick={() => setShowDeleteModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition mt-1"
-                            >
+                            <button onClick={() => setShowDeleteModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
-
                         <div className="p-6">
-                            <p className="text-gray-600 text-sm">
-                                Are you sure you want to delete user <strong>{selectedUser.name}</strong>? This action cannot be undone.
-                            </p>
+                            <p className="text-gray-600 text-sm">Are you sure you want to delete user <strong>{selectedUser.name}</strong>? This action cannot be undone.</p>
                         </div>
-
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowDeleteModal(false)}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDeleteUser}
-                                className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
-                            >
-                                Delete
-                            </button>
+                            <button onClick={() => setShowDeleteModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                            <button onClick={handleDeleteUser} className="px-6 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Delete</button>
                         </div>
                     </div>
                 </div>,
                 document.body
             )}
 
-            {/* VERIFY USER MODAL */}
+            {/* ============================================================ */}
+            {/* ✅ VERIFY USER MODAL */}
             {showVerifyModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -497,38 +444,18 @@ export default function UserAccount() {
                                 <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
                                     <Icon icon="mdi:check-circle" className="w-5 h-5 text-blue-500" />
                                 </div>
-                                <h2 className="text-lg font-semibold text-gray-800">
-                                    Verify user {selectedUser.name}
-                                </h2>
+                                <h2 className="text-lg font-semibold text-gray-800">Verify user {selectedUser.name}</h2>
                             </div>
-                            <button
-                                onClick={() => setShowVerifyModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition mt-1"
-                            >
+                            <button onClick={() => setShowVerifyModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
-
                         <div className="p-6">
-                            <p className="text-gray-600 text-sm">
-                                Are you sure you want to verify user <strong>{selectedUser.name}</strong>?
-                                This will activate their account and grant them full access.
-                            </p>
+                            <p className="text-gray-600 text-sm">Are you sure you want to verify user <strong>{selectedUser.name}</strong>? This will activate their account and grant them full access.</p>
                         </div>
-
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowVerifyModal(false)}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleVerifyUser}
-                                className="px-6 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                            >
-                                Verify
-                            </button>
+                            <button onClick={() => setShowVerifyModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                            <button onClick={handleVerifyUser} className="px-6 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition">Verify</button>
                         </div>
                     </div>
                 </div>,
