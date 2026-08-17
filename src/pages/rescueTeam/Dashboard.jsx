@@ -466,7 +466,13 @@ export default function Dashboard({ onIncidentClick }) {
                       <span className="text-[10px] font-bold px-2 py-[2px] border border-red-300 text-[#4B5563] rounded-[2px]">
                         {severityText}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-[2px] bg-[#FEF3C7] text-[#4B5563] rounded-[2px]">
+                      <span className={`text-[10px] font-bold px-2 py-[2px] rounded-[2px] ${statusText === 'Resolved' ? 'bg-green-100 text-green-700' :
+                        statusText === 'On Scene' ? 'bg-blue-100 text-blue-700' :
+                          statusText === 'En Route' ? 'bg-blue-100 text-blue-700' :
+                            statusText === 'Dispatched' ? 'bg-blue-100 text-blue-700' :
+                              statusText === 'Active' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                        }`}>
                         {statusText}
                       </span>
                       <span className="text-[10px] text-gray-400 font-medium">
