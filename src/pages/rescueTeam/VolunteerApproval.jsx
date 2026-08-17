@@ -126,6 +126,7 @@ export default function VolunteerApproval() {
             availability: availability,
             description: description,
             appliedDate: volunteer.createdAt ? new Date(volunteer.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A',
+            profileImage: volunteer.profileImage || null,
             details: {
               age: volunteer.age || 'N/A',
               email: volunteer.email || 'N/A',
@@ -425,7 +426,13 @@ export default function VolunteerApproval() {
           {activeTab === 'roster' && activeVolunteer && (
             <div className="h-full flex flex-col relative">
               <div className="p-6 flex items-center gap-4 border-b border-gray-200">
-                <div className="w-16 h-16 rounded-full bg-[#dbe0e8] flex items-center justify-center"><Icon icon="mdi:account" className="w-8 h-8 text-gray-400" /></div>
+                <div className="w-16 h-16 rounded-full bg-[#dbe0e8] flex items-center justify-center overflow-hidden">
+                  {activeVolunteer.profileImage ? (
+                    <img src={activeVolunteer.profileImage} alt={activeVolunteer.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Icon icon="mdi:account" className="w-8 h-8 text-gray-400" />
+                  )}
+                </div>
                 <div><h3 className="text-[20px] font-bold text-gray-800">{activeVolunteer.name}</h3><p className="text-[13px] text-gray-500 font-medium">{activeVolunteer.role}</p><div className="mt-1.5"><PanelStatusBadge label={getVolunteerStatus(activeVolunteer.id)} /></div></div>
                 <button onClick={handleCloseRoster} className="text-gray-400 hover:text-gray-600 absolute top-4 right-4"><Icon icon="mdi:close" className="w-6 h-6" /></button>
               </div>

@@ -24,8 +24,12 @@ export const RosterView = ({ volunteers, selectedId, onSelect, getStatus }) => {
                             <div className="p-5 pb-3">
                                 {/* Avatar and Name Section */}
                                 <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-12 h-12 rounded-full bg-[#dbe0e8] flex items-center justify-center text-gray-400">
-                                        <Icon icon="mdi:account" className="w-6 h-6" />
+                                    <div className="w-12 h-12 rounded-full bg-[#dbe0e8] flex items-center justify-center text-gray-400 overflow-hidden">
+                                        {v.profileImage ? (
+                                            <img src={v.profileImage} alt={v.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Icon icon="mdi:account" className="w-6 h-6" />
+                                        )}
                                     </div>
                                     <div>
                                         <div className="font-bold text-[15px] text-gray-800">{v.name}</div>

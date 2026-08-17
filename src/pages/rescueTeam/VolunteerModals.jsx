@@ -162,9 +162,13 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                         <div className="p-6 flex items-center gap-4 border-b border-gray-200 bg-white">
                             <div className="relative w-16 h-16 shrink-0">
                                 <div className="w-16 h-16 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center overflow-hidden">
-                                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
-                                        <Icon icon="mdi:account" className="w-8 h-8" />
-                                    </div>
+                                    {volunteer.profileImage ? (
+                                        <img src={volunteer.profileImage} alt={volunteer.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
+                                            <Icon icon="mdi:account" className="w-8 h-8" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div>

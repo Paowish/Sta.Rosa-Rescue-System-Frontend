@@ -404,7 +404,8 @@ export default function VolunteerDashboard() {
                 if (hostname === 'localhost' || hostname === '127.0.0.1') {
                     socketUrl = 'http://localhost:5000';
                 } else {
-                    socketUrl = 'https://hammily-unscaled-synthia.ngrok-free.dev';
+                    // ✅ CHANGE THIS TO YOUR ACTUAL BACKEND URL
+                    socketUrl = 'https://sta-rosa-rescue-system-backend.onrender.com';
                 }
 
                 console.log('🔌 Socket URL:', socketUrl);
@@ -1161,20 +1162,39 @@ export default function VolunteerDashboard() {
         const hasChanges = user.firstName.trim() !== originalUser.firstName ||
             user.lastName.trim() !== originalUser.lastName ||
             user.phoneNumber.trim() !== originalUser.phoneNumber;
+
         if (!hasChanges) {
             alert("No changes were made to your profile.");
             setIsEditingLocal(false);
             setShowEditProfile(false);
             return;
         }
+
         setSaving(true);
         try {
-            const response = await authService.updateProfile({
-                firstName: user.firstName.trim(),
-                lastName: user.lastName.trim(),
-                phoneNumber: user.phoneNumber.trim()
+            const token = localStorage.getItem('token');
+            // ✅ CHANGE THIS TO HIT YOUR NEW BACKEND ROUTE
+            const response = await fetch('/api/volunteer/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    firstName: user.firstName.trim(),
+                    lastName: user.lastName.trim(),
+                    phoneNumber: user.phoneNumber.trim(),
+                    // You can pass these optional fields too if your form has them:
+                    // address: user.address,
+                    // certifications: user.certifications,
+                    // availability: user.availability,
+                    // description: user.description
+                })
             });
-            if (response.success) {
+
+            const data = await response.json();
+
+            if (data.success) {
                 const updatedUser = { ...user, profileImage: originalUser.profileImage };
                 setOriginalUser(updatedUser);
                 setUser(updatedUser);
@@ -1194,6 +1214,8 @@ export default function VolunteerDashboard() {
                 setIsEditingLocal(false);
                 setValidationErrors({});
                 setShowEditProfile(false);
+            } else {
+                alert(data.message || "Failed to update profile");
             }
         } catch (error) {
             alert(error.message || "Failed to update profile");
@@ -1201,7 +1223,6 @@ export default function VolunteerDashboard() {
             setSaving(false);
         }
     };
-
     const validatePassword = () => {
         const errors = {};
         if (!passwordData.currentPassword) {
