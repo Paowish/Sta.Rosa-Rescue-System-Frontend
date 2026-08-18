@@ -76,14 +76,17 @@ export default function VolunteerApproval() {
       }
 
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/admin/all-volunteers`, {
+      const response = await fetch(`${apiUrl}/admin/all-users`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const data = await response.json();
 
       if (data.success) {
-        const transformedData = data.data.map(volunteer => {
+        // ✅ STEP 1: Filter ONLY users with role = 'volunteer'
+        const volunteersOnly = data.data.filter(user => user.role === 'volunteer');
+
+        const transformedData = volunteersOnly.map(volunteer => {
           let status = 'pending';
           if (volunteer.applicationStatus === 'approved' || volunteer.isApproved) status = 'accepted';
           else if (volunteer.applicationStatus === 'rejected') status = 'rejected';

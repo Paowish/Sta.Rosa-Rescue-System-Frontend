@@ -99,7 +99,10 @@ export default function AdminOverview() {
             setError(null);
             const token = localStorage.getItem('token');
 
-            const incidentResponse = await fetch('/api/incidents', { headers: { 'Authorization': `Bearer ${token}` } });
+            // ✅ FIX: Load Incidents (Use existing /api/incidents)
+            const incidentResponse = await fetch('/api/incidents', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const incidentData = await incidentResponse.json();
 
             if (incidentData.success) {
@@ -111,7 +114,10 @@ export default function AdminOverview() {
                 setStats({ total, active, pending });
             }
 
-            const requestsResponse = await fetch('/api/admin/pending-volunteers', { headers: { 'Authorization': `Bearer ${token}` } });
+            // ✅ FIX: Load pending volunteer requests (Use existing /api/admin/pending-volunteers)
+            const requestsResponse = await fetch('/api/admin/pending-volunteers', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const requestsData = await requestsResponse.json();
             if (requestsData.success) {
                 setRecentRequests(requestsData.data.slice(0, 5));
