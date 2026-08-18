@@ -1,7 +1,66 @@
 import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
+
+// ============================================================
+// ✅ UI HELPER COMPONENTS
+// ============================================================
+
+const StatusBadge = ({ status }) => {
+    let colorClass = "bg-gray-100 text-gray-700 border-gray-200";
+    let icon = "mdi:circle-outline";
+
+    switch (status) {
+        case "Resolved":
+            colorClass = "bg-[#D5FFE5] text-[#15803D] border-[#15803D]";
+            icon = "mdi:check-circle";
+            break;
+        case "Active":
+            colorClass = "bg-[#FDE6EA] text-[#DC2626] border-[#DC2626]";
+            icon = "mdi:alert-circle";
+            break;
+        case "Dispatched":
+            colorClass = "bg-[#FCE3AE] text-[#E1791E] border-[#E1791E]";
+            icon = "mdi:truck-delivery";
+            break;
+        case "Pending":
+            colorClass = "bg-[#FCE3AE] text-[#E1791E] border-[#E1791E]";
+            icon = "mdi:clock-outline";
+            break;
+        default:
+            colorClass = "bg-gray-100 text-gray-700 border-gray-200";
+            icon = "mdi:circle-outline";
+    }
+
+    const displayText = status === "Active" ? "UNSOLVED" : status === "Resolved" ? "SOLVED" : status?.toUpperCase() || "PENDING";
+
+    return (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold rounded-full border ${colorClass}`}>
+            <Icon icon={icon} className="w-3.5 h-3.5" />
+            {displayText}
+        </span>
+    );
+};
+
+const RoleBadge = ({ role }) => {
+    let colorClass = "bg-gray-100 text-gray-700 border-gray-200";
+    switch (role) {
+        case "volunteer": colorClass = "bg-[#D5FFE5] text-[#15803D] border-[#15803D]"; break;
+        case "responder": colorClass = "bg-[#CBE8FF] text-[#4285F4] border-[#4285F4]"; break;
+        case "admin": colorClass = "bg-[#FCE3AE] text-[#E1791E] border-[#E1791E]"; break;
+        default: break;
+    }
+    return (
+        <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${colorClass}`}>
+            {role?.toUpperCase() || 'VOLUNTEER'}
+        </span>
+    );
+};
+
+// ============================================================
+// ✅ MAIN COMPONENT
+// ============================================================
 
 export default function AdminOverview() {
     const [stats, setStats] = useState({ total: 0, active: 0, pending: 0 });
@@ -16,16 +75,17 @@ export default function AdminOverview() {
     const [allRequests, setAllRequests] = useState([]);
     const [allIncidents, setAllIncidents] = useState([]);
 
-    // ✅ New Modal States for Alerts
+    // ✅ Modal Search & Filter States
+    const [requestSearch, setRequestSearch] = useState("");
+    const [incidentSearch, setIncidentSearch] = useState("");
+
+    // ✅ Alert Modals
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [confirmModalData, setConfirmModalData] = useState({
-        title: '',
-        message: '',
-        onConfirm: () => { },
-        confirmText: 'Confirm',
-        confirmColor: 'bg-green-600 hover:bg-green-700'
+        title: '', message: '', onConfirm: () => { },
+        confirmText: 'Confirm', confirmColor: 'bg-green-600 hover:bg-green-700'
     });
     const [modalMessage, setModalMessage] = useState('');
 
@@ -39,14 +99,11 @@ export default function AdminOverview() {
             setError(null);
             const token = localStorage.getItem('token');
 
-            // Load incidents
-            const incidentResponse = await fetch('/api/incidents', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const incidentResponse = await fetch('/api/incidents', { headers: { 'Authorization': `Bearer ${token}` } });
             const incidentData = await incidentResponse.json();
 
             if (incidentData.success) {
-                setIncidents(incidentData.data.slice(0, 3));
+                setIncidents(incidentData.data.slice(0, 5));
                 setAllIncidents(incidentData.data);
                 const total = incidentData.data.length;
                 const active = incidentData.data.filter(i => i.status === 'Active' || i.status === 'Dispatched').length;
@@ -54,13 +111,10 @@ export default function AdminOverview() {
                 setStats({ total, active, pending });
             }
 
-            // Load pending volunteer requests
-            const requestsResponse = await fetch('/api/admin/pending-volunteers', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const requestsResponse = await fetch('/api/admin/pending-volunteers', { headers: { 'Authorization': `Bearer ${token}` } });
             const requestsData = await requestsResponse.json();
             if (requestsData.success) {
-                setRecentRequests(requestsData.data.slice(0, 3));
+                setRecentRequests(requestsData.data.slice(0, 5));
                 setAllRequests(requestsData.data);
             }
         } catch (error) {
@@ -71,37 +125,11 @@ export default function AdminOverview() {
         }
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "PENDING": return "bg-[#FCE3AE] border border-[#E1791E] text-[#E1791E]";
-            case "SOLVED": return "bg-[#D5FFE5] border border-[#15803D] text-[#15803D]";
-            case "UNSOLVED": return "bg-[#FDE6EA] border border-[#DC2626] text-[#DC2626]";
-            default: return "bg-gray-100 text-gray-700";
-        }
-    };
-
-    const getRoleColor = (role) => {
-        switch (role) {
-            case "volunteer": return "bg-[#D5FFE5] border border-[#15803D] text-[#15803D]";
-            case "responder": return "bg-[#CBE8FF] border border-[#4285F4] text-[#4285F4]";
-            default: return "bg-gray-100 text-gray-700";
-        }
-    };
-
-    const getStatusDisplay = (status) => {
-        switch (status) {
-            case "Active": return "UNSOLVED";
-            case "Dispatched": return "PENDING";
-            case "Resolved": return "SOLVED";
-            default: return status?.toUpperCase() || "PENDING";
-        }
-    };
-
-    // ✅ New: Handlers for Accept/Decline using Modals
+    // --- Request Handlers ---
     const handleAcceptRequest = (userId, userName) => {
         setConfirmModalData({
             title: `Accept ${userName || 'Volunteer'}?`,
-            message: `Are you sure you want to ACCEPT this volunteer as an active member?`,
+            message: `This will grant full system access to <strong>${userName || 'this volunteer'}</strong>. Are you sure?`,
             confirmText: 'Yes, Accept',
             confirmColor: 'bg-green-600 hover:bg-green-700',
             onConfirm: () => confirmAcceptRequest(userId)
@@ -112,7 +140,7 @@ export default function AdminOverview() {
     const handleDeclineRequest = (userId, userName) => {
         setConfirmModalData({
             title: `Decline ${userName || 'Volunteer'}?`,
-            message: `Are you sure you want to DECLINE this volunteer?`,
+            message: `This will permanently reject <strong>${userName || 'this volunteer'}</strong>'s application. Continue?`,
             confirmText: 'Yes, Decline',
             confirmColor: 'bg-red-600 hover:bg-red-700',
             onConfirm: () => confirmDeclineRequest(userId)
@@ -124,17 +152,12 @@ export default function AdminOverview() {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`/api/admin/approve-volunteer/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
             setShowConfirmModal(false);
-
             if (data.success) {
-                setModalMessage("Volunteer accepted successfully!");
+                setModalMessage("Volunteer accepted successfully! They can now log in.");
                 setShowSuccessModal(true);
                 loadData();
             } else {
@@ -152,15 +175,10 @@ export default function AdminOverview() {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`/api/admin/reject-volunteer/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
             setShowConfirmModal(false);
-
             if (data.success) {
                 setModalMessage("Volunteer declined.");
                 setShowSuccessModal(true);
@@ -176,87 +194,158 @@ export default function AdminOverview() {
         }
     };
 
-    // ✅ View All Handlers
-    const handleViewAllRequests = () => setIsRequestsModalOpen(true);
-    const handleViewAllIncidents = () => setIsIncidentsModalOpen(true);
+    // --- Filtered Lists for Modals ---
+    const filteredRequests = useMemo(() => {
+        if (!requestSearch) return allRequests;
+        return allRequests.filter(r =>
+            `${r.firstName} ${r.lastName}`.toLowerCase().includes(requestSearch.toLowerCase()) ||
+            r.email.toLowerCase().includes(requestSearch.toLowerCase())
+        );
+    }, [allRequests, requestSearch]);
 
+    const filteredIncidents = useMemo(() => {
+        if (!incidentSearch) return allIncidents;
+        return allIncidents.filter(i =>
+            i.incidentId?.toLowerCase().includes(incidentSearch.toLowerCase()) ||
+            i.type?.toLowerCase().includes(incidentSearch.toLowerCase()) ||
+            i.location?.address?.toLowerCase().includes(incidentSearch.toLowerCase())
+        );
+    }, [allIncidents, incidentSearch]);
+
+    // ============================================================
+    // ✅ RENDER: SKELETON LOADING
+    // ============================================================
     if (loading) {
         return (
             <AdminLayout>
-                <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1f6b75]"></div>
-                    <div className="text-gray-500 ml-4">Loading dashboard...</div>
+                <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
+                    <div className="mb-6 animate-pulse">
+                        <div className="h-8 w-48 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 w-64 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white rounded-lg shadow p-5 animate-pulse">
+                                <div className="flex items-start gap-3">
+                                    <div className="h-10 w-14 bg-gray-200 rounded"></div>
+                                    <div className="space-y-2 flex-1">
+                                        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                                        <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="bg-white rounded-lg shadow h-64 animate-pulse">
+                        <div className="p-4 border-b bg-gray-50 h-12"></div>
+                        <div className="p-4 space-y-3">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="h-6 bg-gray-100 rounded w-full"></div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </AdminLayout>
         );
     }
 
+    // ============================================================
+    // ✅ RENDER: MAIN DASHBOARD
+    // ============================================================
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
 
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-semibold text-[#262D31]">Admin Overview</h1>
-                    <p className="text-gray-500 text-sm">System health, user summary, and activity snapshot</p>
+                <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-[#262D31]">Admin Overview</h1>
+                        <p className="text-gray-500 text-sm mt-1">System health, user activity, and incident snapshot.</p>
+                    </div>
+                    <button
+                        onClick={loadData}
+                        className="mt-2 md:mt-0 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                    >
+                        <Icon icon="mdi:refresh" className="w-4 h-4" />
+                        Refresh Data
+                    </button>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                    <div className="mb-4 p-3 bg-[#FDE6EA] border border-[#DC2626] rounded-lg text-[#DC2626] flex items-center gap-2">
-                        <Icon icon="mdi:alert-circle" className="w-5 h-5" />
-                        {error}
-                        <button
-                            onClick={() => setError(null)}
-                            className="ml-auto text-[#DC2626] hover:text-[#c11f1f]"
-                        >
+                    <div className="mb-4 p-4 bg-[#FDE6EA] border border-[#DC2626] rounded-xl text-[#DC2626] flex items-center gap-3">
+                        <Icon icon="mdi:alert-circle" className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium">{error}</span>
+                        <button onClick={() => setError(null)} className="ml-auto hover:text-[#c11f1f]">
                             <Icon icon="mdi:close" className="w-4 h-4" />
                         </button>
                     </div>
                 )}
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-lg shadow p-5">
-                        <div className="flex items-start gap-3">
-                            <p className="text-5xl font-bold text-[#672778] leading-none">{stats.total}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                    <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-gray-500 text-sm">Total Incidents</p>
-                                <span className="text-green-500 text-sm font-medium flex items-center">
-                                    {stats.active} Active
-                                </span>
+                                <p className="text-4xl font-bold text-[#672778] leading-none">{stats.total}</p>
+                                <p className="text-gray-500 text-sm mt-2 font-medium">Total Incidents</p>
                             </div>
+                            <div className="bg-purple-50 p-2 rounded-lg">
+                                <Icon icon="mdi:clipboard-list" className="w-6 h-6 text-[#672778]" />
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full w-fit">
+                            <Icon icon="mdi:arrow-up" className="w-3 h-3" />
+                            {stats.active} Active
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-5">
-                        <div className="flex items-start gap-3">
-                            <p className="text-5xl font-bold text-[#15803D] leading-none">{stats.active}</p>
+                    <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-gray-500 text-sm">Active incidents</p>
-                                <span className="text-blue-500 text-sm font-medium">{Math.round((stats.active / stats.total) * 100) || 0}% Total</span>
+                                <p className="text-4xl font-bold text-[#15803D] leading-none">{stats.active}</p>
+                                <p className="text-gray-500 text-sm mt-2 font-medium">Active Incidents</p>
                             </div>
+                            <div className="bg-green-50 p-2 rounded-lg">
+                                <Icon icon="mdi:ambulance" className="w-6 h-6 text-[#15803D]" />
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full w-fit">
+                            <Icon icon="mdi:clock-outline" className="w-3 h-3" />
+                            {Math.round((stats.active / (stats.total || 1)) * 100)}% of total
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow p-5">
-                        <div className="flex items-start gap-3">
-                            <p className="text-5xl font-bold text-[#E1791E] leading-none">{stats.pending}</p>
+                    <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
+                        <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-gray-500 text-sm">Pending Accounts</p>
-                                <span className="text-yellow-500 text-sm font-medium">Needs Review</span>
+                                <p className="text-4xl font-bold text-[#E1791E] leading-none">{stats.pending}</p>
+                                <p className="text-gray-500 text-sm mt-2 font-medium">Pending Approvals</p>
                             </div>
+                            <div className="bg-orange-50 p-2 rounded-lg">
+                                <Icon icon="mdi:account-clock" className="w-6 h-6 text-[#E1791E]" />
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-yellow-600 font-semibold bg-yellow-50 px-2 py-1 rounded-full w-fit">
+                            <Icon icon="mdi:alert" className="w-3 h-3" />
+                            Needs Review
                         </div>
                     </div>
                 </div>
 
                 {/* Recent Account Requests */}
-                <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-                    <div className="p-4 border-b flex justify-between items-center bg-[#EAE9F9]">
-                        <h2 className="font-semibold text-[#262D31]">Recent Account Request</h2>
+                <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] border border-gray-100 mb-8 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="mdi:account-plus" className="w-5 h-5 text-[#262D31]" />
+                            <h2 className="font-bold text-[#262D31] text-base">Pending Registrations</h2>
+                            <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {recentRequests.length}
+                            </span>
+                        </div>
                         <button
-                            onClick={handleViewAllRequests}
-                            className="text-blue-600 text-sm font-medium hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                            onClick={() => setIsRequestsModalOpen(true)}
+                            className="text-blue-600 text-sm font-semibold hover:text-blue-700 flex items-center gap-1 transition cursor-pointer mt-2 sm:mt-0"
                         >
                             View All
                             <Icon icon="mdi:chevron-right" className="w-4 h-4" />
@@ -264,47 +353,47 @@ export default function AdminOverview() {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50/50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Name</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Role</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Email</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Requested</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Action</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Volunteer</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Requested</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-100">
                                 {recentRequests.length > 0 ? (
-                                    recentRequests.map((request, index) => (
-                                        <tr key={index} className="hover:bg-gray-50 transition">
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{request.firstName} {request.lastName}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${getRoleColor(request.role)}`}>
-                                                    {request.role?.toUpperCase() || 'VOLUNTEER'}
-                                                </span>
+                                    recentRequests.map((request) => (
+                                        <tr key={request._id} className="hover:bg-[#FAFAFF] transition duration-150">
+                                            <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                                                {request.firstName} {request.lastName}
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-[#000000]">{request.email}</td>
-                                            <td className="px-4 py-3 text-sm text-[#000000]">
+                                            <td className="px-6 py-4">
+                                                <RoleBadge role={request.role} />
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{request.email}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
                                                 {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor('PENDING')}`}>
-                                                    PENDING
-                                                </span>
+                                            <td className="px-6 py-4">
+                                                <StatusBadge status="Pending" />
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end items-center gap-2">
                                                     <button
                                                         onClick={() => handleAcceptRequest(request._id, `${request.firstName} ${request.lastName}`)}
-                                                        className="bg-[#15803D] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#166534] transition"
+                                                        className="bg-[#15803D] text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-[#166534] transition shadow-sm flex items-center gap-1"
                                                     >
+                                                        <Icon icon="mdi:check" className="w-3.5 h-3.5" />
                                                         Accept
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeclineRequest(request._id, `${request.firstName} ${request.lastName}`)}
-                                                        className="bg-[#DC2626] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#c11f1f] transition"
+                                                        className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-bold hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition flex items-center gap-1"
                                                     >
+                                                        <Icon icon="mdi:close" className="w-3.5 h-3.5" />
                                                         Decline
                                                     </button>
                                                 </div>
@@ -313,8 +402,10 @@ export default function AdminOverview() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                                            No pending requests
+                                        <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                            <Icon icon="mdi:inbox" className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                                            <p className="font-medium">All caught up!</p>
+                                            <p className="text-xs text-gray-400">No pending volunteer registrations.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -324,12 +415,18 @@ export default function AdminOverview() {
                 </div>
 
                 {/* Incident Summary */}
-                <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-                    <div className="p-4 border-b flex justify-between items-center bg-[#EAE9F9]">
-                        <h2 className="font-semibold text-[#262D31]">Incident Summary</h2>
+                <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="mdi:file-document" className="w-5 h-5 text-[#262D31]" />
+                            <h2 className="font-bold text-[#262D31] text-base">Recent Incidents</h2>
+                            <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {incidents.length}
+                            </span>
+                        </div>
                         <button
-                            onClick={handleViewAllIncidents}
-                            className="text-blue-600 text-sm font-medium hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                            onClick={() => setIsIncidentsModalOpen(true)}
+                            className="text-blue-600 text-sm font-semibold hover:text-blue-700 flex items-center gap-1 transition cursor-pointer mt-2 sm:mt-0"
                         >
                             View All
                             <Icon icon="mdi:chevron-right" className="w-4 h-4" />
@@ -337,36 +434,36 @@ export default function AdminOverview() {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50/50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">ID</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Type</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Location</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Reported</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Barangay</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reported</th>
+                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-100">
                                 {incidents.length > 0 ? (
                                     incidents.map((incident) => (
-                                        <tr key={incident._id} className="hover:bg-gray-50 transition">
-                                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{incident.incidentId || 'N/A'}</td>
-                                            <td className="px-4 py-3 text-sm text-[#000000]">{incident.type}</td>
-                                            <td className="px-4 py-3 text-sm text-[#000000]">{incident.location?.address || 'Unknown'}</td>
-                                            <td className="px-4 py-3 text-sm text-[#000000]">
+                                        <tr key={incident._id} className="hover:bg-[#FAFAFF] transition duration-150">
+                                            <td className="px-6 py-4 text-sm font-mono text-gray-500">{incident.incidentId || 'N/A'}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{incident.type}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{incident.location?.barangay || incident.location?.address || 'Unknown'}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
                                                 {incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : 'N/A'}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(getStatusDisplay(incident.status))}`}>
-                                                    {getStatusDisplay(incident.status)}
-                                                </span>
+                                            <td className="px-6 py-4">
+                                                <StatusBadge status={incident.status} />
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
-                                            No incidents found
+                                        <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                            <Icon icon="mdi:check-circle" className="w-12 h-12 mx-auto text-green-300 mb-2" />
+                                            <p className="font-medium">All clear!</p>
+                                            <p className="text-xs text-gray-400">No incidents have been reported recently.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -377,63 +474,83 @@ export default function AdminOverview() {
             </div>
 
             {/* ================================================================ */}
-            {/* ✅ REQUESTS MODAL (All Volunteers) */}
+            {/* ✅ PROFESSIONAL "VIEW ALL" MODALS */}
             {/* ================================================================ */}
+
+            {/* REQUESTS MODAL */}
             {isRequestsModalOpen && createPortal(
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-6 py-4 border-b flex justify-between items-center bg-[#EAE9F9] shrink-0">
-                            <h2 className="text-xl font-bold text-[#262D31]">All Account Requests</h2>
-                            <button
-                                onClick={() => setIsRequestsModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700 transition"
-                            >
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-5 border-b flex justify-between items-center bg-white shrink-0">
+                            <div className="flex items-center gap-3">
+                                <Icon icon="mdi:account-group" className="w-6 h-6 text-[#262D31]" />
+                                <div>
+                                    <h2 className="text-xl font-bold text-[#262D31]">All Registrations</h2>
+                                    <p className="text-xs text-gray-500 mt-0.5">Manage all pending volunteer accounts.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsRequestsModalOpen(false)} className="text-gray-400 hover:text-gray-700 transition">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="overflow-y-auto flex-1 p-4">
+
+                        {/* Search Bar inside Modal */}
+                        <div className="px-6 py-4 border-b bg-gray-50/50 flex gap-3">
+                            <div className="relative flex-1">
+                                <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or email..."
+                                    value={requestSearch}
+                                    onChange={(e) => setRequestSearch(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-0">
                             <table className="w-full">
-                                <thead className="bg-gray-50 sticky top-0 z-10">
+                                <thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Name</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Role</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Email</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Requested</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Status</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider border-b border-[#EAE9F9]">Action</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Volunteer</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Requested</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {allRequests.length > 0 ? (
-                                        allRequests.map((request, index) => (
-                                            <tr key={index} className="hover:bg-gray-50 transition">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{request.firstName} {request.lastName}</td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 text-xs rounded-full ${getRoleColor(request.role)}`}>
-                                                        {request.role?.toUpperCase() || 'VOLUNTEER'}
-                                                    </span>
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredRequests.length > 0 ? (
+                                        filteredRequests.map((request) => (
+                                            <tr key={request._id} className="hover:bg-[#FAFAFF] transition duration-150">
+                                                <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                                                    {request.firstName} {request.lastName}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-[#000000]">{request.email}</td>
-                                                <td className="px-4 py-3 text-sm text-[#000000]">
+                                                <td className="px-6 py-4">
+                                                    <RoleBadge role={request.role} />
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{request.email}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-500">
                                                     {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A'}
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor('PENDING')}`}>
-                                                        PENDING
-                                                    </span>
+                                                <td className="px-6 py-4">
+                                                    <StatusBadge status="Pending" />
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex justify-end items-center gap-2">
                                                         <button
                                                             onClick={() => handleAcceptRequest(request._id, `${request.firstName} ${request.lastName}`)}
-                                                            className="bg-[#15803D] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#166534] transition"
+                                                            className="bg-[#15803D] text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-[#166534] transition shadow-sm flex items-center gap-1"
                                                         >
+                                                            <Icon icon="mdi:check" className="w-3.5 h-3.5" />
                                                             Accept
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeclineRequest(request._id, `${request.firstName} ${request.lastName}`)}
-                                                            className="bg-[#DC2626] text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-[#c11f1f] transition"
+                                                            className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-bold hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition flex items-center gap-1"
                                                         >
+                                                            <Icon icon="mdi:close" className="w-3.5 h-3.5" />
                                                             Decline
                                                         </button>
                                                     </div>
@@ -442,19 +559,19 @@ export default function AdminOverview() {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                                                No pending requests
+                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                                <Icon icon="mdi:inbox" className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                                                <p className="font-medium">No registrations found</p>
+                                                <p className="text-xs text-gray-400">Try adjusting your search.</p>
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                        <div className="px-6 py-3 border-t bg-gray-50 flex justify-end shrink-0">
-                            <button
-                                onClick={() => setIsRequestsModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-                            >
+                        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center shrink-0">
+                            <span className="text-xs text-gray-500">{filteredRequests.length} record(s) found</span>
+                            <button onClick={() => setIsRequestsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
                                 Close
                             </button>
                         </div>
@@ -463,64 +580,78 @@ export default function AdminOverview() {
                 document.body
             )}
 
-            {/* ================================================================ */}
-            {/* ✅ INCIDENTS MODAL (All Incidents) */}
-            {/* ================================================================ */}
+            {/* INCIDENTS MODAL */}
             {isIncidentsModalOpen && createPortal(
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                        <div className="px-6 py-4 border-b flex justify-between items-center bg-[#EAE9F9] shrink-0">
-                            <h2 className="text-xl font-bold text-[#262D31]">All Incidents</h2>
-                            <button
-                                onClick={() => setIsIncidentsModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700 transition"
-                            >
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-5 border-b flex justify-between items-center bg-white shrink-0">
+                            <div className="flex items-center gap-3">
+                                <Icon icon="mdi:clipboard-list" className="w-6 h-6 text-[#262D31]" />
+                                <div>
+                                    <h2 className="text-xl font-bold text-[#262D31]">All Incidents</h2>
+                                    <p className="text-xs text-gray-500 mt-0.5">Complete history of all reported emergencies.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsIncidentsModalOpen(false)} className="text-gray-400 hover:text-gray-700 transition">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="overflow-y-auto flex-1 p-4">
+
+                        {/* Search Bar inside Modal */}
+                        <div className="px-6 py-4 border-b bg-gray-50/50 flex gap-3">
+                            <div className="relative flex-1">
+                                <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by ID, type, or location..."
+                                    value={incidentSearch}
+                                    onChange={(e) => setIncidentSearch(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-0">
                             <table className="w-full">
-                                <thead className="bg-gray-50 sticky top-0 z-10">
+                                <thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">ID</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Type</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Location</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Reported</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-[#000000] uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Barangay</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reported</th>
+                                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {allIncidents.length > 0 ? (
-                                        allIncidents.map((incident) => (
-                                            <tr key={incident._id} className="hover:bg-gray-50 transition">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{incident.incidentId || 'N/A'}</td>
-                                                <td className="px-4 py-3 text-sm text-[#000000]">{incident.type}</td>
-                                                <td className="px-4 py-3 text-sm text-[#000000]">{incident.location?.address || 'Unknown'}</td>
-                                                <td className="px-4 py-3 text-sm text-[#000000]">
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredIncidents.length > 0 ? (
+                                        filteredIncidents.map((incident) => (
+                                            <tr key={incident._id} className="hover:bg-[#FAFAFF] transition duration-150">
+                                                <td className="px-6 py-4 text-sm font-mono text-gray-500">{incident.incidentId || 'N/A'}</td>
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{incident.type}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{incident.location?.barangay || incident.location?.address || 'Unknown'}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-500">
                                                     {incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : 'N/A'}
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(getStatusDisplay(incident.status))}`}>
-                                                        {getStatusDisplay(incident.status)}
-                                                    </span>
+                                                <td className="px-6 py-4">
+                                                    <StatusBadge status={incident.status} />
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
-                                                No incidents found
+                                            <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                                <Icon icon="mdi:check-circle" className="w-12 h-12 mx-auto text-green-300 mb-2" />
+                                                <p className="font-medium">No incidents found</p>
+                                                <p className="text-xs text-gray-400">Try adjusting your search.</p>
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                        <div className="px-6 py-3 border-t bg-gray-50 flex justify-end shrink-0">
-                            <button
-                                onClick={() => setIsIncidentsModalOpen(false)}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-                            >
+                        <div className="px-6 py-4 border-t bg-gray-50 flex justify-between items-center shrink-0">
+                            <span className="text-xs text-gray-500">{filteredIncidents.length} record(s) found</span>
+                            <button onClick={() => setIsIncidentsModalOpen(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
                                 Close
                             </button>
                         </div>
@@ -544,29 +675,18 @@ export default function AdminOverview() {
                                 </div>
                                 <h2 className="text-lg font-semibold text-gray-800">{confirmModalData.title}</h2>
                             </div>
-                            <button
-                                onClick={() => setShowConfirmModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition mt-1"
-                            >
+                            <button onClick={() => setShowConfirmModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
                         <div className="p-6">
-                            <p className="text-gray-600 text-sm">{confirmModalData.message}</p>
+                            <p className="text-gray-600 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: confirmModalData.message }} />
                         </div>
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowConfirmModal(false)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                            >
+                            <button onClick={() => setShowConfirmModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
                                 Cancel
                             </button>
-                            <button
-                                onClick={() => {
-                                    if (confirmModalData.onConfirm) confirmModalData.onConfirm();
-                                }}
-                                className={`px-4 py-2 text-white rounded-lg text-sm font-medium transition ${confirmModalData.confirmColor}`}
-                            >
+                            <button onClick={confirmModalData.onConfirm} className={`px-4 py-2 text-white rounded-lg text-sm font-medium transition ${confirmModalData.confirmColor}`}>
                                 {confirmModalData.confirmText}
                             </button>
                         </div>
@@ -586,10 +706,7 @@ export default function AdminOverview() {
                                 </div>
                                 <h2 className="text-lg font-semibold text-gray-800">Success</h2>
                             </div>
-                            <button
-                                onClick={() => setShowSuccessModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition mt-1"
-                            >
+                            <button onClick={() => setShowSuccessModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
@@ -597,10 +714,7 @@ export default function AdminOverview() {
                             <p className="text-gray-600 text-sm">{modalMessage}</p>
                         </div>
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowSuccessModal(false)}
-                                className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition"
-                            >
+                            <button onClick={() => setShowSuccessModal(false)} className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition">
                                 OK
                             </button>
                         </div>
@@ -620,10 +734,7 @@ export default function AdminOverview() {
                                 </div>
                                 <h2 className="text-lg font-semibold text-gray-800">Error</h2>
                             </div>
-                            <button
-                                onClick={() => setShowErrorModal(false)}
-                                className="text-gray-500 hover:text-gray-700 transition mt-1"
-                            >
+                            <button onClick={() => setShowErrorModal(false)} className="text-gray-500 hover:text-gray-700 transition mt-1">
                                 <Icon icon="mdi:close" className="w-6 h-6" />
                             </button>
                         </div>
@@ -631,10 +742,7 @@ export default function AdminOverview() {
                             <p className="text-gray-600 text-sm">{modalMessage}</p>
                         </div>
                         <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowErrorModal(false)}
-                                className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
-                            >
+                            <button onClick={() => setShowErrorModal(false)} className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">
                                 OK
                             </button>
                         </div>
