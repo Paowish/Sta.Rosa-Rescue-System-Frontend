@@ -431,15 +431,7 @@ export default function VolunteerApproval() {
               <div className="p-6 flex items-center gap-4 border-b border-gray-200">
                 <div className="w-16 h-16 rounded-full bg-[#dbe0e8] flex items-center justify-center overflow-hidden">
                   {activeVolunteer.profileImage ? (
-                    <img
-                      src={activeVolunteer.profileImage}
-                      alt={activeVolunteer.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(activeVolunteer.name) + '&background=random&size=128';
-                      }}
-                    />
+                    <img src={activeVolunteer.profileImage} alt={activeVolunteer.name} className="w-full h-full object-cover" />
                   ) : (
                     <Icon icon="mdi:account" className="w-8 h-8 text-gray-400" />
                   )}

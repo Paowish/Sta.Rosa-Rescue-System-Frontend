@@ -4,19 +4,19 @@ import { createPortal } from "react-dom";
 
 export default function ExportIncidentModal({ isOpen, onClose, onExport, incidents = [] }) {
     const [selectedOption, setSelectedOption] = useState('all');
-    const [selectedBarangay, setSelectedBarangay] = useState('all');
+    const [selectedDate, setSelectedDate] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
 
     // ✅ Reset states when modal opens
     useEffect(() => {
         if (isOpen) {
             setSelectedOption('all');
-            setSelectedBarangay('all');
+            setSelectedDate('all');
             setSelectedStatus('all');
         }
     }, [isOpen]);
 
-    // ✅ DYNAMIC BARANGAYS
+    // ✅ DYNAMIC BARANGAYS (For "Incidents by Barangay" option)
     const barangayList = useMemo(() => {
         if (!incidents || incidents.length === 0) return [];
         return [...new Set(
@@ -26,34 +26,72 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
         )];
     }, [incidents]);
 
+    // ✅ DYNAMIC MUNICIPALITIES (For "Incidents by Municipality" option)
+    const municipalityList = useMemo(() => {
+        if (!incidents || incidents.length === 0) return [];
+        return [...new Set(
+            incidents
+                .map(inc => inc.location?.city || inc.location?.municipality || inc.location?.address?.split(',')?.pop()?.trim())
+                .filter(mun => mun && mun !== 'N/A' && mun !== 'Unknown' && mun !== '')
+        )];
+    }, [incidents]);
+
+    // ✅ DYNAMIC INCIDENT TYPES (For "Incidents by Type" option)
+    const typeList = useMemo(() => {
+        if (!incidents || incidents.length === 0) return [];
+        return [...new Set(
+            incidents
+                .map(inc => inc.type)
+                .filter(type => type && type !== 'N/A' && type !== '')
+        )];
+    }, [incidents]);
+
     // ✅ SMART CHECK: Disable ONLY if the filtered selection is EMPTY
     const isExportDisabled = useMemo(() => {
         if (incidents.length === 0) return true;
 
         let checkList = [...incidents];
 
-        // Apply the exact filters the user selected
-        if (selectedBarangay !== 'all') {
-            checkList = checkList.filter(inc => inc.location?.barangay === selectedBarangay);
-        }
-        if (selectedStatus !== 'all') {
-            checkList = checkList.filter(inc => inc.status === selectedStatus);
-        }
+        // 1. Apply Option filter (All, Active, Inactive)
         if (selectedOption === 'active') {
             checkList = checkList.filter(inc => inc.status !== 'Resolved' && inc.status !== 'Closed');
         } else if (selectedOption === 'inactive') {
             checkList = checkList.filter(inc => inc.status === 'Resolved' || inc.status === 'Closed');
         }
 
+        // 2. Apply Date filter
+        if (selectedDate !== 'all') {
+            const now = new Date();
+            checkList = checkList.filter(inc => {
+                const reportedDate = new Date(inc.reportedAt || inc.createdAt);
+                switch (selectedDate) {
+                    case 'today': return reportedDate.toDateString() === now.toDateString();
+                    case 'week': {
+                        const weekAgo = new Date(now);
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        return reportedDate >= weekAgo;
+                    }
+                    case 'month': return reportedDate.getMonth() === now.getMonth() && reportedDate.getFullYear() === now.getFullYear();
+                    case 'year': return reportedDate.getFullYear() === now.getFullYear();
+                    default: return true;
+                }
+            });
+        }
+
+        // 3. Apply Status filter
+        if (selectedStatus !== 'all') {
+            checkList = checkList.filter(inc => inc.status === selectedStatus);
+        }
+
         // ✅ ONLY RULE: If there are 0 results, disable the button.
         return checkList.length === 0;
-    }, [incidents, selectedOption, selectedBarangay, selectedStatus]);
+    }, [incidents, selectedOption, selectedDate, selectedStatus]);
 
     if (!isOpen) return null;
 
     const handleExport = () => {
         if (isExportDisabled) return;
-        onExport(selectedOption, selectedBarangay, selectedStatus);
+        onExport(selectedOption, selectedDate, selectedStatus);
         onClose();
     };
 
@@ -95,35 +133,35 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:emergency" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">List of all users</h3>
+                                    <h3 className="font-semibold text-gray-800 text-sm">All Incident Reports</h3>
                                     <p className="text-[10px] text-gray-500 mt-1">Complete log of every incident</p>
                                 </div>
                             </div>
                         </button>
 
-                        {/* Option 2: Active Incidents */}
+                        {/* Option 2: Incidents by Type */}
                         <button
-                            onClick={() => setSelectedOption('active')}
-                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'active'
+                            onClick={() => setSelectedOption('type')}
+                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'type'
                                 ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-start gap-3">
                                 <div className="pt-1">
-                                    <Icon icon="mdi:ambulance" className="w-6 h-6 text-red-500" />
+                                    <Icon icon="mdi:fire" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">All users - Active</h3>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by type</h3>
                                     <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of incident</p>
                                 </div>
                             </div>
                         </button>
 
-                        {/* Option 3: Inactive/Resolved Incidents */}
+                        {/* Option 3: Incidents by Barangay */}
                         <button
-                            onClick={() => setSelectedOption('inactive')}
-                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'inactive'
+                            onClick={() => setSelectedOption('barangay')}
+                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'barangay'
                                 ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
                                 : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
@@ -133,8 +171,46 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:map-marker" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">All users - Inactive</h3>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by barangay</h3>
                                     <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of barangay</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Option 4: Incidents by Municipality */}
+                        <button
+                            onClick={() => setSelectedOption('municipality')}
+                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'municipality'
+                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="pt-1">
+                                    <Icon icon="mdi:city" className="w-6 h-6 text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by Municipality</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of municipality</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Option 5: Incidents by Date */}
+                        <button
+                            onClick={() => setSelectedOption('date')}
+                            className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'date'
+                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                }`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="pt-1">
+                                    <Icon icon="mdi:calendar" className="w-6 h-6 text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by date</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Filter incidents by date range</p>
                                 </div>
                             </div>
                         </button>
@@ -145,29 +221,26 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Filter Options</h4>
                         <div className="flex flex-wrap gap-6">
 
-                            {/* ✅ DYNAMIC Barangay Filter */}
+                            {/* ✅ DYNAMIC Date Filter (Always visible) */}
                             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                                <label className="text-xs text-gray-500 font-medium">Barangays</label>
+                                <label className="text-xs text-gray-500 font-medium">Date</label>
                                 <div className="relative">
                                     <select
-                                        value={selectedBarangay}
-                                        onChange={(e) => setSelectedBarangay(e.target.value)}
+                                        value={selectedDate}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
                                         className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500 bg-white appearance-none"
                                     >
-                                        <option value="all">- All Barangays -</option>
-                                        {barangayList.length > 0 ? (
-                                            barangayList.map((brgy, index) => (
-                                                <option key={index} value={brgy}>{brgy}</option>
-                                            ))
-                                        ) : (
-                                            <option value="" disabled>No barangays available</option>
-                                        )}
+                                        <option value="all">- All Time -</option>
+                                        <option value="today">Today</option>
+                                        <option value="week">This Week</option>
+                                        <option value="month">This Month</option>
+                                        <option value="year">This Year</option>
                                     </select>
                                     <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                                 </div>
                             </div>
 
-                            {/* ✅ ALWAYS SHOW ALL STATUSES */}
+                            {/* ✅ DYNAMIC Status Filter */}
                             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
                                 <label className="text-xs text-gray-500 font-medium">Status of Incident</label>
                                 <div className="relative">
@@ -205,8 +278,8 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                         onClick={handleExport}
                         disabled={isExportDisabled}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition ${isExportDisabled
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-[#198754] text-white hover:bg-[#157347] cursor-pointer'
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-[#198754] text-white hover:bg-[#157347] cursor-pointer'
                             }`}
                     >
                         Export Records
