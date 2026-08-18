@@ -11,6 +11,7 @@ export default function NotificationBell() {
     const dropdownRef = useRef(null);
     const socketRef = useRef(null);
     const notificationTimeoutRef = useRef(null);
+    const bellButtonRef = useRef(null);
 
     useEffect(() => {
         loadNotifications();
@@ -19,7 +20,12 @@ export default function NotificationBell() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
         if (token && user._id) {
-            socketRef.current = io('http://localhost:5000', {
+            // Use dynamic URL based on environment
+            const socketUrl = window.location.hostname === 'localhost'
+                ? 'http://localhost:5000'
+                : window.location.origin;
+
+            socketRef.current = io(socketUrl, {
                 auth: { token }
             });
 
@@ -106,15 +112,16 @@ export default function NotificationBell() {
         audio.play().catch(e => console.log('Audio play failed:', e));
     };
 
+    // ✅ FIX: Simplified outside click logic
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [isOpen]);
 
     const loadNotifications = async () => {
         try {
@@ -217,6 +224,7 @@ export default function NotificationBell() {
 
             {/* Bell Button */}
             <button
+                ref={bellButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative focus:outline-none text-white text-xl sm:text-2xl p-1 sm:p-2 rounded-full hover:bg-white/10 transition-colors duration-200"
             >
