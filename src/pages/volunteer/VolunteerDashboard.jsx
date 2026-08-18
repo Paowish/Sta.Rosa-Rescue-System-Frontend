@@ -1,4 +1,4 @@
-// src/pages/volunteer/volunteerdashboard.jsx - COMPLETE FIXED VERSION
+// src/pages/volunteer/volunteerdashboard.jsx - COMPLETE FIXED VERSION (FULLY CLEANED)
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
@@ -55,11 +55,6 @@ export default function VolunteerDashboard() {
     });
 
     const [isModalClosing, setIsModalClosing] = useState(false);
-
-    // Dispatch Request Modal state
-    const [showDispatchRequestModal, setShowDispatchRequestModal] = useState(false);
-    const [incomingDispatch, setIncomingDispatch] = useState(null);
-    const [isProcessingDispatch, setIsProcessingDispatch] = useState(false);
 
     // Modal states
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -428,29 +423,6 @@ export default function VolunteerDashboard() {
 
                 socketRef.current.on('new_notification', (notification) => {
                     console.log('📢 New notification received:', notification);
-
-                    if (notification.type === 'response_assignment') {
-                        const incidentData = notification.data || notification;
-                        setIncomingDispatch({
-                            _id: incidentData.incidentId || incidentData._id || Date.now().toString(),
-                            id: incidentData.incidentId || incidentData._id || Date.now().toString(),
-                            title: incidentData.title || incidentData.type || 'Untitled Incident',
-                            type: incidentData.type || incidentData.title || 'Untitled Incident',
-                            location: incidentData.location?.address || incidentData.location || 'Unknown location',
-                            priority: incidentData.severity || incidentData.priority || 'Medium',
-                            status: incidentData.status || 'Pending',
-                            description: incidentData.description || 'No description provided',
-                            reporter: incidentData.reporterName || incidentData.reporter || 'Anonymous',
-                            victims: incidentData.victimsAffected || incidentData.victims || 0,
-                            coordinates: incidentData.coordinates || null,
-                            assignedTo: incidentData.assignedTo || []
-                        });
-                        setShowDispatchRequestModal(true);
-
-                        const audio = new Audio('/dispatch-sound.mp3');
-                        audio.play().catch(e => console.log('Audio play failed:', e));
-                    }
-
                     loadIncidents();
                     showNotification(notification);
                 });
@@ -502,86 +474,7 @@ export default function VolunteerDashboard() {
     }, [loadIncidents]);
 
     // Handle accepting dispatch request from modal
-    const handleAcceptDispatch = async (incident) => {
-        if (!incident) return;
 
-        setIsProcessingDispatch(true);
-        try {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const volunteerName = `${user.firstName} ${user.lastName}`.trim() || 'Volunteer';
-
-            const incidentId = incident._id || incident.id;
-
-            const response = await fetch(`/api/incidents/${incidentId}/accept`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    volunteerId: user.id,
-                    responderName: volunteerName
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setShowDispatchRequestModal(false);
-                setIncomingDispatch(null);
-                await loadIncidents();
-                await loadActiveDispatch();
-
-                if (incident.coordinates) {
-                    setIncidentCoords(incident.coordinates);
-                    console.log('📍 Incident coords set:', incident.coordinates);
-                }
-                startLocationTracking(incidentId);
-
-                alert(`✅ You have accepted the dispatch for ${incident.title || 'incident'}!`);
-            } else {
-                alert('❌ Failed to accept dispatch: ' + data.message);
-            }
-        } catch (error) {
-            console.error('Error accepting dispatch:', error);
-            alert('❌ Error accepting dispatch. Please try again.');
-        } finally {
-            setIsProcessingDispatch(false);
-        }
-    };
-
-    // Handle declining dispatch request from modal
-    const handleDeclineDispatch = async (incident) => {
-        if (!incident) return;
-
-        try {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const incidentId = incident._id || incident.id;
-
-            const response = await fetch(`/api/incidents/${incidentId}/decline`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ volunteerId: user.id })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setShowDispatchRequestModal(false);
-                setIncomingDispatch(null);
-                console.log('✅ Dispatch declined');
-            } else {
-                console.error('Failed to decline:', data.message);
-            }
-        } catch (error) {
-            console.error('Error declining dispatch:', error);
-        }
-    };
 
     const handleResolveFromButton = async () => {
         const incident = selectedIncident || activeDispatch;
@@ -983,7 +876,7 @@ export default function VolunteerDashboard() {
 
     // Prevent body scroll when modals are open
     useEffect(() => {
-        const isModalOpen = selectedIncident !== null || showArrivalModal || showConfirmModal || showDispatchRequestModal || showDispatchCard || showOffDutyCard || showLogoutModal;
+        const isModalOpen = selectedIncident !== null || showArrivalModal || showConfirmModal || showDispatchCard || showOffDutyCard || showLogoutModal;
 
         if (isModalOpen) {
             document.body.style.overflow = 'hidden';
@@ -1000,7 +893,7 @@ export default function VolunteerDashboard() {
             document.body.style.position = '';
             document.body.style.width = '';
         };
-    }, [selectedIncident, showArrivalModal, showConfirmModal, showDispatchRequestModal, showDispatchCard, showOffDutyCard, showLogoutModal]);
+    }, [selectedIncident, showArrivalModal, showConfirmModal, showDispatchCard, showOffDutyCard, showLogoutModal]);
 
     // Authentication check
     useEffect(() => {
@@ -1971,18 +1864,6 @@ export default function VolunteerDashboard() {
                 }}
                 onSolve={handleSolveIncident}
                 incident={arrivalIncident}
-            />
-
-            <DispatchRequestModal
-                isOpen={showDispatchRequestModal}
-                onClose={() => {
-                    setShowDispatchRequestModal(false);
-                    setIncomingDispatch(null);
-                }}
-                onAccept={handleAcceptDispatch}
-                onDecline={handleDeclineDispatch}
-                incident={incomingDispatch}
-                isLoading={isProcessingDispatch}
             />
 
             {showLogoutModal && (
