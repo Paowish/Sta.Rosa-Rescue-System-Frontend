@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react";
 import NotificationBell from "../../components/layout/NotificationBell";
 import io from 'socket.io-client';
 import { incidentService, authService } from "../../services/api";
-import DispatchRequestModal from "./DispatchRequestModal";
 import EditProfileForm from "../civilian/EditProfile.jsx";
 
 // Import all components
