@@ -1,19 +1,26 @@
 import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
+import ExportUserModal from "./ExportUserModal";
 
 export default function UserAccount() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
 
+    // ✅ NEW: Filter States
+    const [searchTerm, setSearchTerm] = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
+
     // Modal states
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
 
-    // ✅ New Error & Success Modal States
+    // Error & Success Modal States
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -30,7 +37,7 @@ export default function UserAccount() {
         password: ''
     });
 
-    // ✅ Get API URL dynamically
+    // Get API URL dynamically
     const getApiUrl = () => {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://localhost:5000/api';
@@ -47,7 +54,7 @@ export default function UserAccount() {
             setLoading(true);
             const token = localStorage.getItem('token');
             const apiUrl = getApiUrl();
-            const response = await fetch(`${apiUrl}/admin/all-volunteers`, {
+            const response = await fetch(`${apiUrl}/admin/all-users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -66,7 +73,7 @@ export default function UserAccount() {
                         firstName: user.firstName || '',
                         lastName: user.lastName || '',
                         name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown User',
-                        role: user.role?.toUpperCase() || 'VOLUNTEER',
+                        role: user.role?.toUpperCase() === 'RESPONDER' ? 'RESCUER' : (user.role?.toUpperCase() || 'VOLUNTEER'),
                         email: user.email || '',
                         phoneNumber: user.phoneNumber || 'N/A',
                         contact: user.phoneNumber || 'N/A',
@@ -83,6 +90,66 @@ export default function UserAccount() {
             console.error("Failed to load users:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // ✅ FILTER LOGIC: Filter users based on search, role, and status
+    const filteredUsers = useMemo(() => {
+        return users.filter(user => {
+            // 1. Search filter (matches name, email, phone, or ID)
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch =
+                user.name.toLowerCase().includes(searchLower) ||
+                user.email.toLowerCase().includes(searchLower) ||
+                user.contact.toLowerCase().includes(searchLower) ||
+                user.id.toLowerCase().includes(searchLower);
+
+            // 2. Role filter
+            const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+
+            // 3. Status filter
+            const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+
+            return matchesSearch && matchesRole && matchesStatus;
+        });
+    }, [users, searchTerm, roleFilter, statusFilter]);
+
+    const handleExportUsers = async (option, role) => {
+        try {
+            const token = localStorage.getItem('token');
+            const apiUrl = getApiUrl();
+
+            // ✅ FIX: Handle BOTH 'RESCUER' (uppercase) and 'rescuer' (lowercase)
+            let roleParam = role;
+            if (role === 'RESCUER' || role === 'rescuer') {
+                roleParam = 'responder'; // Matches your database exactly
+            }
+
+            let url = `${apiUrl}/admin/export-users?type=${option}`;
+            if (roleParam !== 'all') {
+                url += `&role=${roleParam}`;
+            }
+
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Export failed');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `users_${option}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+
+        } catch (error) {
+            console.error("Export error:", error);
+            setErrorMessage("Failed to export users.");
+            setShowErrorModal(true);
         }
     };
 
@@ -137,7 +204,6 @@ export default function UserAccount() {
         }
     };
 
-    // ✅ Fixed Save with Duplicate Error Handling
     const handleSaveEdit = async () => {
         if (!selectedUser) return;
         try {
@@ -173,7 +239,6 @@ export default function UserAccount() {
             }
         } catch (error) {
             console.error("Error updating user:", error);
-            // ✅ Handle the specific MongoDB duplicate key error gracefully
             if (error.message && error.message.includes("E11000 duplicate key error")) {
                 setErrorMessage("This email is already in use by another account. Please use a different email.");
             } else {
@@ -252,7 +317,59 @@ export default function UserAccount() {
                         <Icon icon="mdi:account-group" className="w-7 h-7 text-[#262D31]" />
                         User Account
                     </h1>
-                    <p className="text-gray-500 text-sm">Manage all registered volunteers</p>
+                    <p className="text-gray-500 text-sm">Manage all registered accounts across all roles</p>
+                </div>
+
+                {/* ✅ FUNCTIONAL FILTERS & EXPORT */}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Search Input */}
+                        <div className="relative">
+                            <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                                type="text"
+                                placeholder="Search ID, type, location..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-[#1f6b75] focus:border-[#1f6b75] w-64"
+                            />
+                        </div>
+
+                        {/* Role Filter */}
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1f6b75] focus:border-[#1f6b75] bg-white"
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="VOLUNTEER">Volunteer</option>
+                            <option value="RESCUER">Rescuer</option>
+                            <option value="CIVILIAN">Civilian</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+
+                        {/* Status Filter */}
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1f6b75] focus:border-[#1f6b75] bg-white"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="REJECTED">Rejected</option>
+                        </select>
+                    </div>
+
+                    {/* Export Button */}
+                    <button
+                        onClick={() => setShowExportModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#198754] text-white rounded-lg text-sm font-medium hover:bg-[#157347] transition"
+                    >
+                        <Icon icon="mdi:file-excel" className="w-5 h-5" />
+                        Export to Excel
+                    </button>
                 </div>
 
                 {/* Users Table */}
@@ -274,8 +391,8 @@ export default function UserAccount() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {users.length > 0 ? (
-                                    users.map((user) => (
+                                {filteredUsers.length > 0 ? (
+                                    filteredUsers.map((user) => (
                                         <tr key={user.id} className="hover:bg-gray-50 transition">
                                             <td className="px-4 py-3">
                                                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300" />
@@ -316,7 +433,7 @@ export default function UserAccount() {
                                 ) : (
                                     <tr>
                                         <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
-                                            No users found
+                                            No users found matching your filters
                                         </td>
                                     </tr>
                                 )}
@@ -330,7 +447,7 @@ export default function UserAccount() {
             {/* ✅ MODALS (PORTAL TO BODY) */}
             {/* ============================================================ */}
 
-            {/* ✅ SUCCESS MODAL */}
+            {/* SUCCESS MODAL */}
             {showSuccessModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -356,7 +473,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ✅ ERROR MODAL */}
+            {/* ERROR MODAL */}
             {showErrorModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -382,7 +499,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ✅ EDIT USER MODAL */}
+            {/* EDIT USER MODAL */}
             {showEditModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -439,7 +556,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ✅ DELETE USER MODAL */}
+            {/* DELETE USER MODAL */}
             {showDeleteModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -466,7 +583,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ✅ VERIFY USER MODAL */}
+            {/* VERIFY USER MODAL */}
             {showVerifyModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -492,6 +609,13 @@ export default function UserAccount() {
                 </div>,
                 document.body
             )}
+
+            {/* Export Modal */}
+            <ExportUserModal
+                isOpen={showExportModal}
+                onClose={() => setShowExportModal(false)}
+                onExport={handleExportUsers}
+            />
         </AdminLayout>
     );
 }
