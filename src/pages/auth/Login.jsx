@@ -325,6 +325,13 @@ export default function Login() {
               Don't have an account? <Link to="/signup" className="text-red-400 font-medium hover:underline cursor-pointer">Sign up</Link>
             </p>
 
+            <div className="mt-4 text-center text-sm text-gray-500">
+              <Link to="/" className="text-[#FF6B6B] hover:text-[#E55A5A] transition-colors">
+                ← Back to Home
+              </Link>
+            </div>
+
+
           </div>
 
           <div className="hidden md:block">
