@@ -4,8 +4,6 @@ import { authService } from "../../services/api";
 // src/pages/edit-profile/index.jsx - Add at top
 import notificationService from "../../services/notificationService";
 
-
-
 export default function EditProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -455,6 +453,18 @@ export default function EditProfile() {
 
   return (
     <div className="p-6">
+
+      {/* ✅ SPINNING MODAL WHEN UPLOADING PHOTO */}
+      {uploadingPhoto && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-sm mx-auto">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-700 font-medium text-sm">Uploading photo...</p>
+            <p className="text-gray-400 text-xs">Please wait a moment</p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <svg className="w-8 h-8 text-gray-700" fill="currentColor" viewBox="0 0 20 20">

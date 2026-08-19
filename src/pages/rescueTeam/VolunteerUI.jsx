@@ -16,16 +16,16 @@ export const PanelStatusBadge = ({ label }) => (
 );
 
 export const StatBox = ({ number, label, barColor }) => (
-    <div className="bg-white rounded border border-gray-200 p-4 flex flex-col justify-between shadow-sm h-24">
-        <span className="text-3xl font-bold text-gray-800">{number}</span>
-        <div><div className={`border-b-2 ${barColor} pb-1`}><span className="text-[13px] font-medium text-gray-500 pb-0.5">{label}</span></div></div>
+    <div className="bg-white rounded border border-gray-200 p-2 flex flex-col justify-between shadow-sm h-20">
+        <span className="text-2xl font-bold text-gray-800">{number}</span>
+        <div><div className={`border-b-2 ${barColor} pb-0.5`}><span className="text-[11px] font-medium text-gray-500">{label}</span></div></div>
     </div>
 );
 
 export const ApplicantStatBox = ({ number, label, color }) => (
-    <div className="bg-white rounded border border-gray-200 p-4 flex flex-col justify-between shadow-sm h-24">
-        <span className="text-3xl font-bold text-gray-800">{number}</span>
-        <div><div className={`border-b-2 ${color} pb-1`}><span className="text-[13px] font-medium text-gray-500 pb-0.5">{label}</span></div></div>
+    <div className="bg-white rounded border border-gray-200 p-2 flex flex-col justify-between shadow-sm h-20">
+        <span className="text-2xl font-bold text-gray-800">{number}</span>
+        <div><div className={`border-b-2 ${color} pb-0.5`}><span className="text-[11px] font-medium text-gray-500">{label}</span></div></div>
     </div>
 );
 

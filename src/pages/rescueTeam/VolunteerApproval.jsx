@@ -363,21 +363,14 @@ export default function VolunteerApproval() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] p-6 font-sans relative">
+    <div className="min-h-screen bg-[#fafbfc] p-4 pt-2 font-sans relative">
       {isProcessing && <FullScreenSpinner message={processingMessage} />}
       <ConfirmationModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={modalData.onConfirm} title={modalData.title} message={modalData.message} confirmText={modalData.confirmText} confirmColor={modalData.confirmColor} icon={modalData.icon} iconColor={modalData.iconColor} />
       <ToastModal isOpen={showResultModal} onClose={() => setShowResultModal(false)} title={modalData.title} message={modalData.message} type={modalData.icon === 'success' ? 'success' : modalData.icon === 'error' ? 'error' : 'warning'} />
 
-      <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <Icon icon="mdi:account-group" className="w-8 h-8 text-[#1f4e6f]" />
-          <div><h1 className="text-2xl font-bold text-[#1f4e6f]">Volunteers</h1><p className="text-xs text-gray-400 font-medium">Volunteer roster & deployment status</p></div>
-        </div>
-      </header>
-
-      <div className="flex gap-6 h-[calc(100vh-140px)]">
-        <div className="flex-1 flex flex-col h-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="flex items-center gap-6 border-b border-gray-200 px-6 pt-4 pb-0 bg-white">
+      <div className="flex gap-4 h-[calc(100vh-110px)]">
+        <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="flex items-center gap-6 border-b border-gray-200 px-4 pt-2 pb-0 bg-white">
             <button onClick={() => handleSwitchTab('roster')} className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'roster' ? 'border-[#1f4e6f] text-[#1f4e6f]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               <Icon icon="mdi:list" className="w-4 h-4" /> Roster
             </button>
@@ -418,7 +411,7 @@ export default function VolunteerApproval() {
           </div>
         </div>
 
-        <div className="w-[380px] bg-white rounded-xl border border-gray-200 shadow-lg h-[calc(100vh-140px)] sticky top-6 overflow-hidden shrink-0">
+        <div className="w-[380px] bg-white rounded-xl border border-gray-200 shadow-lg max-h-[calc(100vh-80px)] sticky top-0 shrink-0 flex flex-col">
           {activeTab === 'roster' && !activeVolunteer && (
             <div className="h-full flex flex-col items-center justify-center p-6">
               <Icon icon="mdi:account-search" className="w-16 h-16 text-gray-300 mb-4" />
@@ -471,39 +464,139 @@ export default function VolunteerApproval() {
             </div>
           )}
           {activeTab === 'applicant' && activeApplicant && (
-            <div className="h-full flex flex-col relative">
-              <div className="relative pt-4 pr-4 flex justify-end">
-                <button onClick={handleCloseApplicant} className="text-gray-400 hover:text-gray-600"><Icon icon="mdi:close" className="w-6 h-6" /></button>
-              </div>
-              <div className="px-6 pb-4 flex gap-4 border-b border-gray-200">
-                <div className="w-16 h-16 rounded-full bg-[#dbeafe] flex items-center justify-center text-blue-400 border-2 border-[#bfdbfe]"><Icon icon="mdi:account" className="w-8 h-8" /></div>
-                <div><h2 className="text-xl font-bold text-gray-900">{activeApplicant.name}</h2><p className="text-xs text-gray-500 font-medium">{activeApplicant.role} · {activeApplicant.experience}</p><p className="text-[11px] text-gray-400 mt-0.5">Applied {activeApplicant.appliedDate}</p><div className="flex items-center gap-3 mt-2"><PanelStatusBadge label="Pending Application" /><span className="text-[11px] text-gray-400 font-medium">{activeApplicant.appId}</span></div></div>
-              </div>
-              <div className="flex-1 overflow-y-auto bg-white pb-20">
-                <SectionHeader title="Personal Information" />
-                <DetailRow label="Age" value={activeApplicant.details?.age || 'N/A'} />
-                <DetailRow label="Email" value={activeApplicant.details?.email || 'N/A'} />
-                <DetailRow label="Contact" value={activeApplicant.details?.contact || 'N/A'} />
-                <DetailRow label="Location" value={activeApplicant.details?.location || 'N/A'} />
-                <DetailRow label="Availability" value={activeApplicant.availability && Array.isArray(activeApplicant.availability) && activeApplicant.availability.length > 0 ? activeApplicant.availability.join(', ') : 'N/A'} />
-                <SectionHeader title="Certifications" />
-                <div className="px-6 py-3 flex flex-wrap gap-2">
-                  {activeApplicant.details?.certs?.length > 0 ? activeApplicant.details.certs.map((c, idx) => <span key={idx} className="bg-[#e6f2ff] text-[#007bff] border border-[#b8daff] text-[11px] font-medium px-3 py-1 rounded">{c}</span>) : <span className="text-xs text-gray-400 italic">No certifications listed</span>}
-                </div>
-                <SectionHeader title="Uploaded Certifications" />
-                <div className="px-6 py-3 flex flex-wrap gap-3">
-                  {activeApplicant.details?.files?.length > 0 ? activeApplicant.details.files.map((file, idx) => (
-                    <div key={idx} onClick={() => { if (file.url) { const link = document.createElement('a'); link.href = file.url; link.download = file.name || 'document.pdf'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } else { alert("No file data found."); } }} className="flex flex-col items-center justify-center border border-gray-200 bg-gray-50 rounded p-2 w-20 h-20 hover:shadow-md hover:border-blue-300 cursor-pointer group">
-                      {file.type && file.type.startsWith('image/') ? <Icon icon="mdi:image" className="text-2xl text-blue-500 mb-1 group-hover:scale-110" /> : <Icon icon="mdi:file-pdf-box" className="text-2xl text-red-500 mb-1 group-hover:scale-110" />}
-                      <span className="text-[9px] text-gray-600 text-center truncate w-full group-hover:text-blue-600">{file.name || 'File'}</span>
+            <div className="h-full flex flex-col relative bg-white rounded-xl">
+
+              {/* TOP HEADER - Tighter Padding */}
+              <div className="pt-4 pb-3 px-4 flex flex-col border-b border-gray-200 relative">
+                <button onClick={handleCloseApplicant} className="absolute top-3 right-4 text-gray-400 hover:text-gray-600">
+                  <Icon icon="mdi:close" className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#dbeafe] flex items-center justify-center text-blue-400 border-2 border-[#bfdbfe] flex-shrink-0">
+                    <Icon icon="mdi:account" className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg font-bold text-gray-900 truncate">{activeApplicant.name}</h2>
+                    <p className="text-[11px] text-gray-500 truncate">{activeApplicant.role} · {activeApplicant.experience}</p>
+                    <p className="text-[10px] text-gray-400 truncate">Applied {activeApplicant.appliedDate}</p>
+
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full text-[9px] font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        Pending Application
+                      </span>
+                      <span className="text-[9px] text-gray-400">{activeApplicant.appId}</span>
                     </div>
-                  )) : <span className="text-xs text-gray-400 italic">No documents uploaded</span>}
+                  </div>
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-200 flex gap-2">
-                <button onClick={() => handleRejectClick(activeApplicant)} disabled={isProcessing} className="flex-1 bg-[#f8d7da] text-[#721c24] border border-[#f5c6cb] text-[11px] font-medium py-1.5 px-2 rounded hover:bg-[#f1c0c5] flex items-center justify-center gap-1 disabled:opacity-50"><Icon icon="mdi:close" className="w-4 h-4" /> Reject</button>
-                <button onClick={handleCloseApplicant} disabled={isProcessing} className="flex-1 bg-white border border-gray-300 text-gray-700 py-1.5 px-2 rounded hover:bg-gray-50 disabled:opacity-50">Close</button>
-                <button onClick={() => handleAcceptClick(activeApplicant)} disabled={isProcessing} className="flex-1 bg-[#28a745] text-white text-[11px] font-medium py-1.5 px-2 rounded hover:bg-[#218838] shadow-sm flex items-center justify-center gap-1 disabled:opacity-50"><Icon icon="mdi:check" className="w-4 h-4" /> Accept Volunteer</button>
+
+              {/* MIDDLE DETAILS - Tight padding & smaller text to fit without scrolling */}
+              <div className="flex-1 overflow-y-auto bg-white pb-14">
+
+                {/* Personal Information */}
+                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200">
+                  Personal Information
+                </div>
+                <div className="divide-y divide-gray-100">
+                  <div className="flex justify-between py-2 px-4 text-[12px]">
+                    <span className="text-gray-500">Age</span>
+                    <span className="font-medium text-gray-800">{activeApplicant.details?.age || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 px-4 text-[12px]">
+                    <span className="text-gray-500">Email</span>
+                    <span className="font-medium text-gray-800 truncate max-w-[150px]">{activeApplicant.details?.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 px-4 text-[12px]">
+                    <span className="text-gray-500">Contact</span>
+                    <span className="font-medium text-gray-800">{activeApplicant.details?.contact || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 px-4 text-[12px]">
+                    <span className="text-gray-500">Location</span>
+                    <span className="font-medium text-gray-800">{activeApplicant.details?.location || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 px-4 text-[12px]">
+                    <span className="text-gray-500">Availability</span>
+                    <span className="font-medium text-gray-800">
+                      {activeApplicant.availability && Array.isArray(activeApplicant.availability) && activeApplicant.availability.length > 0
+                        ? activeApplicant.availability.join(', ')
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Certifications */}
+                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200 mt-1">
+                  Certifications
+                </div>
+                <div className="p-3 flex flex-wrap gap-1.5">
+                  {activeApplicant.details?.certs?.length > 0 ? (
+                    activeApplicant.details.certs.map((c, idx) => (
+                      <span key={idx} className="bg-[#e6f2ff] text-[#007bff] border border-[#b8daff] text-[10px] font-medium px-2.5 py-1 rounded">
+                        {c}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-gray-400 italic px-4 py-1">No certifications listed</span>
+                  )}
+                </div>
+
+                {/* Uploaded Certifications */}
+                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200 mt-1">
+                  Uploaded Certifications
+                </div>
+                <div className="p-3 flex flex-wrap gap-2">
+                  {activeApplicant.details?.files?.length > 0 ? (
+                    activeApplicant.details.files.map((file, idx) => (
+                      <div key={idx}
+                        onClick={() => { if (file.url) { const link = document.createElement('a'); link.href = file.url; link.download = file.name || 'document.pdf'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } else { alert("No file data found."); } }}
+                        className="flex flex-col items-center justify-center border border-gray-200 bg-gray-50 rounded p-1.5 w-14 h-14 hover:shadow-md hover:border-blue-300 cursor-pointer group"
+                      >
+                        {file.type && file.type.startsWith('image/') ? (
+                          <Icon icon="mdi:image" className="text-xl text-blue-500 mb-0.5 group-hover:scale-110" />
+                        ) : (
+                          <Icon icon="mdi:file-pdf-box" className="text-xl text-red-500 mb-0.5 group-hover:scale-110" />
+                        )}
+                        <span className="text-[7px] text-gray-600 text-center truncate w-full group-hover:text-blue-600">
+                          {file.name || 'File'}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-gray-400 italic px-4 py-1">No documents uploaded</span>
+                  )}
+                </div>
+
+                {/* BOTTOM SPACER - Prevents content from hiding behind the absolute buttons */}
+                <div className="h-12"></div>
+              </div>
+
+              {/* CLEAN MINIMAL BUTTONS AT THE BOTTOM (No scroll, No blocks) */}
+              <div className="absolute bottom-0 left-0 right-0 py-3 px-5 bg-white border-t border-gray-200 flex justify-between items-center">
+                <button
+                  onClick={() => handleRejectClick(activeApplicant)}
+                  disabled={isProcessing}
+                  className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                >
+                  <Icon icon="mdi:close" className="w-4 h-4" /> Reject
+                </button>
+
+                <button
+                  onClick={handleCloseApplicant}
+                  disabled={isProcessing}
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 cursor-pointer"
+                >
+                  Close
+                </button>
+
+                <button
+                  onClick={() => handleAcceptClick(activeApplicant)}
+                  disabled={isProcessing}
+                  className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                >
+                  <Icon icon="mdi:check" className="w-4 h-4" /> Accept Volunteer
+                </button>
               </div>
             </div>
           )}

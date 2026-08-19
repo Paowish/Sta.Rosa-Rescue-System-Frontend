@@ -72,78 +72,91 @@ export const RosterView = ({ volunteers, selectedId, onSelect, getStatus }) => {
     );
 };
 
-// --- APPLICANT VIEW (Fully Functional & Accurate) ---
+// --- APPLICANT VIEW (Fully Functional & COMPACT) ---
 export const ApplicantView = ({ applicants, onView, onAccept, onReject, isProcessing }) => (
     <div className="flex flex-col gap-3">
         {applicants.length === 0 ? (
             <div className="text-center py-12 text-gray-400">No pending applicants.</div>
         ) : (
             applicants.map((app) => (
-                <div key={app.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <div key={app.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
 
-                    {/* Header Section */}
-                    <div className="p-4 pb-3 flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 mt-1"></div>
+                    {/* Header Section - Reduced Padding */}
+                    <div className="p-4 pb-2 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 mt-1 flex items-center justify-center">
+                            <Icon icon="mdi:account" className="w-5 h-5 text-gray-500" />
+                        </div>
                         <div className="flex flex-col flex-1 min-w-0">
-                            <div className="font-bold text-[17px] text-gray-800 leading-tight">{app.name}</div>
-                            <div className="text-[13px] text-gray-500 leading-snug">{app.role} · {app.experience}</div>
-                            <div className="text-[13px] text-gray-400 leading-snug">{app.location}</div>
+                            <div className="font-bold text-[16px] text-gray-800 leading-tight">{app.name}</div>
+                            <div className="text-[12px] text-gray-500 leading-snug">{app.role} · {app.experience}</div>
+                            <div className="text-[12px] text-gray-400 leading-snug">{app.location}</div>
 
-                            {/* Availability & Description Section */}
-                            <div className="-ml-[44px] flex flex-col gap-1.5 mt-2">
-                                {/* Certification Tags */}
-                                <div className="flex flex-wrap items-center gap-2">
+                            {/* Availability & Description Section - Compacted */}
+                            <div className="-ml-[44px] flex flex-col gap-1 mt-2">
+                                {/* Certification Tags - Smaller and cleaner */}
+                                <div className="flex flex-wrap items-center gap-1.5">
                                     {app.tags && app.tags.length > 0 ? (
                                         <>
                                             {app.tags.map((t, idx) => (
-                                                <span key={idx} className="bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-medium px-2.5 py-1 rounded-full truncate max-w-[120px]">
+                                                <span key={idx} className="bg-blue-50 border border-blue-200 text-blue-600 text-[9px] font-medium px-2 py-0.5 rounded-full truncate max-w-[100px]">
                                                     {t}
                                                 </span>
                                             ))}
                                             {app.hasMoreSkills && (
-                                                <span className="bg-white border border-gray-200 text-gray-600 text-[10px] font-medium px-2.5 py-1 rounded-full">
-                                                    + {app.details?.certs?.length - 3 || 0} Skills
+                                                <span className="bg-white border border-gray-200 text-gray-600 text-[9px] font-medium px-2 py-0.5 rounded-full">
+                                                    +{app.details?.certs?.length - 3 || 0}
                                                 </span>
                                             )}
                                         </>
                                     ) : (
-                                        <div className="text-xs text-gray-400 italic">No certifications listed</div>
+                                        <div className="text-[11px] text-gray-400 italic">No certifications listed</div>
                                     )}
                                 </div>
 
-                                {/* Availability Bars */}
-                                <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-[13px] text-gray-600 font-medium">
-                                    <span>Availability:</span>
-                                    <div className="flex items-center gap-[2px]">
+                                {/* Availability Bars - Smaller */}
+                                <div className="flex items-center flex-wrap gap-x-1.5 gap-y-1 text-[12px] text-gray-600 font-medium">
+                                    <span className="text-[10px]">Availability:</span>
+                                    <div className="flex items-center gap-[1px]">
                                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                                            <div key={day} className={`w-5 h-2.5 rounded-sm ${app.availability && app.availability.includes(day) ? 'bg-[#15803d]' : 'bg-gray-200'}`}></div>
+                                            <div key={day} className={`w-4 h-2 rounded-sm ${app.availability && app.availability.includes(day) ? 'bg-[#15803d]' : 'bg-gray-200'}`}></div>
                                         ))}
                                     </div>
-                                    <span className="ml-1 font-normal text-gray-500">
+                                    <span className="ml-1 font-normal text-gray-500 text-[10px]">
                                         {app.availability && Array.isArray(app.availability) && app.availability.length > 0
                                             ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].filter(day => app.availability.includes(day)).join(' · ')
                                             : 'None selected'}
                                     </span>
                                 </div>
 
-                                {/* Description */}
-                                <div className="text-[13px] text-gray-700 leading-relaxed">
+                                {/* Description - Compact */}
+                                <div className="text-[12px] text-gray-700 leading-relaxed line-clamp-1">
                                     {app.description}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Action Buttons Footer */}
+                    {/* Action Buttons Footer - COMPACT & CLEAN */}
                     <div className="flex border-t border-gray-200 bg-white divide-x divide-gray-200">
-                        <button onClick={() => onView(app)} className="flex-1 flex items-center justify-center gap-1.5 py-3 text-gray-600 text-sm hover:bg-gray-50 transition-colors font-medium">
-                            <Icon icon="mdi:magnify" className="w-4 h-4" /> View Full Application
+                        <button
+                            onClick={() => onView(app)}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 text-[11px] text-gray-600 hover:bg-gray-50 transition-colors font-medium"
+                        >
+                            <Icon icon="mdi:magnify" className="w-3.5 h-3.5" /> View Full Application
                         </button>
-                        <button onClick={() => onAccept(app)} disabled={isProcessing} className="flex-1 flex items-center justify-center gap-1.5 py-3 text-green-600 text-sm hover:bg-green-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-                            <Icon icon="mdi:check" className="w-4 h-4" /> Accept
+                        <button
+                            onClick={() => onAccept(app)}
+                            disabled={isProcessing}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 text-[11px] text-green-600 hover:bg-green-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Icon icon="mdi:check" className="w-3.5 h-3.5" /> Accept
                         </button>
-                        <button onClick={() => onReject(app)} disabled={isProcessing} className="flex-1 flex items-center justify-center gap-1.5 py-3 text-red-500 text-sm hover:bg-red-100 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-                            <Icon icon="mdi:close" className="w-4 h-4" /> Reject
+                        <button
+                            onClick={() => onReject(app)}
+                            disabled={isProcessing}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 text-[11px] text-red-500 hover:bg-red-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <Icon icon="mdi:close" className="w-3.5 h-3.5" /> Reject
                         </button>
                     </div>
 
