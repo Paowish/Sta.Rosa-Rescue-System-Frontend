@@ -426,30 +426,52 @@ export default function LandingHome() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: false, amount: 0.3 }}
                     transition={{ duration: 0.7 }}
-                    className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between text-white"
+                    className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 text-white"
                 >
-                    <div className="mb-8 md:mb-0 max-w-xl">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-1 bg-white rounded-full"></div>
-                            <span className="text-sm font-semibold uppercase tracking-wide">Civilian Incident Reporting</span>
+                    {/* Left Text Section */}
+                    <div className="max-w-xl">
+                        {/* Small white line + Subtitle */}
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-[2px] bg-white"></div>
+                            <span className="text-sm font-medium tracking-widest uppercase opacity-90">
+                                Civilian Incident Reporting
+                            </span>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+
+                        {/* Headline */}
+                        <h2 className="text-[40px] leading-[1.1] font-bold mb-6">
                             Witnessed an emergency?<br />
                             Report it now.
                         </h2>
-                        <p className="text-white/80 text-sm leading-relaxed max-w-md">
+
+                        {/* Body Text */}
+                        <p className="text-white/80 text-[15px] leading-relaxed font-light max-w-md">
                             Our civilian portal lets anyone file an incident report directly from their phone or computer, with GPS location, photo upload, and instant reference tracking.
                         </p>
                     </div>
-                    <Link to="/login">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="bg-white text-[#E63946] px-8 py-4 rounded shadow-lg font-bold text-lg flex items-center gap-3 hover:bg-gray-100 transition min-w-[200px] justify-center"
-                        >
-                            <Icon icon="mdi:alert" className="w-6 h-6" /> FILE A REPORT
-                        </motion.button>
-                    </Link>
+
+                    {/* Right Button Section */}
+                    <div className="mt-6 lg:mt-0 shrink-0">
+                        <Link to="/login">
+                            <motion.button
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                className="group flex items-center gap-4 bg-white px-8 py-4 rounded shadow-lg transition-all duration-300 hover:shadow-xl"
+                            >
+                                {/* Red Alert Icon inside button */}
+                                <div className="text-[#E63946]">
+                                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2L1 21h22L12 2zm0 3.8l8 14.2H4l8-14.2z" />
+                                        <rect x="11" y="10" width="2" height="5" />
+                                        <circle cx="12" cy="18" r="1" />
+                                    </svg>
+                                </div>
+                                <span className="text-[#E63946] font-bold text-[18px] tracking-wide uppercase">
+                                    File A Report
+                                </span>
+                            </motion.button>
+                        </Link>
+                    </div>
                 </motion.div>
             </section>
 
