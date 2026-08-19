@@ -2,11 +2,11 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
+import { motion, AnimatePresence } from "framer-motion"; // ✅ ADD AnimatePresence
 
 // ✅ Pending Approval Modal Component
 function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
   if (!isOpen) return null;
-  // ... (Keep your existing modal code here) ...
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
@@ -28,7 +28,7 @@ function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
   );
 }
 
-// ✅ Rejected, NotApproved, Deactivated Modals... (Keep your existing code for these)
+// ✅ Rejected Modal Component
 function RejectedModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   return (
@@ -49,7 +49,49 @@ function RejectedModal({ isOpen, onClose }) {
   );
 }
 
-// ✅ NEW: Forgot Password Modal Component
+// ✅ NotApproved Modal Component
+function NotApprovedModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">Account Not Approved</h3>
+          <p className="text-sm text-gray-600 mt-2">Your account is not yet approved.</p>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button onClick={onClose} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Deactivated Modal Component
+function DeactivatedModal({ isOpen, onClose }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">Account Deactivated</h3>
+          <p className="text-sm text-gray-600 mt-2">Your account has been deactivated.</p>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button onClick={onClose} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Forgot Password Modal Component
 function ForgotPasswordModal({ isOpen, onClose }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,10 +105,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     setError("");
 
     try {
-      // Assuming authService has a forgotPassword method. 
-      // If your backend uses a different route, adjust here.
       const response = await authService.forgotPassword(email);
-
       if (response.success) {
         setMessage("Password reset link has been sent to your email.");
         setTimeout(() => {
@@ -131,7 +170,6 @@ function ForgotPasswordModal({ isOpen, onClose }) {
   );
 }
 
-
 // ✅ Main Login Component
 export default function Login() {
   const [showPass, setShowPass] = useState(false);
@@ -146,7 +184,7 @@ export default function Login() {
   const [showRejectedModal, setShowRejectedModal] = useState(false);
   const [showNotApprovedModal, setShowNotApprovedModal] = useState(false);
   const [showDeactivatedModal, setShowDeactivatedModal] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false); // ✅ New state
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -184,7 +222,6 @@ export default function Login() {
       const response = await authService.login(email, password);
 
       if (response.success === false) {
-        // Check for specific status codes for modals
         if (response.code === 'PENDING_APPROVAL' || (response.message && response.message.includes('pending approval'))) {
           setLoading(false); setShowPendingModal(true); return;
         }
@@ -203,7 +240,6 @@ export default function Login() {
         return;
       }
 
-      // ✅ Successful login
       let userData = response.user;
       let token = response.token;
 
@@ -258,132 +294,96 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6">
-      {/* ✅ Modals */}
-      <PendingApprovalModal isOpen={showPendingModal} onClose={() => setShowPendingModal(false)} onLoginClick={() => { setEmail(""); setPassword(""); setError(""); }} />
-      <RejectedModal isOpen={showRejectedModal} onClose={() => setShowRejectedModal(false)} />
-      <NotApprovedModal isOpen={showNotApprovedModal} onClose={() => setShowNotApprovedModal(false)} /> {/* Keep your existing NotApprovedModal component */}
-      <DeactivatedModal isOpen={showDeactivatedModal} onClose={() => setShowDeactivatedModal(false)} /> {/* Keep your existing DeactivatedModal component */}
+    <AnimatePresence mode="wait">
+      <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6">
+        {/* ✅ Modals */}
+        <PendingApprovalModal isOpen={showPendingModal} onClose={() => setShowPendingModal(false)} onLoginClick={() => { setEmail(""); setPassword(""); setError(""); }} />
+        <RejectedModal isOpen={showRejectedModal} onClose={() => setShowRejectedModal(false)} />
+        <NotApprovedModal isOpen={showNotApprovedModal} onClose={() => setShowNotApprovedModal(false)} />
+        <DeactivatedModal isOpen={showDeactivatedModal} onClose={() => setShowDeactivatedModal(false)} />
+        <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
 
-      {/* ✅ New Forgot Password Modal */}
-      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
+        {/* ✅ MAIN CONTENT WITH SLIDE LEFT & RIGHT ANIMATION */}
+        <motion.div
+          key="login-page"
+          initial={{ opacity: 0, x: -100 }}      // Starts 100px to the LEFT (hidden)
+          animate={{ opacity: 1, x: 0 }}          // Slides IN to the center
+          exit={{ opacity: 0, x: 100 }}           // Slides OUT to the RIGHT
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          className="w-full max-w-6xl py-10"
+        >
+          <div className="flex items-center gap-3 mb-8">
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">Rescue Team</h1>
+            </Link>
+          </div>
 
-      <div className="w-full max-w-6xl py-10">
-        <div className="flex items-center gap-3 mb-8">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">Rescue Team</h1>
-          </Link>
-        </div>
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
+              <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-        <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div>
-            <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
-            <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
-
-            {error && (
-              <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️') ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                {error}
-              </div>
-            )}
-
-            <div className="w-full mb-5">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'}`}>
-                <legend className="text-sm px-2 text-gray-700">Email</legend>
-                <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (validationErrors.email) setValidationErrors({ ...validationErrors, email: null }); }} placeholder="john.doe@gmail.com" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
-              </fieldset>
-              {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
-            </div>
-
-            <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'}`}>
-                <legend className="text-sm px-2 text-gray-700">Password</legend>
-                <div className="flex items-center">
-                  <input type={showPass ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); if (validationErrors.password) setValidationErrors({ ...validationErrors, password: null }); }} placeholder="••••••••" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
-                  <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">{showPass ? <FaEyeSlash /> : <FaEye />}</span>
+              {error && (
+                <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️') ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                  {error}
                 </div>
-              </fieldset>
-              {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
-            </div>
+              )}
 
-            <div className="flex items-center justify-between mt-2 mb-6">
-              <label className="flex items-center gap-2 text-sm text-gray-600">
-                <input type="checkbox" className="w-4 h-4" /> Remember me
-              </label>
-              {/* ✅ Functional Forgot Password Button */}
-              <button onClick={() => setShowForgotModal(true)} className="text-sm text-red-400 hover:underline">
-                Forgot Password
+              <div className="w-full mb-5">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'}`}>
+                  <legend className="text-sm px-2 text-gray-700">Email</legend>
+                  <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (validationErrors.email) setValidationErrors({ ...validationErrors, email: null }); }} placeholder="john.doe@gmail.com" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
+                </fieldset>
+                {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
+              </div>
+
+              <div className="w-full">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'}`}>
+                  <legend className="text-sm px-2 text-gray-700">Password</legend>
+                  <div className="flex items-center">
+                    <input type={showPass ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); if (validationErrors.password) setValidationErrors({ ...validationErrors, password: null }); }} placeholder="••••••••" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
+                    <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">{showPass ? <FaEyeSlash /> : <FaEye />}</span>
+                  </div>
+                </fieldset>
+                {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
+              </div>
+
+              <div className="flex items-center justify-between mt-2 mb-6">
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <input type="checkbox" className="w-4 h-4" /> Remember me
+                </label>
+                <button onClick={() => setShowForgotModal(true)} className="text-sm text-red-400 hover:underline">
+                  Forgot Password
+                </button>
+              </div>
+
+              <button onClick={handleLogin} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">Login</button>
+
+              <button onClick={() => navigate('/Guest/Report')} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 mt-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+                Report as Guest
               </button>
+
+              <p className="text-center text-sm text-gray-600 mt-5">
+                Don't have an account? <Link to="/signup" className="text-red-400 font-medium hover:underline cursor-pointer">Sign up</Link>
+              </p>
+
+              <div className="mt-4 text-center text-sm text-gray-500">
+                <Link to="/" className="text-[#FF6B6B] hover:text-[#E55A5A] transition-colors">
+                  ← Back to Home
+                </Link>
+              </div>
             </div>
 
-            <button onClick={handleLogin} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">Login</button>
-
-            <button onClick={() => navigate('/Guest/Report')} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 mt-3">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-              Report as Guest
-            </button>
-
-            <p className="text-center text-sm text-gray-600 mt-5">
-              Don't have an account? <Link to="/signup" className="text-red-400 font-medium hover:underline cursor-pointer">Sign up</Link>
-            </p>
-
-            <div className="mt-4 text-center text-sm text-gray-500">
-              <Link to="/" className="text-[#FF6B6B] hover:text-[#E55A5A] transition-colors">
-                ← Back to Home
-              </Link>
-            </div>
-
-
-          </div>
-
-          <div className="hidden md:block">
-            <div className="rounded-xl overflow-hidden shadow-lg">
-              <img src="/shers.png" alt="building" className="w-full h-full object-cover" />
+            <div className="hidden md:block">
+              <div className="rounded-xl overflow-hidden shadow-lg">
+                <img src="/shers.png" alt="building" className="w-full h-full object-cover" />
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
-  );
-}
-
-// ✅ Keep your existing NotApprovedModal and DeactivatedModal components here below
-function NotApprovedModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div className="text-center mb-4">
-          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800">Account Not Approved</h3>
-          <p className="text-sm text-gray-600 mt-2">Your account is not yet approved.</p>
-        </div>
-        <div className="flex gap-3 mt-4">
-          <button onClick={onClose} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Close</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DeactivatedModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div className="text-center mb-4">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800">Account Deactivated</h3>
-          <p className="text-sm text-gray-600 mt-2">Your account has been deactivated.</p>
-        </div>
-        <div className="flex gap-3 mt-4">
-          <button onClick={onClose} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Close</button>
-        </div>
-      </div>
-    </div>
+    </AnimatePresence>
   );
 }
