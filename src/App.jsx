@@ -1,12 +1,29 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
-// Auth Pages
+// =============================================================
+// ✅ PUBLIC LANDING PAGE IMPORTS
+// =============================================================
+import PublicLayout from "./components/layout/PublicLayout";
+import LandingHome from './pages/landing/LandingHome';
+// Add these pages later as you create them:
+
+
+import HowItWorks from './pages/landing/HowItWorks';
+import Mission from './pages/landing/Mission';
+import Services from './pages/landing/Services';
+import FileReport from './pages/landing/FileReport';
+
+// =============================================================
+// ✅ AUTH PAGES
+// =============================================================
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
 
-// RESCUE TEAM LAYOUT
+// =============================================================
+// ✅ RESCUE TEAM / ADMIN LAYOUT
+// =============================================================
 import DashboardLayout from "./components/layout/DashboardLayout";
 
 // NEW Admin / Rescue Team Pages
@@ -18,33 +35,35 @@ import Units from './pages/rescueTeam/Units';
 import SystemSettings from './pages/admin/SystemSettings';
 import AdminLayout from "./pages/admin/AdminLayout";
 
-// ✅ ADD THESE MISSING IMPORTS FOR THE RESCUE TEAM DASHBOARD
+// Rescue Team Dashboard Pages
 import Dashboard from "./pages/rescueTeam/Dashboard";
 import IncidentManagement from "./pages/rescueTeam/IncidentManagement.jsx";
-
-// ✅ FIXED: Separate Route for Volunteers
 import VolunteerApproval from "./pages/rescueTeam/VolunteerApproval";
 
-// Civilian Pages
+// =============================================================
+// ✅ CIVILIAN PAGES
+// =============================================================
 import CivilianDashboard from "./pages/civilian/CivilianDashboard";
 import Overview from "./pages/civilian/Overview";
 import EditProfile from "./pages/civilian/EditProfile";
-
-// ✅ Civilian Track Reports (You kept the civilian version, right?)
 import TrackReports from "./pages/civilian/TrackReports";
-
-// ✅ NEW: Unified Incident Reporting Flow
 import ReportIncident from './pages/civilian/reportIncident/ReportIncident';
 import SubmitSuccess from "./pages/civilian/reportIncident/Submit";
 
-// Volunteer Pages
+// =============================================================
+// ✅ VOLUNTEER PAGES
+// =============================================================
 import VolunteerApplication from "./pages/rescueTeam/VolunteerApplication";
 import VolunteerDashboard from "./pages/volunteer/VolunteerDashboard";
 
-// ✅ NEW GUEST REPORT PAGE (Replaces GuestReportIncident)
+// =============================================================
+// ✅ GUEST PAGES
+// =============================================================
 import GuestReport from "./pages/guest/GuestReport";
 
-// Components
+// =============================================================
+// ✅ COMPONENTS
+// =============================================================
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -52,96 +71,33 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* ==================== PUBLIC ROUTES ==================== */}
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Signup" element={<Signup />} />
+
+          {/* ============================================================ */}
+          {/* 🌐 PUBLIC LANDING ROUTES (NO AUTH REQUIRED)                   */}
+          {/* ============================================================ */}
+          <Route element={<PublicLayout />}>
+            {/* Root URL goes to the Landing Page */}
+            <Route index element={<LandingHome />} />
+          </Route>
+
+          {/* ============================================================ */}
+          {/* 🔐 AUTH ROUTES                                                */}
+          {/* ============================================================ */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/Volunteer-Application" element={<VolunteerApplication />} />
 
-          {/* ==================== GUEST ROUTES ==================== */}
-          {/* Entry point for Guest reporting - Only the form */}
-          <Route path="/Guest" element={<GuestReport />} />
-          <Route path="/Guest/Report" element={<GuestReport />} />
+          {/* ============================================================ */}
+          {/* 🚀 GUEST ROUTES                                               */}
+          {/* ============================================================ */}
+          <Route path="/guest" element={<GuestReport />} />
+          <Route path="/guest/report" element={<GuestReport />} />
 
-          {/* ==================== ADMIN DASHBOARD REDIRECT ==================== */}
+          {/* ============================================================ */}
+          {/* 🏛️ ADMIN / RESCUE TEAM ROUTES                                 */}
+          {/* ============================================================ */}
           <Route
-            path="/Admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
-                <Navigate to="/Admin/Overview" replace />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ========================================================== */}
-          {/* ✅ NEW ADMIN ROUTES                                        */}
-          {/* ========================================================== */}
-          <Route
-            path="/Admin/Overview"
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
-                <AdminOverview />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Admin/UserAccounts"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <UserAccount />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Admin/IncidentReports"
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
-                <IncidentReports />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Admin/SystemMaintenance"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <SystemMaintenance />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Admin/SystemSettings"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout>
-                  <SystemSettings />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ✅ FIXED: Admin Profile uses civilian EditProfile */}
-          <Route
-            path="/Admin/Profile"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout>
-                  <EditProfile />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ========================================================== */}
-          {/* ✅ RESCUE TEAM ROUTES                                     */}
-          {/* ========================================================== */}
-
-          {/* ✅ FIXED: Rescue Team Dashboard */}
-          <Route
-            path="/Dashboard"
+            path="/dashboard"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <DashboardLayout>
@@ -152,7 +108,68 @@ function App() {
           />
 
           <Route
-            path="/Units"
+            path="/admin/overview"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
+                <AdminOverview />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/user-accounts"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <UserAccount />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/incident-reports"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
+                <IncidentReports />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/system-maintenance"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <SystemMaintenance />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/system-settings"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout>
+                  <SystemSettings />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout>
+                  <EditProfile />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ============================================================ */}
+          {/* 🚑 RESCUE TEAM ROUTES                                         */}
+          {/* ============================================================ */}
+          <Route
+            path="/units"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <DashboardLayout>
@@ -162,9 +179,8 @@ function App() {
             }
           />
 
-          {/* ✅ FIXED: Rescue Team Incident Management */}
           <Route
-            path="/Incidents"
+            path="/incidents"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <DashboardLayout>
@@ -175,7 +191,7 @@ function App() {
           />
 
           <Route
-            path="/Volunteer-Approval"
+            path="/volunteer-approval"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <DashboardLayout>
@@ -185,9 +201,8 @@ function App() {
             }
           />
 
-          {/* ✅ FIXED: Rescue Team Profile */}
           <Route
-            path="/Profile"
+            path="/profile"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <DashboardLayout>
@@ -197,9 +212,11 @@ function App() {
             }
           />
 
-          {/* ==================== CIVILIAN ROUTES ==================== */}
+          {/* ============================================================ */}
+          {/* 🧍 CIVILIAN ROUTES                                            */}
+          {/* ============================================================ */}
           <Route
-            path="/Civilian-Dashboard"
+            path="/civilian-dashboard"
             element={
               <ProtectedRoute allowedRoles={['civilian']}>
                 <CivilianDashboard>
@@ -210,16 +227,7 @@ function App() {
           />
 
           <Route
-            path="/Volunteer-Dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['volunteer']}>
-                <VolunteerDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Overview"
+            path="/overview"
             element={
               <ProtectedRoute allowedRoles={['civilian']}>
                 <CivilianDashboard>
@@ -229,9 +237,8 @@ function App() {
             }
           />
 
-          {/* ✅ Civilian uses the TRACK REPORTS component from civilian folder */}
           <Route
-            path="/Track-Reports"
+            path="/track-reports"
             element={
               <ProtectedRoute allowedRoles={['civilian']}>
                 <CivilianDashboard>
@@ -242,7 +249,7 @@ function App() {
           />
 
           <Route
-            path="/Edit-Profile"
+            path="/edit-profile"
             element={
               <ProtectedRoute allowedRoles={['civilian']}>
                 <CivilianDashboard>
@@ -252,9 +259,8 @@ function App() {
             }
           />
 
-          {/* ==================== INCIDENT REPORTING FLOW ==================== */}
           <Route
-            path="/Report"
+            path="/report"
             element={
               <ProtectedRoute allowedRoles={['civilian']}>
                 <CivilianDashboard>
@@ -265,7 +271,7 @@ function App() {
           />
 
           <Route
-            path="/Submit"
+            path="/submit"
             element={
               <CivilianDashboard>
                 <SubmitSuccess />
@@ -273,9 +279,27 @@ function App() {
             }
           />
 
-          {/* ==================== DEFAULT REDIRECT ==================== */}
-          <Route path="/" element={<Navigate to="/Login" replace />} />
-          <Route path="*" element={<Navigate to="/Login" replace />} />
+          {/* ============================================================ */}
+          {/* 🦺 VOLUNTEER ROUTES                                          */}
+          {/* ============================================================ */}
+          <Route
+            path="/volunteer-application"
+            element={<VolunteerApplication />}
+          />
+
+          <Route
+            path="/volunteer-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['volunteer']}>
+                <VolunteerDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ============================================================ */}
+          {/* 🛑 FALLBACK ROUTE (If no route matches)                       */}
+          {/* ============================================================ */}
+          <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
       </Router>
