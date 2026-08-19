@@ -356,8 +356,8 @@ export default function LandingHome() {
                         <div className="w-8 h-1 bg-[#E63946] rounded-full"></div>
                         <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Services</span>
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-bold text-[#0F5C73] mb-4">
-                        Built for <span className="text-gray-900">every emergency.</span>
+                    <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                        <span className="text-gray-900">Built for</span> <span className="text-[#0F5C73]">every emergency.</span>
                     </h2>
                     <p className="text-gray-600 text-lg mb-12 max-w-xl">
                         From sudden illnesses to structure fires, we dispatch fast when seconds count.
