@@ -15,6 +15,9 @@ import {
 import { RosterView, ApplicantView } from './VolunteerList';
 
 export default function VolunteerApproval() {
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("newest");
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('roster');
   const [selectedRosterId, setSelectedRosterId] = useState(null);
@@ -129,6 +132,8 @@ export default function VolunteerApproval() {
             availability: availability,
             description: description,
             appliedDate: volunteer.createdAt ? new Date(volunteer.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A',
+            // ✅ ADD RAW TIMESTAMP FOR SORTING
+            createdAtTimestamp: volunteer.createdAt ? new Date(volunteer.createdAt).getTime() : 0,
             profileImage: volunteer.profileImage || null,
             details: {
               age: volunteer.age || 'N/A',
@@ -146,8 +151,29 @@ export default function VolunteerApproval() {
         const acceptedVolunteers = transformedData.filter(v => v.status === 'accepted');
         const pendingApplicants = transformedData.filter(v => v.status === 'pending');
 
+        // ✅ Apply Search Filter
+        let filteredApplicants = pendingApplicants;
+        if (searchQuery.trim() !== "") {
+          const lowerQuery = searchQuery.toLowerCase();
+          filteredApplicants = filteredApplicants.filter(app =>
+            app.name.toLowerCase().includes(lowerQuery)
+          );
+        }
+
+        // ✅ Apply Sort using RAW timestamp
+        filteredApplicants.sort((a, b) => {
+          switch (sortOption) {
+            case 'newest': return b.createdAtTimestamp - a.createdAtTimestamp;
+            case 'oldest': return a.createdAtTimestamp - b.createdAtTimestamp;
+            case 'a-z': return a.name.localeCompare(b.name);
+            case 'z-a': return b.name.localeCompare(a.name);
+            default: return 0;
+          }
+        });
+
         setAllVolunteers(acceptedVolunteers);
-        setApplicants(pendingApplicants);
+        setApplicants(filteredApplicants); // ✅ Keep ONLY this one
+
       } else {
         setApiError(data.message || 'Failed to load volunteers');
         setAllVolunteers([]); setApplicants([]);
@@ -157,9 +183,12 @@ export default function VolunteerApproval() {
       setAllVolunteers([]); setApplicants([]);
     } finally {
       setLoading(false);
+      setIsSearching(false);
       isLoadingRef.current = false;
     }
-  }, [getApiUrl]);
+  }, [getApiUrl, searchQuery, sortOption]);
+
+
 
   // --- ✅ Setup WebSocket (Real-time Status Updates) ---
   useEffect(() => {
@@ -368,6 +397,17 @@ export default function VolunteerApproval() {
       <ConfirmationModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={modalData.onConfirm} title={modalData.title} message={modalData.message} confirmText={modalData.confirmText} confirmColor={modalData.confirmColor} icon={modalData.icon} iconColor={modalData.iconColor} />
       <ToastModal isOpen={showResultModal} onClose={() => setShowResultModal(false)} title={modalData.title} message={modalData.message} type={modalData.icon === 'success' ? 'success' : modalData.icon === 'error' ? 'error' : 'warning'} />
 
+      {/* ✅ SEARCHING / SORTING MODAL */}
+      {isSearching && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-sm mx-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            <p className="text-gray-700 font-medium text-sm">Updating results...</p>
+            <p className="text-gray-400 text-xs">Please wait a moment</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-4 h-[calc(100vh-110px)]">
         <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-6 border-b border-gray-200 px-4 pt-2 pb-0 bg-white">
@@ -399,12 +439,56 @@ export default function VolunteerApproval() {
             )}
             {activeTab === 'applicant' && (
               <>
+                {/* ✅ NEW: Search & Sort Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-200 pb-3">
+                  {/* Search Input */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-500">Search:</span>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setIsSearching(true);
+                          setSearchQuery(e.target.value);
+                          loadAllVolunteers(true); // ✅ ADD THIS LINE
+                        }}
+                        className="pl-7 pr-3 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
+                      />
+                      <Icon icon="mdi:magnify" className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                    </div>
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-500">Sort By:</span>
+                    <select
+                      value={sortOption}
+                      onChange={(e) => {
+                        setIsSearching(true);
+                        setSortOption(e.target.value);
+                        loadAllVolunteers(true);
+                      }}
+                      className="border border-gray-200 rounded-md px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                    >
+                      <option value="newest">Latest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="a-z">Name A-Z</option>
+                      <option value="z-a">Name Z-A</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Stats Cards */}
                 <div className="grid grid-cols-4 gap-4 mb-6">
                   <ApplicantStatBox number={applicants.length + allVolunteers.length} label="Total Applicants" color="border-gray-400" />
                   <ApplicantStatBox number={pendingApplicantCount} label="Pending Review" color="border-orange-400" />
                   <ApplicantStatBox number={allVolunteers.length} label="Accepted" color="border-green-600" />
                   <ApplicantStatBox number={0} label="Rejected" color="border-gray-200" />
                 </div>
+
+                {/* Applicant List */}
                 <ApplicantView applicants={applicants} onView={setSelectedApplicant} onAccept={handleAcceptClick} onReject={handleRejectClick} isProcessing={isProcessing} />
               </>
             )}
@@ -572,12 +656,12 @@ export default function VolunteerApproval() {
                 <div className="h-12"></div>
               </div>
 
-              {/* CLEAN MINIMAL BUTTONS AT THE BOTTOM (No scroll, No blocks) */}
-              <div className="absolute bottom-0 left-0 right-0 py-3 px-5 bg-white border-t border-gray-200 flex justify-between items-center">
+              {/* CLEAN MINIMAL BUTTONS AT THE BOTTOM (With Borders) */}
+              <div className="absolute bottom-0 left-0 right-0 py-3 px-5 bg-white border-t border-gray-200 flex justify-between items-center gap-2">
                 <button
                   onClick={() => handleRejectClick(activeApplicant)}
                   disabled={isProcessing}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="flex-1 py-2 px-3 bg-white border border-red-200 text-red-600 rounded-md text-xs font-medium hover:bg-red-50 hover:border-red-300 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icon icon="mdi:close" className="w-4 h-4" /> Reject
                 </button>
@@ -585,7 +669,7 @@ export default function VolunteerApproval() {
                 <button
                   onClick={handleCloseApplicant}
                   disabled={isProcessing}
-                  className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors disabled:opacity-40 cursor-pointer"
+                  className="flex-1 py-2 px-3 bg-white border border-gray-300 text-gray-600 rounded-md text-xs font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Close
                 </button>
@@ -593,9 +677,9 @@ export default function VolunteerApproval() {
                 <button
                   onClick={() => handleAcceptClick(activeApplicant)}
                   disabled={isProcessing}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-600 rounded-md text-xs font-medium hover:bg-green-50 hover:border-green-400 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icon icon="mdi:check" className="w-4 h-4" /> Accept Volunteer
+                  <Icon icon="mdi:check" className="w-4 h-4" /> Accept
                 </button>
               </div>
             </div>
