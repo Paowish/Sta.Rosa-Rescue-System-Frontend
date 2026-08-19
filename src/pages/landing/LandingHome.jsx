@@ -44,7 +44,7 @@ export default function LandingHome() {
                 const updated = [newIncident, ...prev];
                 return updated.slice(0, 4);
             });
-        }, 4000); // New alert every 4 seconds
+        }, 2000); // New alert every 4 seconds
 
         // ✅ Cleanup: Stop interval when component is removed from screen
         return () => clearInterval(interval);
