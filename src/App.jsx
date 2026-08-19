@@ -117,7 +117,7 @@ function App() {
           />
 
           <Route
-            path="/admin/user-accounts"
+            path="/admin/useraccounts"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <UserAccount />
@@ -126,7 +126,7 @@ function App() {
           />
 
           <Route
-            path="/admin/incident-reports"
+            path="/admin/incidentreports"
             element={
               <ProtectedRoute allowedRoles={['admin', 'dispatcher', 'responder']}>
                 <IncidentReports />
@@ -135,7 +135,7 @@ function App() {
           />
 
           <Route
-            path="/admin/system-maintenance"
+            path="/admin/systemmaintenance"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <SystemMaintenance />
@@ -144,7 +144,7 @@ function App() {
           />
 
           <Route
-            path="/admin/system-settings"
+            path="/admin/systemsettings"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminLayout>

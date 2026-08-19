@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { incidentService, notificationService } from "../../services/api";
 import io from 'socket.io-client';
+import { Icon } from "@iconify/react";
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -16,17 +17,17 @@ L.Icon.Default.mergeOptions({
 // Custom marker icons based on severity
 const getMarkerIcon = (severity) => {
   const colors = {
-    Critical: 'red',
-    High: 'orange',
-    Medium: 'yellow',
-    Low: 'blue'
+    Critical: '#EF4444',
+    High: '#F97316',
+    Medium: '#EAB308',
+    Low: '#3B82F6'
   };
-  const color = colors[severity] || 'blue';
+  const color = colors[severity] || '#3B82F6';
   return L.divIcon({
     className: 'custom-marker',
-    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px;">📍</div>`,
-    iconSize: [24, 24],
-    popupAnchor: [0, -12]
+    html: `<div style="background-color: ${color}; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 14px; animation: pulse-marker 2s infinite; color: white;">!</div>`,
+    iconSize: [32, 32],
+    popupAnchor: [0, -16]
   });
 };
 
@@ -35,10 +36,173 @@ function MapCenter({ position }) {
   const map = useMap();
   useEffect(() => {
     if (position) {
-      map.setView(position, 15);
+      map.flyTo(position, 15, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
     }
   }, [position, map]);
   return null;
+}
+
+// Status Badge Component
+function StatusBadge({ status }) {
+  const configs = {
+    'Resolved': { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+    'On Scene': { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' },
+    'En Route': { bg: 'bg-indigo-100', text: 'text-indigo-700', dot: 'bg-indigo-500' },
+    'Dispatched': { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500' },
+    'Active': { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
+    'Pending': { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' }
+  };
+
+  const config = configs[status] || configs['Pending'];
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${config.bg} ${config.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${config.dot} animate-pulse`}></span>
+      {status}
+    </span>
+  );
+}
+
+// Severity Badge Component
+function SeverityBadge({ severity }) {
+  const configs = {
+    'Critical': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    'High': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+    'Medium': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+    'Low': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' }
+  };
+
+  const config = configs[severity] || configs['Medium'];
+
+  return (
+    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${config.bg} ${config.text} ${config.border}`}>
+      {severity}
+    </span>
+  );
+}
+
+// Stat Card Component (Professional Version)
+function StatCard({ title, value, icon, color, trend }) {
+  // Determine bg color class based on the text color
+  const bgColorClass = color
+    .replace('text-', 'bg-')
+    .replace('-600', '-100')
+    .replace('-700', '-100');
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-300">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+          <p className={`text-3xl font-bold ${color}`}>{value}</p>
+        </div>
+        {/* ✅ Professional Icon container with exact color matching */}
+        <div className={`p-3 rounded-lg ${bgColorClass}`}>
+          <Icon icon={icon} className={`text-xl ${color}`} />
+        </div>
+      </div>
+      {trend && (
+        <div className="mt-3 flex items-center gap-1 text-xs">
+          <span className={trend.positive ? 'text-emerald-600' : 'text-red-600'}>
+            {trend.positive ? '↑' : '↓'} {trend.value}%
+          </span>
+          <span className="text-gray-400">vs last week</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Incident Card Component
+function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, timeAgo, severity }) {
+  const getStatusBorderColor = (status) => {
+    const colors = {
+      'Resolved': 'border-emerald-500',
+      'On Scene': 'border-blue-500',
+      'En Route': 'border-indigo-500',
+      'Dispatched': 'border-purple-500',
+      'Active': 'border-red-500',
+      'Pending': 'border-amber-500'
+    };
+    return colors[status] || 'border-amber-500';
+  };
+
+  const borderColor = getStatusBorderColor(incident.status);
+  const statusText = volunteerStatus?.status === 'en-route' ? 'En Route' :
+    volunteerStatus?.status === 'arrived' ? 'On Scene' :
+      incident.status || 'Pending';
+
+  return (
+    <div
+      onClick={() => onClick(incident)}
+      className={`
+        relative bg-white rounded-xl border-l-[6px] p-4 cursor-pointer transition-all duration-200
+        hover:shadow-md hover:-translate-y-0.5 ${borderColor}
+        ${isSelected ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm border-y-0 border-r-0 border-t-0 border-b-0'}
+      `}
+    >
+      {isNew && (
+        <div className="absolute -top-2 -left-2 z-10">
+          <span className="bg-red-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-md animate-pulse">
+            NEW
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <SeverityBadge severity={severity} />
+          <StatusBadge status={statusText} />
+        </div>
+        <span className="text-[11px] font-mono text-gray-400">
+          {incident.incidentId || 'RES-2026'}
+        </span>
+      </div>
+
+      <h4 className="text-[15px] font-semibold text-gray-800 mb-1 truncate">
+        {incident.type || 'Incident'}
+      </h4>
+
+      <div className="flex items-center gap-2 text-[12px] text-gray-500 overflow-hidden">
+        <span className="flex items-center gap-1 shrink-0">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="truncate">{incident.location?.address || 'Unknown location'}</span>
+        </span>
+        <span className="text-gray-300 shrink-0">•</span>
+        <span className="flex items-center gap-1 shrink-0">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {timeAgo}
+        </span>
+      </div>
+
+      {volunteerStatus && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-[11px] text-gray-500 overflow-hidden">
+            <span className="flex items-center gap-1 shrink-0">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              {volunteerStatus.status === 'en-route' ? 'En Route' : 'On Scene'}
+            </span>
+            {volunteerStatus.location && (
+              <>
+                <span className="text-gray-300 shrink-0">•</span>
+                <span className="truncate">{volunteerStatus.location}</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Dashboard({ onIncidentClick }) {
@@ -46,6 +210,7 @@ export default function Dashboard({ onIncidentClick }) {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
   const [showIncidentPopup, setShowIncidentPopup] = useState(false);
   const [latestIncidentAlert, setLatestIncidentAlert] = useState(null);
@@ -61,10 +226,8 @@ export default function Dashboard({ onIncidentClick }) {
 
   const isLoadingRef = useRef(false);
   const loadDataRef = useRef(null);
-
-  // ✅ State to trigger a refresh pulse in the UI
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const refreshStartTimeRef = useRef(0); // Track when the refresh started
+  const refreshStartTimeRef = useRef(0);
 
   const loadData = useCallback(async () => {
     if (isLoadingRef.current) return;
@@ -85,12 +248,8 @@ export default function Dashboard({ onIncidentClick }) {
       console.error("Failed to load data:", error);
     } finally {
       isLoadingRef.current = false;
-
-      // Calculate elapsed time
       const elapsed = Date.now() - refreshStartTimeRef.current;
-      const minimumLoadingTime = 1500; // 1.5 seconds
-
-      // If it finished too fast, delay the hide to meet the minimum time
+      const minimumLoadingTime = 1500;
       if (elapsed < minimumLoadingTime) {
         setTimeout(() => {
           setLoading(false);
@@ -160,7 +319,7 @@ export default function Dashboard({ onIncidentClick }) {
         });
 
         socketRef.current.on('connect', () => {
-          console.log('✅ Rescue Team socket connected');
+          console.log('Rescue Team socket connected');
           socketRef.current.emit('join', user._id);
           socketRef.current.emit('join-room', 'rescue-team');
         });
@@ -215,7 +374,7 @@ export default function Dashboard({ onIncidentClick }) {
         });
 
         socketRef.current.on('disconnect', () => {
-          console.log('⚠️ Socket disconnected');
+          console.log('Socket disconnected');
         });
 
         socketRef.current.on('reconnect', () => {
@@ -258,10 +417,25 @@ export default function Dashboard({ onIncidentClick }) {
     }
   };
 
-  const filteredIncidents = incidents.filter(incident =>
-    incident.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    incident.location?.address?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getFilteredIncidents = () => {
+    let filtered = incidents;
+
+    if (searchTerm) {
+      filtered = filtered.filter(incident =>
+        incident.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        incident.location?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        incident.incidentId?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedFilter !== 'all') {
+      filtered = filtered.filter(incident =>
+        incident.status?.toLowerCase() === selectedFilter.toLowerCase()
+      );
+    }
+
+    return filtered;
+  };
 
   const getVolunteerStatusForIncident = (incidentId) => {
     const statuses = Object.values(volunteerStatuses).filter(s => s.incidentId === incidentId);
@@ -269,7 +443,6 @@ export default function Dashboard({ onIncidentClick }) {
     return statuses[statuses.length - 1];
   };
 
-  // ✅ Time ago function
   const getTimeAgo = (date) => {
     if (!date) return 'N/A';
     const now = new Date();
@@ -280,19 +453,18 @@ export default function Dashboard({ onIncidentClick }) {
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${diffDays}d`;
   };
 
-  // ✅ Wrapper to handle refresh from child
   const handleRefresh = () => {
-    refreshStartTimeRef.current = Date.now(); // Record start time
-    setIsRefreshing(true); // Start the spinner immediately
+    refreshStartTimeRef.current = Date.now();
+    setIsRefreshing(true);
     if (loadDataRef.current) {
-      loadDataRef.current(); // Load the data
+      loadDataRef.current();
     }
-    loadNotifications(); // Load notifications too
+    loadNotifications();
   };
 
   useEffect(() => {
@@ -318,248 +490,33 @@ export default function Dashboard({ onIncidentClick }) {
     };
   }, []);
 
+  const filteredIncidents = getFilteredIncidents();
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Loading dashboard data...</div>
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-500 font-medium">Loading dashboard data...</p>
       </div>
     );
   }
 
   return (
-    <>
-      {/* ✅ FULL-SCREEN CENTERED LOADING SPINNER */}
-      {isRefreshing && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl p-8 flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-700 font-medium">Refreshing dashboard...</p>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ RED INCIDENT POPUP - SIMPLE DESIGN */}
-      {showIncidentPopup && latestIncidentAlert && (
-        <div className="fixed top-20 right-4 z-[999] animate-slide-in">
-          <div className="bg-red-500 text-white rounded-lg shadow-lg p-4 max-w-sm">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl">🚨</div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm">{latestIncidentAlert.title || "New Incident Reported"}</h4>
-                <p className="text-xs opacity-90 mt-1">{latestIncidentAlert.message}</p>
-                <p className="text-xs opacity-75 mt-1">Just now</p>
-              </div>
-              <button
-                onClick={() => setShowIncidentPopup(false)}
-                className="text-white opacity-75 hover:opacity-100"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* STATS CARDS - SIMPLE DESIGN */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-          <p className="text-2xl font-bold text-gray-700">{stats.total}</p>
-          <p className="text-sm text-gray-500">All Incidents</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-orange-500">
-          <p className="text-2xl font-bold text-orange-600">{stats.active}</p>
-          <p className="text-sm text-gray-500">Active</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-          <p className="text-sm text-gray-500">Pending</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-          <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
-          <p className="text-sm text-gray-500">Resolved</p>
-        </div>
-      </div>
-
-      {/* UNREAD NOTIFICATIONS - SIMPLE DESIGN */}
-      {unreadCount > 0 && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-500"></span>
-            <span className="text-sm text-blue-700">You have {unreadCount} new notification{unreadCount > 1 ? 's' : ''}</span>
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing} // Disable while refreshing
-            className="text-xs text-blue-600 hover:text-blue-800 font-medium bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition"
-          >
-            Refresh
-          </button>
-        </div>
-      )}
-
-      {/* MAIN CONTENT GRID */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* RECENT INCIDENTS */}
-        <div className="bg-white rounded-lg shadow col-span-1">
-          <div className="p-4 border-b">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-[#262D31]">Active Incidents</h3>
-              <div className="flex gap-2">
-                <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">{stats.active}</span>
-              </div>
-            </div>
-          </div>
-          <div className="p-4">
-            <input
-              type="text"
-              placeholder="Search type, location..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border rounded-md p-2 mb-3 text-sm placeholder-[#5D7285] focus:outline-none focus:border-[#0C7FDA]"
-            />
-            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-              {filteredIncidents.slice(0, 10).map((incident) => {
-                const isNew = newIncidentIds.includes(incident._id);
-                const volunteerStatus = getVolunteerStatusForIncident(incident._id);
-                const timeAgo = getTimeAgo(incident.reportedAt);
-
-                // ✅ NEW BORDER COLOR LOGIC BASED ON STATUS
-                const getStatusBorderColor = (status) => {
-                  if (status === 'Resolved') return 'border-green-500';
-                  if (status === 'On Scene') return 'border-blue-500';
-                  if (status === 'En Route') return 'border-blue-500';
-                  if (status === 'Dispatched') return 'border-blue-500';
-                  if (status === 'Active') return 'border-red-500';
-                  // Default for Pending and everything else
-                  return 'border-yellow-500';
-                };
-
-                const borderColor = getStatusBorderColor(incident.status);
-
-                // Keep severity for the text badge only
-                const severityText = incident.severity || 'Medium';
-                const statusText = volunteerStatus?.status === 'en-route' ? 'En Route' :
-                  volunteerStatus?.status === 'arrived' ? 'On Scene' :
-                    incident.status || 'Pending';
-
-                return (
-                  <div
-                    key={incident._id}
-                    onClick={() => handleIncidentClick(incident)}
-                    className={`
-                      relative bg-[#FAFAFA] rounded-lg border-l-[5px] p-3 cursor-pointer transition-all duration-200
-                      hover:bg-gray-100 ${borderColor}
-                      ${selectedIncident?._id === incident._id ? 'shadow-md border-gray-200' : 'border-y-0 border-r-0 border-t-0 border-b-0 shadow-sm'}
-                    `}
-                  >
-                    {/* "NEW" Badge positioned absolute top-left */}
-                    {isNew && (
-                      <div className="absolute -top-2 -left-2 z-20">
-                        <span className="bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
-                          NEW
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Tags Row */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-bold px-2 py-[2px] border border-red-300 text-[#4B5563] rounded-[2px]">
-                        {severityText}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-[2px] rounded-[2px] ${statusText === 'Resolved' ? 'bg-green-100 text-green-700' :
-                        statusText === 'On Scene' ? 'bg-blue-100 text-blue-700' :
-                          statusText === 'En Route' ? 'bg-blue-100 text-blue-700' :
-                            statusText === 'Dispatched' ? 'bg-blue-100 text-blue-700' :
-                              statusText === 'Active' ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
-                        }`}>
-                        {statusText}
-                      </span>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {incident.incidentId || 'RES-2026'}
-                      </span>
-                    </div>
-
-                    <p className="text-[14px] font-medium text-gray-800 mt-1.5 truncate leading-snug">
-                      {incident.type || 'Incident'}
-                    </p>
-                    <p className="text-[12px] text-[#6B7280] mt-0.5 truncate font-normal">
-                      {incident.location?.address || 'Unknown location'}
-                    </p>
-                    <p className="text-[12px] text-[#6B7280] mt-1 font-normal">
-                      {timeAgo}
-                    </p>
-                  </div>
-                );
-              })}
-              {filteredIncidents.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No incidents found</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* MAP with Leaflet */}
-        <div className="col-span-2 bg-white rounded-lg shadow overflow-hidden relative" style={{ zIndex: 1 }}>
-          <MapContainer
-            center={mapCenter}
-            zoom={13}
-            style={{ height: "500px", width: "100%" }}
-            key={mapCenter.toString()}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapCenter position={mapCenter} />
-
-            {filteredIncidents.slice(0, 10).map((incident) => {
-              const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
-              const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
-
-              if (lat && lng) {
-                return (
-                  <Marker
-                    key={incident._id}
-                    position={[parseFloat(lat), parseFloat(lng)]}
-                    icon={getMarkerIcon(incident.severity)}
-                  >
-                    <Popup>
-                      <div>
-                        <strong>{incident.type}</strong><br />
-                        {incident.location?.address}<br />
-                        <span className="text-xs">Status: {incident.status}</span><br />
-                        <span className="text-xs">ID: {incident.incidentId}</span>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              }
-              return null;
-            })}
-          </MapContainer>
-          {selectedIncident && (
-            <div className="p-2 text-center text-xs text-gray-400 border-t">
-              📍 Showing location for: {selectedIncident.type}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Custom Styles */}
+    <div className="min-h-screen bg-gray-50 p-6">
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
+          width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: #f1f1f1;
+          border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #d1d5db;
+          background: #c1c7cd;
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
+          background: #a0a7ad;
         }
         .animate-slide-in {
           animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -574,7 +531,238 @@ export default function Dashboard({ onIncidentClick }) {
             transform: translateX(0);
           }
         }
+        @keyframes pulse-marker {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+          }
+        }
       `}</style>
-    </>
+
+      {/* FULL-SCREEN LOADING SPINNER */}
+      {isRefreshing && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
+            <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-700 font-medium">Refreshing dashboard...</p>
+          </div>
+        </div>
+      )}
+
+      {/* INCIDENT POPUP */}
+      {showIncidentPopup && latestIncidentAlert && (
+        <div className="fixed top-20 right-4 z-[999] animate-slide-in">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-2xl p-5 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl animate-pulse">!</div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm mb-1">{latestIncidentAlert.title || "New Incident Reported"}</h4>
+                <p className="text-xs opacity-90 mb-1">{latestIncidentAlert.message}</p>
+                <p className="text-xs opacity-75">Just now</p>
+              </div>
+              <button
+                onClick={() => setShowIncidentPopup(false)}
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="min-w-0 flex-1 pr-4">
+          <h1 className="text-2xl font-bold text-gray-800 truncate">Incident Dashboard</h1>
+          <p className="text-sm text-gray-500 truncate">Real-time incident monitoring and response coordination</p>
+        </div>
+        <div className="flex items-center gap-4 shrink-0">
+          {unreadCount > 0 && (
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 shrink-0">
+              <Icon icon="mdi:bell" className="w-5 h-5 text-blue-500" />
+              <span className="text-sm font-medium text-blue-700">{unreadCount} new</span>
+            </div>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50 shrink-0"
+          >
+            <span className={`${isRefreshing ? 'animate-spin' : ''}`}>↻</span>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          title="Total Incidents"
+          value={stats.total}
+          icon="mdi:chart-bar"           // ✅ Clean professional bar chart
+          color="text-gray-700"
+          trend={{ value: 5, positive: false }}
+        />
+        <StatCard
+          title="Active"
+          value={stats.active}
+          icon="mdi:lightning-bolt"      // ✅ Clean sharp bolt
+          color="text-red-600"
+          trend={{ value: 12, positive: true }}
+        />
+        <StatCard
+          title="Pending"
+          value={stats.pending}
+          icon="mdi:hourglass-outline"   // ✅ Thin, clean hourglass
+          color="text-amber-600"
+          trend={{ value: 3, positive: false }}
+        />
+        <StatCard
+          title="Resolved"
+          value={stats.resolved}
+          icon="mdi:check-circle-outline" // ✅ Clean outlined checkmark
+          color="text-emerald-600"
+          trend={{ value: 8, positive: true }}
+        />
+      </div>
+
+      {/* MAIN CONTENT GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* INCIDENTS LIST */}
+        <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-800">Active Incidents</h3>
+              <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                {stats.active}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search incidents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
+              />
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+              >
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-3">
+            {filteredIncidents.slice(0, 20).map((incident) => {
+              const isNew = newIncidentIds.includes(incident._id);
+              const volunteerStatus = getVolunteerStatusForIncident(incident._id);
+              const timeAgo = getTimeAgo(incident.reportedAt);
+              const severity = incident.severity || 'Medium';
+
+              return (
+                <IncidentCard
+                  key={incident._id}
+                  incident={incident}
+                  isSelected={selectedIncident?._id === incident._id}
+                  onClick={handleIncidentClick}
+                  isNew={isNew}
+                  volunteerStatus={volunteerStatus}
+                  timeAgo={timeAgo}
+                  severity={severity}
+                />
+              );
+            })}
+            {filteredIncidents.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No incidents found</p>
+                <p className="text-xs text-gray-300 mt-1">Try adjusting your search or filters</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* MAP */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
+          <MapContainer
+            center={mapCenter}
+            zoom={13}
+            style={{ height: "600px", width: "100%" }}
+            key={mapCenter.toString()}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <MapCenter position={mapCenter} />
+
+            {filteredIncidents.slice(0, 20).map((incident) => {
+              const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
+              const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
+
+              if (lat && lng) {
+                return (
+                  <Marker
+                    key={incident._id}
+                    position={[parseFloat(lat), parseFloat(lng)]}
+                    icon={getMarkerIcon(incident.severity)}
+                  >
+                    <Popup>
+                      <div className="p-1">
+                        <h4 className="font-semibold text-sm mb-1">{incident.type}</h4>
+                        <p className="text-xs text-gray-600 mb-1">{incident.location?.address}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <StatusBadge status={incident.status} />
+                          <SeverityBadge severity={incident.severity} />
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-2">ID: {incident.incidentId}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              }
+              return null;
+            })}
+          </MapContainer>
+
+          {selectedIncident && (
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-sm border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-blue-500 shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 0116 0z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm font-medium text-gray-700 truncate">
+                    {selectedIncident.type}
+                  </span>
+                  <span className="text-xs text-gray-400 truncate">
+                    {selectedIncident.location?.address}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedIncident(null)}
+                  className="text-xs text-gray-400 hover:text-gray-600 shrink-0 ml-2"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

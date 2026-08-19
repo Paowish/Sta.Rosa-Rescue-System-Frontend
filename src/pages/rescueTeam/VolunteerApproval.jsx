@@ -562,46 +562,46 @@ export default function VolunteerApproval() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-lg font-bold text-gray-900 truncate">{activeApplicant.name}</h2>
-                    <p className="text-[11px] text-gray-500 truncate">{activeApplicant.role} · {activeApplicant.experience}</p>
-                    <p className="text-[10px] text-gray-400 truncate">Applied {activeApplicant.appliedDate}</p>
+                    <p className="text-xs text-gray-500 truncate">{activeApplicant.role} · {activeApplicant.experience}</p>
+                    <p className="text-xs text-gray-400 truncate">Applied {activeApplicant.appliedDate}</p>
 
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full text-[9px] font-medium">
+                      <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px] font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                         Pending Application
                       </span>
-                      <span className="text-[9px] text-gray-400">{activeApplicant.appId}</span>
+                      <span className="text-[10px] text-gray-400">{activeApplicant.appId}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* MIDDLE DETAILS - Tight padding & smaller text to fit without scrolling */}
+              {/* MIDDLE DETAILS - Bigger text */}
               <div className="flex-1 overflow-y-auto bg-white pb-14">
 
                 {/* Personal Information */}
-                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200">
+                <div className="bg-[#f0f2f5] py-1.5 px-4 text-xs font-semibold text-gray-600 border-y border-gray-200">
                   Personal Information
                 </div>
                 <div className="divide-y divide-gray-100">
-                  <div className="flex justify-between py-2 px-4 text-[12px]">
-                    <span className="text-gray-500">Age</span>
+                  <div className="flex justify-between py-3 px-4 text-sm">
+                    <span className="text-gray-500 font-medium">Age</span>
                     <span className="font-medium text-gray-800">{activeApplicant.details?.age || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between py-2 px-4 text-[12px]">
-                    <span className="text-gray-500">Email</span>
+                  <div className="flex justify-between py-3 px-4 text-sm">
+                    <span className="text-gray-500 font-medium">Email</span>
                     <span className="font-medium text-gray-800 truncate max-w-[150px]">{activeApplicant.details?.email || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between py-2 px-4 text-[12px]">
-                    <span className="text-gray-500">Contact</span>
+                  <div className="flex justify-between py-3 px-4 text-sm">
+                    <span className="text-gray-500 font-medium">Contact</span>
                     <span className="font-medium text-gray-800">{activeApplicant.details?.contact || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between py-2 px-4 text-[12px]">
-                    <span className="text-gray-500">Location</span>
+                  <div className="flex justify-between py-3 px-4 text-sm">
+                    <span className="text-gray-500 font-medium">Location</span>
                     <span className="font-medium text-gray-800">{activeApplicant.details?.location || 'N/A'}</span>
                   </div>
-                  <div className="flex justify-between py-2 px-4 text-[12px]">
-                    <span className="text-gray-500">Availability</span>
+                  <div className="flex justify-between py-3 px-4 text-sm">
+                    <span className="text-gray-500 font-medium">Availability</span>
                     <span className="font-medium text-gray-800">
                       {activeApplicant.availability && Array.isArray(activeApplicant.availability) && activeApplicant.availability.length > 0
                         ? activeApplicant.availability.join(', ')
@@ -611,23 +611,23 @@ export default function VolunteerApproval() {
                 </div>
 
                 {/* Certifications */}
-                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200 mt-1">
+                <div className="bg-[#f0f2f5] py-1.5 px-4 text-xs font-semibold text-gray-600 border-y border-gray-200 mt-1">
                   Certifications
                 </div>
                 <div className="p-3 flex flex-wrap gap-1.5">
                   {activeApplicant.details?.certs?.length > 0 ? (
                     activeApplicant.details.certs.map((c, idx) => (
-                      <span key={idx} className="bg-[#e6f2ff] text-[#007bff] border border-[#b8daff] text-[10px] font-medium px-2.5 py-1 rounded">
+                      <span key={idx} className="bg-[#e6f2ff] text-[#007bff] border border-[#b8daff] text-xs font-medium px-2.5 py-1 rounded">
                         {c}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[11px] text-gray-400 italic px-4 py-1">No certifications listed</span>
+                    <span className="text-sm text-gray-400 italic px-4 py-1">No certifications listed</span>
                   )}
                 </div>
 
                 {/* Uploaded Certifications */}
-                <div className="bg-[#f0f2f5] py-1 px-4 text-[11px] font-medium text-gray-600 border-y border-gray-200 mt-1">
+                <div className="bg-[#f0f2f5] py-1.5 px-4 text-xs font-semibold text-gray-600 border-y border-gray-200 mt-1">
                   Uploaded Certifications
                 </div>
                 <div className="p-3 flex flex-wrap gap-2">
@@ -642,13 +642,13 @@ export default function VolunteerApproval() {
                         ) : (
                           <Icon icon="mdi:file-pdf-box" className="text-xl text-red-500 mb-0.5 group-hover:scale-110" />
                         )}
-                        <span className="text-[7px] text-gray-600 text-center truncate w-full group-hover:text-blue-600">
+                        <span className="text-[9px] text-gray-600 text-center truncate w-full group-hover:text-blue-600">
                           {file.name || 'File'}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <span className="text-[11px] text-gray-400 italic px-4 py-1">No documents uploaded</span>
+                    <span className="text-sm text-gray-400 italic px-4 py-1">No documents uploaded</span>
                   )}
                 </div>
 
