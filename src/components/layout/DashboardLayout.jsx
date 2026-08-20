@@ -17,7 +17,6 @@ const PageTransition = ({ children, location }) => {
     if (location !== prevLocation) {
       setIsVisible(false);
 
-      // Determine direction based on path order
       const pathOrder = ['/dashboard', '/incidents', '/units', '/volunteer-approval', '/profile'];
       const prevIndex = pathOrder.indexOf(prevLocation.pathname);
       const currIndex = pathOrder.indexOf(location.pathname);
@@ -63,7 +62,6 @@ export default function DashboardLayout({ children }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Volunteer applicant count
   const [pendingVolunteerCount, setPendingVolunteerCount] = useState(0);
   const [showBadge, setShowBadge] = useState(false);
   const [hasNewApplication, setHasNewApplication] = useState(false);
@@ -72,23 +70,18 @@ export default function DashboardLayout({ children }) {
   const pollIntervalRef = useRef(null);
   const lastKnownUnreadCountRef = useRef(0);
 
-  // ✅ Listen for volunteer count updates from VolunteerApproval
+  // ✅ Listen for volunteer count updates
   useEffect(() => {
     const handleVolunteerCountUpdate = (event) => {
       if (event.detail && event.detail.pendingCount !== undefined) {
         const newCount = event.detail.pendingCount;
-        console.log('📊 Volunteer count updated from event:', newCount);
-
-        // ✅ Only update if we're not on the Volunteer page
         if (location.pathname !== '/volunteer-approval') {
           setPendingVolunteerCount(newCount);
-          // ✅ Show badge if there's a new application
           if (newCount > 0) {
             setShowBadge(true);
             setHasNewApplication(true);
           }
         } else {
-          // ✅ On Volunteer page, hide badge but keep count
           setPendingVolunteerCount(newCount);
           setShowBadge(false);
         }
@@ -96,13 +89,11 @@ export default function DashboardLayout({ children }) {
     };
 
     window.addEventListener('volunteerCountUpdated', handleVolunteerCountUpdate);
-
     return () => {
       window.removeEventListener('volunteerCountUpdated', handleVolunteerCountUpdate);
     };
   }, [location.pathname]);
 
-  // ✅ Hide badge when on Volunteer page, show when on other pages with new applications
   useEffect(() => {
     if (location.pathname === '/volunteer-approval') {
       setShowBadge(false);
@@ -174,22 +165,16 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  // Load pending volunteer count
   const loadPendingVolunteerCount = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/volunteers/applications?status=pending', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       if (data.success && data.data) {
         const count = data.data.length || 0;
         setPendingVolunteerCount(count);
-        console.log('📊 Pending volunteer count:', count);
-
-        // ✅ Only show badge if there are new applications and not on Volunteer page
         if (count > 0 && location.pathname !== '/volunteer-approval') {
           setShowBadge(true);
           setHasNewApplication(true);
@@ -224,7 +209,6 @@ export default function DashboardLayout({ children }) {
     }, 500);
   };
 
-  // Check for new notifications via polling
   const checkForNewNotifications = async () => {
     try {
       const response = await apiNotificationService.getNotifications();
@@ -243,7 +227,6 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  // Setup socket connection
   const setupSocketConnection = () => {
     try {
       const token = localStorage.getItem('token');
@@ -260,25 +243,18 @@ export default function DashboardLayout({ children }) {
         });
 
         socketRef.current.on('connect', () => {
-          console.log('✅ Socket connected for notifications');
+          console.log('✅ Socket connected');
           socketRef.current.emit('join', user._id);
           socketRef.current.emit('join-room', 'rescue-team');
         });
 
         socketRef.current.on('new_notification', (notification) => {
-          console.log('📢 New notification via socket:', notification);
-
           if (notification.type === 'new_incident') {
-            console.log('🚨 New incident alert from socket!');
             notificationService.resetForNewNotification();
             notificationService.showNotification(notification);
           }
-
-          // ✅ Check for volunteer application notifications
           if (notification.type === 'volunteer_status' || notification.type === 'new_volunteer') {
-            console.log('👤 New volunteer application notification:', notification);
             loadPendingVolunteerCount();
-            // ✅ Reset and show new count
             setHasNewApplication(true);
             setShowBadge(true);
             window.dispatchEvent(new CustomEvent('refreshVolunteerList'));
@@ -289,11 +265,10 @@ export default function DashboardLayout({ children }) {
         });
 
         socketRef.current.on('new_incident', (data) => {
-          console.log('🚨 Direct new_incident event received:', data);
           const notification = {
             _id: data._id || Date.now().toString(),
             type: 'new_incident',
-            title: data.title || '🚨 New Incident',
+            title: data.title || 'New Incident',
             message: data.message || 'A new incident has been reported',
             data: data,
             createdAt: data.createdAt || new Date().toISOString()
@@ -302,12 +277,8 @@ export default function DashboardLayout({ children }) {
           notificationService.showNotification(notification);
         });
 
-        // ✅ Volunteer application events
         socketRef.current.on('new_volunteer_application', (data) => {
-          console.log('👤 New volunteer application received:', data);
-          // ✅ Fetch fresh count
           loadPendingVolunteerCount();
-          // ✅ Reset badge to show new application
           setHasNewApplication(true);
           setShowBadge(true);
           window.dispatchEvent(new CustomEvent('refreshVolunteerList'));
@@ -317,7 +288,6 @@ export default function DashboardLayout({ children }) {
         });
 
         socketRef.current.on('volunteer_application_updated', (data) => {
-          console.log('👤 Volunteer application updated:', data);
           loadPendingVolunteerCount();
           window.dispatchEvent(new CustomEvent('refreshVolunteerList'));
           window.dispatchEvent(new CustomEvent('volunteerCountUpdated', {
@@ -334,7 +304,6 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  // Initial check for unread notifications
   const initialCheck = async () => {
     try {
       const response = await apiNotificationService.getNotifications();
@@ -357,12 +326,10 @@ export default function DashboardLayout({ children }) {
     initialCheck();
     loadPendingVolunteerCount();
 
-    // Poll for new notifications every 5 seconds
     pollIntervalRef.current = setInterval(() => {
       checkForNewNotifications();
     }, 5000);
 
-    // Poll for volunteer count every 10 seconds
     const volunteerPollInterval = setInterval(() => {
       if (!document.hidden) {
         loadPendingVolunteerCount();
@@ -447,119 +414,119 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden rescue-team">
-
-      {/* GLOBAL INCIDENT POPUP - SHOWS ON ALL PAGES */}
-      <div className={`fixed top-20 right-4 z-[999] transition-all duration-500 ease-in-out transform ${showIncidentPopup && latestIncidentAlert
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* GLOBAL INCIDENT POPUP - PROFESSIONAL */}
+      <div className={`fixed top-6 right-6 z-[999] transition-all duration-500 ease-in-out transform ${showIncidentPopup && latestIncidentAlert
         ? isSlidingOut
           ? 'translate-x-[calc(100%+20px)] opacity-0'
           : 'translate-x-0 opacity-100'
         : 'translate-x-[calc(100%+20px)] opacity-0 pointer-events-none'
         }`}>
-        <div className="bg-red-500 text-white rounded-lg shadow-lg p-4 max-w-sm min-w-[280px]">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl flex-shrink-0">🚨</div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm">{latestIncidentAlert?.title || "New Incident Reported"}</h4>
-              <p className="text-xs opacity-90 mt-1 break-words">{latestIncidentAlert?.message}</p>
-              <p className="text-xs opacity-75 mt-1">Just now</p>
-            </div>
-            <button
-              onClick={dismissPopup}
-              className="text-white opacity-75 hover:opacity-100 transition-opacity flex-shrink-0"
-            >
-              ✕
-            </button>
+        <div className="bg-white/95 backdrop-blur-sm border border-red-200 shadow-2xl rounded-xl p-5 max-w-sm min-w-[300px] flex items-start gap-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
+            <Icon icon="mdi:alert-circle" className="w-6 h-6" />
           </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-800 text-sm">{latestIncidentAlert?.title || "New Incident Reported"}</h4>
+            <p className="text-sm text-gray-600 mt-0.5 break-words">{latestIncidentAlert?.message}</p>
+            <p className="text-xs text-gray-400 mt-1">Just now</p>
+          </div>
+          <button
+            onClick={dismissPopup}
+            className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-1"
+          >
+            <Icon icon="mdi:close" className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
       {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 animate-in fade-in duration-200">
-          <div className="bg-white rounded-lg shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
                 <Icon icon="material-symbols:logout" className="w-8 h-8 text-red-500" />
               </div>
             </div>
             <h3 className="text-xl font-semibold text-gray-800 text-center mb-2">Logout</h3>
-            <p className="text-gray-600 text-center text-sm mb-6">
+            <p className="text-gray-500 text-center text-sm mb-6">
               Are you sure you want to logout from your account?
             </p>
             <div className="flex gap-3">
-              <button onClick={handleCancelLogout} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-              <button onClick={handleConfirmLogout} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition">Logout</button>
+              <button onClick={handleCancelLogout} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={handleConfirmLogout} className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-sm">Logout</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* NAVBAR */}
-      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-6 text-white flex-shrink-0">
+      {/* 🟢 RESTORED ORIGINAL TEAL NAVBAR */}
+      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
         <div className="flex items-center gap-3">
           <img src="/logo.png" className="w-10 h-10" alt="logo" />
           <div>
-            <h1 className="font-semibold">Rescue Team</h1>
-            <p className="text-xs opacity-70">Municipality of Santa Rosa</p>
+            <h1 className="font-semibold text-lg tracking-tight">Rescue Team</h1>
+            <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
           </div>
         </div>
         <NotificationBell />
       </div>
 
       {/* BODY WITH SIDEBARS */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 overflow-hidden relative bg-[#F0F2F5]">
 
-        {/* LEFT SIDEBAR */}
-        <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between p-5 flex-shrink-0 sidebar-container">
-          <div>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0 profile-avatar">
-                {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      const parent = e.target.parentElement;
-                      const icon = document.createElement('div');
-                      icon.innerHTML = '<svg class="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-                      parent.appendChild(icon);
-                    }}
-                  />
-                ) : (
-                  <Icon icon="iconamoon:profile-fill" className="w-6 h-6 text-gray-500" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-gray-500 user-role">{userRole}</p>
-                <p className="text-sm font-medium text-gray-700 truncate user-name">{userName}</p>
+        {/* LEFT SIDEBAR - ELEVATED & PROFESSIONAL */}
+        <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container">
+          <div className="flex flex-col h-full">
+            {/* Profile Header Section - REMOVED overflow-hidden */}
+            <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative">
+              <div className="flex items-center gap-3 relative z-10">
+
+                {/* ✅ BULLETPROOF AVATAR CIRCLE */}
+                <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <svg
+                      className="w-6 h-6 text-black" /* ✅ CHANGED TO PURE BLACK */
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider user-role">{userRole}</p>
+                  <p className="text-sm font-semibold text-gray-800 truncate user-name">{userName}</p>
+                </div>
               </div>
             </div>
 
             {/* SIDEBAR NAVIGATION LINKS */}
-            <div className="space-y-2 text-gray-600 text-sm nav-links">
-              <NavLink to="/dashboard" className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }>
+            <div className="p-4 space-y-1 text-gray-600 text-sm nav-links flex-1">
+              <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5" /> Dashboard
               </NavLink>
-              <NavLink to="/incidents" className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }>
+              <NavLink to="/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="ic:baseline-emergency" className="w-5 h-5" /> Incidents
               </NavLink>
-              <NavLink to="/units" className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }>
+              <NavLink to="/units" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:group" className="w-5 h-5" /> Units
               </NavLink>
 
-              {/* ✅ Volunteers link with smart badge - only shows NEW applications */}
-              <NavLink to="/volunteer-approval" className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }>
+              <NavLink to="/volunteer-approval" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:groups" className="w-5 h-5" /> Volunteers
                 {showBadge && pendingVolunteerCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
@@ -568,22 +535,20 @@ export default function DashboardLayout({ children }) {
                 )}
               </NavLink>
 
-              <NavLink to="/profile" className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }>
+              <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" /> Profile
               </NavLink>
             </div>
           </div>
 
-          <div onClick={handleLogoutClick} className="text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 transition-colors duration-200 logout-btn">
+          <div onClick={handleLogoutClick} className="m-4 p-3 text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 rounded-lg transition-colors duration-200 hover:bg-red-50 logout-btn">
             <Icon icon="material-symbols:logout" className="w-5 h-5" /> Logout
           </div>
         </div>
 
         {/* MAIN CONTENT WITH SLIDE FROM LEFT PAGE TRANSITIONS */}
-        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto main-content">
-          <div className="p-6">
+        <div className="flex-1 bg-[#F0F2F5] overflow-y-auto main-content">
+          <div className="p-6 max-w-[1600px] mx-auto">
             <PageTransition location={location}>
               {React.isValidElement(children)
                 ? React.cloneElement(children, { onIncidentClick: handleIncidentClick })
@@ -596,25 +561,19 @@ export default function DashboardLayout({ children }) {
         {isSidebarOpen && selectedIncident && (
           <>
             <div
-              className={`fixed inset-0 z-10 transition-opacity duration-300 ${isSidebarClosing ? 'opacity-0' : 'opacity-100'
-                }`}
+              className={`fixed inset-0 z-10 transition-opacity duration-300 ${isSidebarClosing ? 'opacity-0' : 'opacity-100'}`}
               onClick={handleCloseSidebar}
             >
-              <div className="w-full h-full bg-black/20"></div>
+              <div className="w-full h-full bg-black/20 backdrop-blur-[1px]"></div>
             </div>
             <div
-              className={`absolute top-0 right-0 h-full w-[450px] bg-white border-l border-gray-200 shadow-lg flex flex-col z-20 transition-transform duration-300 ease-in-out ${isSidebarClosing ? 'translate-x-full' : 'translate-x-0'
-                }`}
+              className={`absolute top-0 right-0 h-full w-[450px] bg-white border-l border-gray-200 shadow-2xl flex flex-col z-20 transition-transform duration-300 ease-in-out ${isSidebarClosing ? 'translate-x-full' : 'translate-x-0'}`}
             >
-              {/* ✅ FIX: Added key prop. When selectedIncident changes, React forces a hard reset. */}
               <IncidentDetails
                 key={selectedIncident?._id || selectedIncident?.id}
                 data={selectedIncident}
                 onClose={handleCloseSidebar}
-                onDispatch={() => {
-                  console.log('Dispatched');
-                  // Kept empty so sidebar stays open for SuccessModal
-                }}
+                onDispatch={() => { console.log('Dispatched'); }}
                 onResolve={() => {
                   console.log('Resolved');
                   handleCloseSidebar();
@@ -628,246 +587,108 @@ export default function DashboardLayout({ children }) {
 
       {/* ✅ GLOBAL PROFESSIONAL ANIMATIONS CSS */}
       <style>{`
-        /* ============================================
-           PROFESSIONAL PAGE TRANSITIONS - SLIDE FROM LEFT
-           ============================================ */
         .page-transition {
           will-change: transform, opacity;
           transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .page-enter {
           opacity: 0;
           transform: translateX(-30px);
         }
-
         .page-enter-active {
           opacity: 1;
           transform: translateX(0);
         }
-
-        /* Exit animation (when navigating away) */
         .page-exit {
           opacity: 1;
           transform: translateX(0);
         }
-
         .page-exit-active {
           opacity: 0;
           transform: translateX(30px);
         }
-
-        /* Direction-specific entrance */
         .direction-right.page-enter {
           transform: translateX(-30px);
         }
-
         .direction-left.page-enter {
           transform: translateX(30px);
         }
-
         .direction-right.page-enter-active {
           transform: translateX(0);
         }
-
         .direction-left.page-enter-active {
           transform: translateX(0);
         }
 
-        /* ============================================
-           SIDEBAR NAVIGATION LINKS - PROFESSIONAL
-           ============================================ */
         .nav-link {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          padding: 0.6rem 0.75rem;
-          border-radius: 0.5rem;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 0.7rem 1rem;
+          border-radius: 0.75rem;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
           position: relative;
           color: #6b7280;
           font-weight: 500;
         }
-
-        .nav-link::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%) scaleY(0);
-          width: 3px;
-          height: 70%;
-          background: #3b82f6;
-          border-radius: 0 4px 4px 0;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         .nav-link:hover {
-          background: rgba(59, 130, 246, 0.06);
+          background: #f3f4f6;
           color: #1f2937;
           transform: translateX(4px);
         }
-
-        .nav-link:hover::before {
-          transform: translateY(-50%) scaleY(0.6);
-        }
-
         .nav-link.active {
-          background: rgba(59, 130, 246, 0.10);
+          background: #eff6ff;
           color: #2563eb;
           font-weight: 600;
+          box-shadow: inset 3px 0 0 #2563eb;
         }
 
-        .nav-link.active::before {
-          transform: translateY(-50%) scaleY(1);
-        }
-
-        .nav-link.active:hover {
-          background: rgba(59, 130, 246, 0.14);
-          transform: translateX(4px);
-        }
-
-        /* ============================================
-           PROFILE AVATAR - SMOOTH
-           ============================================ */
         .profile-avatar {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .profile-avatar:hover {
           transform: scale(1.05);
-          box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
         }
 
-        /* ============================================
-           USER NAME & ROLE - ELEGANT
-           ============================================ */
-        .user-role {
-          transition: color 0.2s ease;
-        }
-
-        .user-name {
-          transition: color 0.2s ease;
-        }
-
-        .sidebar-container:hover .user-name {
-          color: #1f2937;
-        }
-
-        /* ============================================
-           LOGOUT BUTTON - PROFESSIONAL
-           ============================================ */
         .logout-btn {
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.5rem;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .logout-btn:hover {
-          background: rgba(239, 68, 68, 0.08);
           transform: translateX(4px);
-        }
-
-        /* ============================================
-           SIDEBAR CONTAINER - ELEGANT BORDER
-           ============================================ */
-        .sidebar-container {
-          position: relative;
-        }
-
-        .sidebar-container::after {
-          content: '';
-          position: absolute;
-          right: 0;
-          top: 20px;
-          bottom: 20px;
-          width: 1px;
-          background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.06), transparent);
-        }
-
-        /* ============================================
-           MAIN CONTENT - SMOOTH
-           ============================================ */
-        .main-content {
-          scroll-behavior: smooth;
         }
 
         .main-content::-webkit-scrollbar {
           width: 6px;
         }
-
         .main-content::-webkit-scrollbar-track {
           background: transparent;
         }
-
         .main-content::-webkit-scrollbar-thumb {
-          background: rgba(59, 130, 246, 0.2);
+          background: #d1d5db;
           border-radius: 3px;
-          transition: all 0.2s ease;
         }
-
         .main-content::-webkit-scrollbar-thumb:hover {
-          background: rgba(59, 130, 246, 0.4);
+          background: #9ca3af;
         }
 
-        /* ============================================
-           SIDEBAR SLIDE ANIMATION
-           ============================================ */
         @keyframes slideIn {
-          from { 
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to { 
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-
         .animate-slideIn {
           animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
-        /* ============================================
-           INCIDENT POPUP - PROFESSIONAL
-           ============================================ */
-        .incident-popup {
-          animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* ============================================
-           FADE IN ANIMATION FOR ELEMENTS
-           ============================================ */
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        .fade-in {
-          animation: fadeIn 0.3s ease-in-out forwards;
-        }
-
-        /* ============================================
-           RESPONSIVE TWEAKS
-           ============================================ */
         @media (max-width: 768px) {
-          .sidebar-container::after {
+          .sidebar-container {
+            width: 64px;
+          }
+          .nav-link span:not(.ml-auto) {
+            display: none;
+          }
+          .user-name, .user-role, .logout-btn span:last-child {
             display: none;
           }
         }
