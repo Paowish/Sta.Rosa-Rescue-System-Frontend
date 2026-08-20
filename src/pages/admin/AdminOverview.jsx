@@ -297,7 +297,7 @@ export default function AdminOverview() {
                                 <p className="text-gray-500 text-sm mt-2 font-medium">Total Incidents</p>
                             </div>
                             <div className="bg-purple-50 p-2 rounded-lg">
-                                <Icon icon="mdi:clipboard-list" className="w-6 h-6 text-[#672778]" />
+                                <Icon icon="mdi:chart-bar" className="w-6 h-6 text-[#672778]" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2 text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full w-fit">
@@ -313,7 +313,7 @@ export default function AdminOverview() {
                                 <p className="text-gray-500 text-sm mt-2 font-medium">Active Incidents</p>
                             </div>
                             <div className="bg-green-50 p-2 rounded-lg">
-                                <Icon icon="mdi:ambulance" className="w-6 h-6 text-[#15803D]" />
+                                <Icon icon="mdi:lightning-bolt" className="w-6 h-6 text-[#15803D]" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2 text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-full w-fit">
@@ -329,7 +329,7 @@ export default function AdminOverview() {
                                 <p className="text-gray-500 text-sm mt-2 font-medium">Pending Approvals</p>
                             </div>
                             <div className="bg-orange-50 p-2 rounded-lg">
-                                <Icon icon="mdi:account-clock" className="w-6 h-6 text-[#E1791E]" />
+                                <Icon icon="mdi:hourglass-outline" className="w-6 h-6 text-[#E1791E]" />
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2 text-xs text-yellow-600 font-semibold bg-yellow-50 px-2 py-1 rounded-full w-fit">

@@ -14,7 +14,15 @@ const PageTransition = ({ children, location }) => {
         if (location !== prevLocation) {
             setIsVisible(false);
 
-            const pathOrder = ['/admin/overview', '/admin/useraccounts', '/admin/incidentreports', '/admin/systemmaintenance', '/admin/systemsettings', '/admin/profile'];
+            // ✅ FIXED: Dashes match your App.jsx routes
+            const pathOrder = [
+                '/admin/overview',
+                '/admin/user-accounts',
+                '/admin/incident-reports',
+                '/admin/system-maintenance',
+                '/admin/system-settings',
+                '/admin/profile'
+            ];
             const prevIndex = pathOrder.indexOf(prevLocation.pathname);
             const currIndex = pathOrder.indexOf(location.pathname);
 
@@ -233,7 +241,7 @@ export default function AdminLayout({ children }) {
                             </div>
                         </div>
 
-                        {/* MENU */}
+                        {/* MENU - ✅ EXACT ICONS FROM DASHBOARD.JSX */}
                         <div className="p-4 space-y-1 text-gray-600 text-sm nav-links flex-1">
                             <NavLink
                                 to="/admin/overview"
@@ -244,34 +252,38 @@ export default function AdminLayout({ children }) {
                             </NavLink>
 
                             <NavLink
-                                to="/admin/useraccounts"
+                                to="/admin/user-accounts"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
+                                {/* ✅ Matches Dashboard "Incidents" icon */}
                                 <Icon icon="ic:baseline-emergency" className="w-5 h-5" />
                                 User Accounts
                             </NavLink>
 
                             <NavLink
-                                to="/admin/incidentreports"
+                                to="/admin/incident-reports"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
+                                {/* ✅ Matches Dashboard "Units" icon */}
                                 <Icon icon="material-symbols:group" className="w-5 h-5" />
                                 Incident Reports
                             </NavLink>
 
                             <NavLink
-                                to="/admin/systemmaintenance"
+                                to="/admin/system-maintenance"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="material-symbols:settings" className="w-5 h-5" />
+                                {/* ✅ Matches Dashboard "Volunteers" icon */}
+                                <Icon icon="material-symbols:groups" className="w-5 h-5" />
                                 System Maintenance
                             </NavLink>
 
                             <NavLink
-                                to="/admin/systemsettings"
+                                to="/admin/system-settings"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="mdi:cog" className="w-5 h-5" />
+                                {/* ✅ Matches Dashboard "Profile" icon */}
+                                <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
                                 System Settings
                             </NavLink>
 
@@ -279,6 +291,7 @@ export default function AdminLayout({ children }) {
                                 to="/admin/profile"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
+                                {/* ✅ Matches Dashboard "Profile" icon */}
                                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
                                 Profile
                             </NavLink>
