@@ -14,7 +14,6 @@ const PageTransition = ({ children, location }) => {
         if (location !== prevLocation) {
             setIsVisible(false);
 
-            // ✅ CORRECT: Use actual URL routes for proper slide direction
             const pathOrder = ['/admin/overview', '/admin/useraccounts', '/admin/incidentreports', '/admin/systemmaintenance', '/admin/systemsettings', '/admin/profile'];
             const prevIndex = pathOrder.indexOf(prevLocation.pathname);
             const currIndex = pathOrder.indexOf(location.pathname);
@@ -148,31 +147,31 @@ export default function AdminLayout({ children }) {
     }
 
     return (
-        <div className="h-screen flex flex-col admin-layout">
+        <div className="h-screen flex flex-col overflow-hidden admin-layout bg-[#F0F2F5]">
 
             {/* LOGOUT CONFIRMATION MODAL */}
             {showLogoutModal && (
-                <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-lg shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-center mb-4">
-                            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
                                 <Icon icon="material-symbols:logout" className="w-8 h-8 text-red-500" />
                             </div>
                         </div>
                         <h3 className="text-xl font-semibold text-gray-800 text-center mb-2">Logout</h3>
-                        <p className="text-gray-600 text-center text-sm mb-6">
+                        <p className="text-gray-500 text-center text-sm mb-6">
                             Are you sure you want to logout from your account?
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={handleCancelLogout}
-                                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+                                className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleConfirmLogout}
-                                className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                                className="flex-1 py-2.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-sm"
                             >
                                 Logout
                             </button>
@@ -181,57 +180,64 @@ export default function AdminLayout({ children }) {
                 </div>
             )}
 
-            {/* ✅ NAVBAR */}
-            <div className="h-16 bg-[#155e75] flex items-center justify-between px-6 text-white flex-shrink-0">
+            {/* 🟢 KEPT ORIGINAL TEAL/DARK BLUE NAVBAR */}
+            <div className="h-16 bg-[#155e75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
                 <div className="flex items-center gap-3">
+                    {/* Standalone Logo */}
                     <img src="/logo.png" className="w-10 h-10" alt="logo" />
                     <div>
-                        <h1 className="font-semibold">System Admin</h1>
-                        <p className="text-xs opacity-70">Municipality of Santa Rosa</p>
+                        <h1 className="font-semibold text-lg tracking-tight">System Admin</h1>
+                        <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
                     </div>
                 </div>
-                <Icon icon="material-symbols-light:notifications" className="w-5 h-5 cursor-pointer hover:opacity-80 transition-opacity" />
+                <Icon icon="material-symbols-light:notifications" className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" />
             </div>
 
             {/* ✅ BODY */}
             <div className="flex flex-1 min-h-0 overflow-hidden">
 
                 {/* SIDEBAR */}
-                <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between p-5 flex-shrink-0 sidebar-container overflow-y-auto">
-                    <div>
-                        {/* PROFILE */}
-                        <div className="flex items-center gap-3 mb-8 profile-section">
-                            <div className="w-12 h-12 rounded-full border-2 border-blue-500 overflow-hidden bg-gray-200 flex items-center justify-center profile-avatar">
-                                {profileImage ? (
-                                    <img
-                                        src={profileImage}
-                                        alt="Profile"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            const parent = e.target.parentElement;
-                                            const icon = document.createElement('div');
-                                            icon.innerHTML = '<svg class="w-6 h-6 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-                                            parent.appendChild(icon);
-                                        }}
-                                    />
-                                ) : (
-                                    <Icon icon="iconamoon:profile-fill" className="w-6 h-6 text-gray-500" />
-                                )}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-xs text-gray-500 user-role">{userRole}</p>
-                                <p className="text-sm font-medium text-gray-700 truncate user-name max-w-[140px]">{userName}</p>
+                <div className="w-64 bg-white flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container overflow-y-auto">
+                    <div className="flex flex-col h-full">
+
+                        {/* PROFILE SECTION */}
+                        <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative">
+                            <div className="flex items-center gap-3 relative z-10 profile-section">
+                                <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
+                                    {profileImage ? (
+                                        <img
+                                            src={profileImage}
+                                            alt="Profile"
+                                            className="w-full h-full object-cover rounded-full"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                            }}
+                                        />
+                                    ) : (
+                                        /* ✅ BULLETPROOF DEFAULT AVATAR SVG */
+                                        <svg
+                                            className="w-6 h-6 text-gray-700"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                        </svg>
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider user-role">{userRole}</p>
+                                    <p className="text-sm font-semibold text-gray-800 truncate user-name max-w-[140px]">{userName}</p>
+                                </div>
                             </div>
                         </div>
 
                         {/* MENU */}
-                        <div className="space-y-2 text-gray-600 text-sm nav-links">
+                        <div className="p-4 space-y-1 text-gray-600 text-sm nav-links flex-1">
                             <NavLink
                                 to="/admin/overview"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5" />
                                 Overview
@@ -239,9 +245,7 @@ export default function AdminLayout({ children }) {
 
                             <NavLink
                                 to="/admin/useraccounts"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="ic:baseline-emergency" className="w-5 h-5" />
                                 User Accounts
@@ -249,9 +253,7 @@ export default function AdminLayout({ children }) {
 
                             <NavLink
                                 to="/admin/incidentreports"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="material-symbols:group" className="w-5 h-5" />
                                 Incident Reports
@@ -259,9 +261,7 @@ export default function AdminLayout({ children }) {
 
                             <NavLink
                                 to="/admin/systemmaintenance"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="material-symbols:settings" className="w-5 h-5" />
                                 System Maintenance
@@ -269,9 +269,7 @@ export default function AdminLayout({ children }) {
 
                             <NavLink
                                 to="/admin/systemsettings"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="mdi:cog" className="w-5 h-5" />
                                 System Settings
@@ -279,9 +277,7 @@ export default function AdminLayout({ children }) {
 
                             <NavLink
                                 to="/admin/profile"
-                                className={({ isActive }) =>
-                                    `nav-link ${isActive ? 'active' : ''}`
-                                }
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
                                 Profile
@@ -292,7 +288,7 @@ export default function AdminLayout({ children }) {
                     {/* LOGOUT */}
                     <div
                         onClick={handleLogoutClick}
-                        className="text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 pt-4 border-t border-gray-200 logout-btn"
+                        className="m-4 p-3 text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 rounded-lg transition-colors duration-200 hover:bg-red-50 logout-btn"
                     >
                         <Icon icon="material-symbols:logout" className="w-5 h-5" />
                         Logout
@@ -300,7 +296,7 @@ export default function AdminLayout({ children }) {
                 </div>
 
                 {/* ✅ MAIN CONTENT WITH PAGE TRANSITIONS */}
-                <div className="flex-1 bg-[#EEF2F6] p-6 overflow-y-auto main-content">
+                <div className="flex-1 bg-[#F0F2F5] p-6 overflow-y-auto main-content">
                     <PageTransition location={location}>
                         {children}
                     </PageTransition>
@@ -328,7 +324,6 @@ export default function AdminLayout({ children }) {
                     transform: translateX(0);
                 }
 
-                /* Direction-specific entrance */
                 .direction-right.page-enter {
                     transform: translateX(-30px);
                 }
@@ -352,9 +347,9 @@ export default function AdminLayout({ children }) {
                     display: flex;
                     align-items: center;
                     gap: 0.75rem;
-                    padding: 0.6rem 0.75rem;
-                    border-radius: 0.5rem;
-                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    padding: 0.7rem 1rem;
+                    border-radius: 0.75rem;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                     cursor: pointer;
                     position: relative;
                     color: #6b7280;
@@ -362,42 +357,17 @@ export default function AdminLayout({ children }) {
                     text-decoration: none;
                 }
 
-                .nav-link::before {
-                    content: '';
-                    position: absolute;
-                    left: 0;
-                    top: 50%;
-                    transform: translateY(-50%) scaleY(0);
-                    width: 3px;
-                    height: 70%;
-                    background: #3b82f6;
-                    border-radius: 0 4px 4px 0;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                }
-
                 .nav-link:hover {
-                    background: rgba(59, 130, 246, 0.06);
+                    background: #f3f4f6;
                     color: #1f2937;
                     transform: translateX(4px);
                 }
 
-                .nav-link:hover::before {
-                    transform: translateY(-50%) scaleY(0.6);
-                }
-
                 .nav-link.active {
-                    background: rgba(59, 130, 246, 0.10);
+                    background: #eff6ff;
                     color: #2563eb;
                     font-weight: 600;
-                }
-
-                .nav-link.active::before {
-                    transform: translateY(-50%) scaleY(1);
-                }
-
-                .nav-link.active:hover {
-                    background: rgba(59, 130, 246, 0.14);
-                    transform: translateX(4px);
+                    box-shadow: inset 3px 0 0 #2563eb;
                 }
 
                 /* ============================================
@@ -410,57 +380,18 @@ export default function AdminLayout({ children }) {
 
                 .profile-avatar:hover {
                     transform: scale(1.05);
-                    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
-                }
-
-                /* ============================================
-                   PROFILE SECTION
-                   ============================================ */
-                .profile-section {
-                    transition: all 0.2s ease;
-                }
-
-                .user-role {
-                    transition: color 0.2s ease;
-                }
-
-                .user-name {
-                    transition: color 0.2s ease;
-                }
-
-                .sidebar-container:hover .user-name {
-                    color: #1f2937;
+                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
                 }
 
                 /* ============================================
                    LOGOUT BUTTON - PROFESSIONAL
                    ============================================ */
                 .logout-btn {
-                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                    padding: 0.5rem 0.75rem;
-                    border-radius: 0.5rem;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 }
 
                 .logout-btn:hover {
-                    background: rgba(239, 68, 68, 0.08);
                     transform: translateX(4px);
-                }
-
-                /* ============================================
-                   SIDEBAR CONTAINER - ELEGANT BORDER
-                   ============================================ */
-                .sidebar-container {
-                    position: relative;
-                }
-
-                .sidebar-container::after {
-                    content: '';
-                    position: absolute;
-                    right: 0;
-                    top: 20px;
-                    bottom: 20px;
-                    width: 1px;
-                    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.06), transparent);
                 }
 
                 /* ============================================
@@ -479,20 +410,19 @@ export default function AdminLayout({ children }) {
                 }
 
                 .main-content::-webkit-scrollbar-thumb {
-                    background: rgba(59, 130, 246, 0.2);
+                    background: #d1d5db;
                     border-radius: 3px;
-                    transition: all 0.2s ease;
                 }
 
                 .main-content::-webkit-scrollbar-thumb:hover {
-                    background: rgba(59, 130, 246, 0.4);
+                    background: #9ca3af;
                 }
 
                 /* ============================================
                    ADMIN LAYOUT - GLOBAL
                    ============================================ */
                 .admin-layout {
-                    background: #EEF2F6;
+                    background: #F0F2F5;
                 }
 
                 /* ============================================
@@ -531,7 +461,13 @@ export default function AdminLayout({ children }) {
                    RESPONSIVE
                    ============================================ */
                 @media (max-width: 768px) {
-                    .sidebar-container::after {
+                    .sidebar-container {
+                        width: 64px;
+                    }
+                    .nav-link span:not(.ml-auto) {
+                        display: none;
+                    }
+                    .user-name, .user-role, .logout-btn span:last-child {
                         display: none;
                     }
                 }
