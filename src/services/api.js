@@ -46,12 +46,18 @@ export const safeDisplay = (htmlContent) => {
 
 
 const getApiUrl = () => {
-    // If on localhost, use localhost
+    // 1. If on localhost, use localhost
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5000/api';
     }
-    // For production, just use /api (Vercel will proxy it)
-    return '/api';
+
+    // 2. If on Vercel web domain, use relative /api path (works via proxy)
+    if (window.location.hostname.includes('vercel.app')) {
+        return '/api';
+    }
+
+    // 3. APK / Production Mobile: Force the absolute Render URL
+    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
 };
 
 const API_URL = getApiUrl();

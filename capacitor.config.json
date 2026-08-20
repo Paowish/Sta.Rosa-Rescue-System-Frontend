@@ -1,0 +1,11 @@
+{
+  "appId": "com.yourcompany.irespond",
+  "appName": "iRespond",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "allowNavigation": [
+      "sta-rosa-rescue-system-backend.onrender.com"
+    ]
+  }
+}

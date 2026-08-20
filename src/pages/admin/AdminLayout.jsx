@@ -252,7 +252,7 @@ export default function AdminLayout({ children }) {
                             </NavLink>
 
                             <NavLink
-                                to="/admin/user-accounts"
+                                to="/admin/useraccounts"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 {/* ✅ Matches Dashboard "Incidents" icon */}
@@ -261,7 +261,7 @@ export default function AdminLayout({ children }) {
                             </NavLink>
 
                             <NavLink
-                                to="/admin/incident-reports"
+                                to="/admin/incidentreports"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 {/* ✅ Matches Dashboard "Units" icon */}
@@ -270,7 +270,7 @@ export default function AdminLayout({ children }) {
                             </NavLink>
 
                             <NavLink
-                                to="/admin/system-maintenance"
+                                to="/admin/systemmaintenance"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 {/* ✅ Matches Dashboard "Volunteers" icon */}
@@ -279,7 +279,7 @@ export default function AdminLayout({ children }) {
                             </NavLink>
 
                             <NavLink
-                                to="/admin/system-settings"
+                                to="/admin/systemsettings"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
                                 {/* ✅ Matches Dashboard "Profile" icon */}
