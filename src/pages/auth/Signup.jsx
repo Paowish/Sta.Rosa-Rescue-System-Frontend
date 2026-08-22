@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Certifications Component - Same as in VolunteerApplication
 function Certifications({ selected, setSelected, others, setOthers }) {
@@ -763,484 +764,493 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6 font-Roboto">
-      {/* ✅ Terms Modal */}
-      <TermsModal
-        isOpen={showTermsModal}
-        onClose={() => setShowTermsModal(false)}
-        onAccept={handleAcceptTerms}
-      />
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="signup-page"
+        initial={{ opacity: 0, x: -100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 100 }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+        className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6 font-Roboto"
+      >
+        {/* ✅ Terms Modal */}
+        <TermsModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={handleAcceptTerms}
+        />
 
-      {/* ✅ Success Modal */}
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        message={successMessage}
-        onNavigate={handleSuccessNavigate}
-      />
+        {/* ✅ Success Modal */}
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          message={successMessage}
+          onNavigate={handleSuccessNavigate}
+        />
 
-      {/* ✅ Error Modal */}
-      <ErrorModal
-        isOpen={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        errorMessage={error}
-      />
+        {/* ✅ Error Modal */}
+        <ErrorModal
+          isOpen={showErrorModal}
+          onClose={() => setShowErrorModal(false)}
+          errorMessage={error}
+        />
 
-      {/* ✅ Info Modal for validation errors */}
-      <InfoModal
-        isOpen={showInfoModal}
-        onClose={() => setShowInfoModal(false)}
-        title={infoModalData.title}
-        message={infoModalData.message}
-      />
+        {/* ✅ Info Modal for validation errors */}
+        <InfoModal
+          isOpen={showInfoModal}
+          onClose={() => setShowInfoModal(false)}
+          title={infoModalData.title}
+          message={infoModalData.message}
+        />
 
-      <div className="p-6 sm:p-8 md:p-10 max-w-4xl w-full">
-        <div className="flex items-center gap-3 mb-8">
-          <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">
-            Rescue Team
-          </h1>
-        </div>
-
-        <h2 className="text-4xl font-bold text-[#1E252B] font-serif mb-2">
-          Sign up
-        </h2>
-
-        <p className="text-gray-500 text-sm mb-6">
-          Register your credentials to join the Santa Rosa Rescue Team operations network.
-        </p>
-
-        {/* Remove the inline error display since we use modals now */}
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignup(); }}>
-
-          {/* Row 1: First Name & Last Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.firstName ? 'border-red-500' : 'border-gray-400'
-                }`}>
-                <legend className="text-sm px-2 text-gray-700">First Name</legend>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => {
-                    setFirstName(e.target.value);
-                    if (validationErrors.firstName) {
-                      setValidationErrors({ ...validationErrors, firstName: null });
-                    }
-                  }}
-                  placeholder="John"
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
-                  required
-                />
-              </fieldset>
-              {validationErrors.firstName && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.firstName}</p>
-              )}
-            </div>
-
-            <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.lastName ? 'border-red-500' : 'border-gray-400'
-                }`}>
-                <legend className="text-sm px-2 text-gray-700">Last Name</legend>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value);
-                    if (validationErrors.lastName) {
-                      setValidationErrors({ ...validationErrors, lastName: null });
-                    }
-                  }}
-                  placeholder="Doe"
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
-                  required
-                />
-              </fieldset>
-              {validationErrors.lastName && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.lastName}</p>
-              )}
-            </div>
+        <div className="p-6 sm:p-8 md:p-10 max-w-4xl w-full">
+          <div className="flex items-center gap-3 mb-8">
+            <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">
+              Rescue Team
+            </h1>
           </div>
 
-          {/* Row 2: Email & Phone */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'
-                }`}>
-                <legend className="text-sm px-2 text-gray-700">Email</legend>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (validationErrors.email) {
-                      setValidationErrors({ ...validationErrors, email: null });
-                    }
-                  }}
-                  placeholder="john.doe@gmail.com"
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
-                  required
-                />
-              </fieldset>
-              {validationErrors.email && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
-              )}
-            </div>
+          <h2 className="text-4xl font-bold text-[#1E252B] font-serif mb-2">
+            Sign up
+          </h2>
 
-            <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'
-                }`}>
-                <legend className="text-sm px-2 text-gray-700">Phone Number</legend>
-                <div className="flex items-center">
+          <p className="text-gray-500 text-sm mb-6">
+            Register your credentials to join the Santa Rosa Rescue Team operations network.
+          </p>
+
+          {/* Remove the inline error display since we use modals now */}
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignup(); }}>
+
+            {/* Row 1: First Name & Last Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="w-full">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.firstName ? 'border-red-500' : 'border-gray-400'
+                  }`}>
+                  <legend className="text-sm px-2 text-gray-700">First Name</legend>
                   <input
-                    ref={phoneInputRef}
-                    type="tel"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    onFocus={handlePhoneFocus}
-                    placeholder="+63 912 345 6789"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (validationErrors.firstName) {
+                        setValidationErrors({ ...validationErrors, firstName: null });
+                      }
+                    }}
+                    placeholder="John"
                     className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
                     required
                   />
-                </div>
-              </fieldset>
-              <p className="text-gray-400 text-xs mt-1">Enter 10 digits after +63 (e.g., +63 912 345 6789 or type 09123456789)</p>
-              {validationErrors.phone && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Role Selection */}
-          <div className="w-full">
-            <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'
-              }`}>
-              <legend className="text-sm px-2 text-gray-700">Role / Position</legend>
-              <select
-                value={selectedRole}
-                onChange={(e) => {
-                  handleRoleChange(e);
-                  if (validationErrors.role) {
-                    setValidationErrors({ ...validationErrors, role: null });
-                  }
-                }}
-                className="w-full bg-transparent outline-none text-gray-600"
-                required
-              >
-                <option value="">- Select Role / Position -</option>
-                <option value="civilian">Civilian</option>
-                <option value="volunteer">Volunteer</option>
-              </select>
-            </fieldset>
-            {validationErrors.role && (
-              <p className="text-red-500 text-xs mt-1">{validationErrors.role}</p>
-            )}
-          </div>
-
-          {/* Volunteer Additional Fields */}
-          {showVolunteerForm && (
-            <div className="space-y-4 p-4 border-2 border-blue-300 rounded-lg bg-blue-50">
-              <p className="text-sm font-semibold text-blue-700 mb-2">Volunteer Information (Required)</p>
-              <p className="text-xs text-gray-500 -mt-2">Age requirement: 18 - 50 years old</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${ageError ? 'border-red-500' : validationErrors.birthday ? 'border-red-500' : 'border-gray-400'}`}>
-                    <legend className="text-sm px-2 text-gray-700">Birthday</legend>
-                    <input
-                      type="date"
-                      value={birthday}
-                      onChange={handleBirthdayChange}
-                      className="w-full bg-transparent outline-none"
-                      required
-                    />
-                  </fieldset>
-                  {ageError && <p className="text-red-500 text-xs mt-1">{ageError}</p>}
-                  {validationErrors.birthday && <p className="text-red-500 text-xs mt-1">{validationErrors.birthday}</p>}
-                </div>
-
-                <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.experience ? 'border-red-500' : 'border-gray-400'}`}>
-                    <legend className="text-sm px-2 text-gray-700">Years of Experience</legend>
-                    <select
-                      value={experience}
-                      onChange={(e) => {
-                        setExperience(e.target.value);
-                        if (validationErrors.experience) {
-                          setValidationErrors({ ...validationErrors, experience: null });
-                        }
-                      }}
-                      className="w-full bg-transparent outline-none text-gray-700"
-                      required
-                    >
-                      <option value="">Select experience</option>
-                      <option value="0">Less than 1 year</option>
-                      <option value="1">1 year</option>
-                      <option value="2">2 years</option>
-                      <option value="3">3 years</option>
-                      <option value="4">4 years</option>
-                      <option value="5">5 years</option>
-                      <option value="6">6 years</option>
-                      <option value="7">7 years</option>
-                      <option value="8">8 years</option>
-                      <option value="9">9 years</option>
-                      <option value="10">10+ years</option>
-                    </select>
-                  </fieldset>
-                  {validationErrors.experience && <p className="text-red-500 text-xs mt-1">{validationErrors.experience}</p>}
-                </div>
-
-                <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.address1 ? 'border-red-500' : 'border-gray-400'}`}>
-                    <legend className="text-sm px-2 text-gray-700">Address 1</legend>
-                    <input
-                      type="text"
-                      value={address1}
-                      onChange={(e) => {
-                        setAddress1(e.target.value);
-                        if (validationErrors.address1) {
-                          setValidationErrors({ ...validationErrors, address1: null });
-                        }
-                      }}
-                      placeholder="Street, Barangay"
-                      className="w-full bg-transparent outline-none"
-                      required
-                    />
-                  </fieldset>
-                  {validationErrors.address1 && <p className="text-red-500 text-xs mt-1">{validationErrors.address1}</p>}
-                </div>
-
-                <div>
-                  <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-white">
-                    <legend className="text-sm px-2 text-gray-700">Address 2</legend>
-                    <input
-                      type="text"
-                      value={address2}
-                      onChange={(e) => setAddress2(e.target.value)}
-                      placeholder="Street, Barangay (optional)"
-                      className="w-full bg-transparent outline-none"
-                    />
-                  </fieldset>
-                </div>
-              </div>
-
-              {/* Availability Selection */}
-              <div>
-                <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.availability ? 'border-red-500' : 'border-gray-400'}`}>
-                  <legend className="text-sm px-2 text-gray-700">Availability <span className="text-red-500">*</span></legend>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <label key={day} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={availability.includes(day)}
-                          onChange={() => toggleAvailability(day)}
-                        />
-                        {day}
-                      </label>
-                    ))}
-                  </div>
                 </fieldset>
-                {validationErrors.availability && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.availability}</p>
+                {validationErrors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.firstName}</p>
                 )}
               </div>
 
-              {/* Description */}
-              <div>
-                <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.description ? 'border-red-500' : 'border-gray-400'}`}>
-                  <legend className="text-sm px-2 text-gray-700">Description <span className="text-red-500">*</span></legend>
-                  <textarea
-                    value={description}
+              <div className="w-full">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.lastName ? 'border-red-500' : 'border-gray-400'
+                  }`}>
+                  <legend className="text-sm px-2 text-gray-700">Last Name</legend>
+                  <input
+                    type="text"
+                    value={lastName}
                     onChange={(e) => {
-                      setDescription(e.target.value);
-                      if (validationErrors.description) {
-                        setValidationErrors({ ...validationErrors, description: null });
+                      setLastName(e.target.value);
+                      if (validationErrors.lastName) {
+                        setValidationErrors({ ...validationErrors, lastName: null });
                       }
                     }}
-                    rows="4"
-                    placeholder="Tell us a little about yourself, your experience, and why you want to volunteer..."
-                    className="w-full bg-transparent outline-none resize-none"
+                    placeholder="Doe"
+                    className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
                     required
                   />
                 </fieldset>
-                {validationErrors.description && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.description}</p>
+                {validationErrors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.lastName}</p>
                 )}
               </div>
+            </div>
 
-              {/* Certifications - REQUIRED */}
-              <div>
-                <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.certifications ? 'border-red-500' : 'border-gray-400'}`}>
-                  <legend className="text-sm px-2 text-gray-700">Certifications <span className="text-red-500">*</span></legend>
-                  <Certifications
-                    selected={selectedCerts}
-                    setSelected={setSelectedCerts}
-                    others={othersCert}
-                    setOthers={setOthersCert}
+            {/* Row 2: Email & Phone */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="w-full">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'
+                  }`}>
+                  <legend className="text-sm px-2 text-gray-700">Email</legend>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (validationErrors.email) {
+                        setValidationErrors({ ...validationErrors, email: null });
+                      }
+                    }}
+                    placeholder="john.doe@gmail.com"
+                    className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                    required
                   />
                 </fieldset>
-                {validationErrors.certifications && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.certifications}</p>
+                {validationErrors.email && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
                 )}
               </div>
 
-              {/* File Upload */}
-              <div>
-                <div className={`border-2 border-dashed rounded-lg p-4 bg-white ${validationErrors.files ? 'border-red-500' : 'border-gray-400'}`}>
-                  <p className="text-sm text-gray-700 mb-2">Upload Documents <span className="text-red-500">*</span></p>
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    multiple
-                    onChange={handleFileChange}
-                    className="w-full text-sm"
-                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                  />
-
-                  <p className="text-gray-400 text-xs mt-2">
-                    Upload your resume, certificates, or any supporting documents (Required)
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    Accepted: JPG, PNG, PDF, DOC, DOCX (Max 5MB per file)
-                  </p>
-                </div>
-                {validationErrors.files && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.files}</p>
+              <div className="w-full">
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'
+                  }`}>
+                  <legend className="text-sm px-2 text-gray-700">Phone Number</legend>
+                  <div className="flex items-center">
+                    <input
+                      ref={phoneInputRef}
+                      type="tel"
+                      value={phone}
+                      onChange={handlePhoneChange}
+                      onFocus={handlePhoneFocus}
+                      placeholder="+63 912 345 6789"
+                      className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                      required
+                    />
+                  </div>
+                </fieldset>
+                <p className="text-gray-400 text-xs mt-1">Enter 10 digits after +63 (e.g., +63 912 345 6789 or type 09123456789)</p>
+                {validationErrors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>
                 )}
               </div>
+            </div>
 
-              {/* File Previews */}
-              {filePreviews.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {filePreviews.map((preview, idx) => (
-                    <div key={idx} className="relative border rounded-lg p-2 bg-white">
-                      {preview.type.startsWith('image/') ? (
-                        <img src={preview.url} alt="Preview" className="w-full h-20 object-cover rounded" />
-                      ) : preview.type === 'application/pdf' ? (
-                        <div className="w-full h-20 bg-red-50 flex flex-col items-center justify-center rounded">
-                          <span className="text-3xl">📄</span>
-                          <span className="text-xs text-gray-500 text-center truncate w-full px-1">
-                            {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="w-full h-20 bg-blue-50 flex flex-col items-center justify-center rounded">
-                          <span className="text-3xl">📝</span>
-                          <span className="text-xs text-gray-500 text-center truncate w-full px-1">
-                            {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}
-                          </span>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeFile(idx)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-600 flex items-center justify-center"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
+            {/* Role Selection */}
+            <div className="w-full">
+              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'
+                }`}>
+                <legend className="text-sm px-2 text-gray-700">Role / Position</legend>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => {
+                    handleRoleChange(e);
+                    if (validationErrors.role) {
+                      setValidationErrors({ ...validationErrors, role: null });
+                    }
+                  }}
+                  className="w-full bg-transparent outline-none text-gray-600"
+                  required
+                >
+                  <option value="">- Select Role / Position -</option>
+                  <option value="civilian">Civilian</option>
+                  <option value="volunteer">Volunteer</option>
+                </select>
+              </fieldset>
+              {validationErrors.role && (
+                <p className="text-red-500 text-xs mt-1">{validationErrors.role}</p>
               )}
             </div>
-          )}
 
-          {/* Password Section with Strength Indicator */}
-          <div className="w-full">
-            <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'
-              }`}>
-              <legend className="text-sm px-2 text-gray-700">Password</legend>
-              <div className="flex items-center">
-                <input
-                  type={showPass ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (validationErrors.password) {
-                      setValidationErrors({ ...validationErrors, password: null });
-                    }
-                  }}
-                  placeholder="••••••••"
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
-                  required
-                />
-                <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">
-                  {showPass ? <FaEyeSlash /> : <FaEye />}
-                </span>
+            {/* Volunteer Additional Fields */}
+            {showVolunteerForm && (
+              <div className="space-y-4 p-4 border-2 border-blue-300 rounded-lg bg-blue-50">
+                <p className="text-sm font-semibold text-blue-700 mb-2">Volunteer Information (Required)</p>
+                <p className="text-xs text-gray-500 -mt-2">Age requirement: 18 - 50 years old</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${ageError ? 'border-red-500' : validationErrors.birthday ? 'border-red-500' : 'border-gray-400'}`}>
+                      <legend className="text-sm px-2 text-gray-700">Birthday</legend>
+                      <input
+                        type="date"
+                        value={birthday}
+                        onChange={handleBirthdayChange}
+                        className="w-full bg-transparent outline-none"
+                        required
+                      />
+                    </fieldset>
+                    {ageError && <p className="text-red-500 text-xs mt-1">{ageError}</p>}
+                    {validationErrors.birthday && <p className="text-red-500 text-xs mt-1">{validationErrors.birthday}</p>}
+                  </div>
+
+                  <div>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.experience ? 'border-red-500' : 'border-gray-400'}`}>
+                      <legend className="text-sm px-2 text-gray-700">Years of Experience</legend>
+                      <select
+                        value={experience}
+                        onChange={(e) => {
+                          setExperience(e.target.value);
+                          if (validationErrors.experience) {
+                            setValidationErrors({ ...validationErrors, experience: null });
+                          }
+                        }}
+                        className="w-full bg-transparent outline-none text-gray-700"
+                        required
+                      >
+                        <option value="">Select experience</option>
+                        <option value="0">Less than 1 year</option>
+                        <option value="1">1 year</option>
+                        <option value="2">2 years</option>
+                        <option value="3">3 years</option>
+                        <option value="4">4 years</option>
+                        <option value="5">5 years</option>
+                        <option value="6">6 years</option>
+                        <option value="7">7 years</option>
+                        <option value="8">8 years</option>
+                        <option value="9">9 years</option>
+                        <option value="10">10+ years</option>
+                      </select>
+                    </fieldset>
+                    {validationErrors.experience && <p className="text-red-500 text-xs mt-1">{validationErrors.experience}</p>}
+                  </div>
+
+                  <div>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.address1 ? 'border-red-500' : 'border-gray-400'}`}>
+                      <legend className="text-sm px-2 text-gray-700">Address 1</legend>
+                      <input
+                        type="text"
+                        value={address1}
+                        onChange={(e) => {
+                          setAddress1(e.target.value);
+                          if (validationErrors.address1) {
+                            setValidationErrors({ ...validationErrors, address1: null });
+                          }
+                        }}
+                        placeholder="Street, Barangay"
+                        className="w-full bg-transparent outline-none"
+                        required
+                      />
+                    </fieldset>
+                    {validationErrors.address1 && <p className="text-red-500 text-xs mt-1">{validationErrors.address1}</p>}
+                  </div>
+
+                  <div>
+                    <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-white">
+                      <legend className="text-sm px-2 text-gray-700">Address 2</legend>
+                      <input
+                        type="text"
+                        value={address2}
+                        onChange={(e) => setAddress2(e.target.value)}
+                        placeholder="Street, Barangay (optional)"
+                        className="w-full bg-transparent outline-none"
+                      />
+                    </fieldset>
+                  </div>
+                </div>
+
+                {/* Availability Selection */}
+                <div>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.availability ? 'border-red-500' : 'border-gray-400'}`}>
+                    <legend className="text-sm px-2 text-gray-700">Availability <span className="text-red-500">*</span></legend>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                        <label key={day} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={availability.includes(day)}
+                            onChange={() => toggleAvailability(day)}
+                          />
+                          {day}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  {validationErrors.availability && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.availability}</p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.description ? 'border-red-500' : 'border-gray-400'}`}>
+                    <legend className="text-sm px-2 text-gray-700">Description <span className="text-red-500">*</span></legend>
+                    <textarea
+                      value={description}
+                      onChange={(e) => {
+                        setDescription(e.target.value);
+                        if (validationErrors.description) {
+                          setValidationErrors({ ...validationErrors, description: null });
+                        }
+                      }}
+                      rows="4"
+                      placeholder="Tell us a little about yourself, your experience, and why you want to volunteer..."
+                      className="w-full bg-transparent outline-none resize-none"
+                      required
+                    />
+                  </fieldset>
+                  {validationErrors.description && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.description}</p>
+                  )}
+                </div>
+
+                {/* Certifications - REQUIRED */}
+                <div>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.certifications ? 'border-red-500' : 'border-gray-400'}`}>
+                    <legend className="text-sm px-2 text-gray-700">Certifications <span className="text-red-500">*</span></legend>
+                    <Certifications
+                      selected={selectedCerts}
+                      setSelected={setSelectedCerts}
+                      others={othersCert}
+                      setOthers={setOthersCert}
+                    />
+                  </fieldset>
+                  {validationErrors.certifications && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.certifications}</p>
+                  )}
+                </div>
+
+                {/* File Upload */}
+                <div>
+                  <div className={`border-2 border-dashed rounded-lg p-4 bg-white ${validationErrors.files ? 'border-red-500' : 'border-gray-400'}`}>
+                    <p className="text-sm text-gray-700 mb-2">Upload Documents <span className="text-red-500">*</span></p>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      multiple
+                      onChange={handleFileChange}
+                      className="w-full text-sm"
+                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                    />
+
+                    <p className="text-gray-400 text-xs mt-2">
+                      Upload your resume, certificates, or any supporting documents (Required)
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      Accepted: JPG, PNG, PDF, DOC, DOCX (Max 5MB per file)
+                    </p>
+                  </div>
+                  {validationErrors.files && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.files}</p>
+                  )}
+                </div>
+
+                {/* File Previews */}
+                {filePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {filePreviews.map((preview, idx) => (
+                      <div key={idx} className="relative border rounded-lg p-2 bg-white">
+                        {preview.type.startsWith('image/') ? (
+                          <img src={preview.url} alt="Preview" className="w-full h-20 object-cover rounded" />
+                        ) : preview.type === 'application/pdf' ? (
+                          <div className="w-full h-20 bg-red-50 flex flex-col items-center justify-center rounded">
+                            <span className="text-3xl">📄</span>
+                            <span className="text-xs text-gray-500 text-center truncate w-full px-1">
+                              {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="w-full h-20 bg-blue-50 flex flex-col items-center justify-center rounded">
+                            <span className="text-3xl">📝</span>
+                            <span className="text-xs text-gray-500 text-center truncate w-full px-1">
+                              {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}
+                            </span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFile(idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-600 flex items-center justify-center"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </fieldset>
-            {validationErrors.password && (
-              <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>
             )}
-            <PasswordStrength password={password} />
-          </div>
 
-          <div className="w-full">
-            <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-400'
-              }`}>
-              <legend className="text-sm px-2 text-gray-700">Confirm Password</legend>
-              <div className="flex items-center">
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (validationErrors.confirmPassword) {
-                      setValidationErrors({ ...validationErrors, confirmPassword: null });
-                    }
-                  }}
-                  placeholder="••••••••"
-                  className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
-                  required
-                />
-                <span onClick={() => setShowConfirm(!showConfirm)} className="cursor-pointer text-gray-500 ml-2">
-                  {showConfirm ? <FaEyeSlash /> : <FaEye />}
+            {/* Password Section with Strength Indicator */}
+            <div className="w-full">
+              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'
+                }`}>
+                <legend className="text-sm px-2 text-gray-700">Password</legend>
+                <div className="flex items-center">
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (validationErrors.password) {
+                        setValidationErrors({ ...validationErrors, password: null });
+                      }
+                    }}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                    required
+                  />
+                  <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">
+                    {showPass ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                </div>
+              </fieldset>
+              {validationErrors.password && (
+                <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>
+              )}
+              <PasswordStrength password={password} />
+            </div>
+
+            <div className="w-full">
+              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-400'
+                }`}>
+                <legend className="text-sm px-2 text-gray-700">Confirm Password</legend>
+                <div className="flex items-center">
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (validationErrors.confirmPassword) {
+                        setValidationErrors({ ...validationErrors, confirmPassword: null });
+                      }
+                    }}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                    required
+                  />
+                  <span onClick={() => setShowConfirm(!showConfirm)} className="cursor-pointer text-gray-500 ml-2">
+                    {showConfirm ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                </div>
+              </fieldset>
+              {validationErrors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">{validationErrors.confirmPassword}</p>
+              )}
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />
+              <span>
+                I agree to all the{" "}
+                <span onClick={handleTermsClick} className="text-red-500 cursor-pointer hover:underline">
+                  Terms
+                </span>{" "}
+                and{" "}
+                <span onClick={handlePrivacyClick} className="text-red-500 cursor-pointer hover:underline">
+                  Privacy Policies
                 </span>
-              </div>
-            </fieldset>
-            {validationErrors.confirmPassword && (
-              <p className="text-red-500 text-xs mt-1">{validationErrors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Terms and Conditions */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-            />
-            <span>
-              I agree to all the{" "}
-              <span onClick={handleTermsClick} className="text-red-500 cursor-pointer hover:underline">
-                Terms
-              </span>{" "}
-              and{" "}
-              <span onClick={handlePrivacyClick} className="text-red-500 cursor-pointer hover:underline">
-                Privacy Policies
               </span>
-            </span>
-          </div>
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {loading ? "Creating account..." : "Create account"}
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </button>
 
-          <p className="text-center text-sm text-gray-500">
-            Already have an account?
-            <Link to="/login" className="text-red-500 ml-1 cursor-pointer hover:underline">
-              Login
-            </Link>
-          </p>
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?
+              <Link to="/login" className="text-red-500 ml-1 cursor-pointer hover:underline">
+                Login
+              </Link>
+            </p>
 
-        </form>
-      </div>
-    </div>
+          </form>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
