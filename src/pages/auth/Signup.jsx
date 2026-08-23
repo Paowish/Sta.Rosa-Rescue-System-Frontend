@@ -360,38 +360,41 @@ export default function Signup() {
     return { valid: true, error: null };
   };
 
-  // Format and validate phone number
+  // Format and validate phone number - STRICT: must start with 9
   const formatAndValidatePhone = (inputValue) => {
     let digits = inputValue.replace(/\D/g, '');
 
+    // Remove leading 0 if present
     if (digits.startsWith('0')) {
       digits = digits.substring(1);
-      const formatted = '+63' + digits;
-      const isValid = digits.length === 10;
-      return { formatted, cleaned: '0' + digits, isValid, digitsAfter63: digits.length };
     }
 
+    // Remove 63 if present
     if (digits.startsWith('63')) {
       digits = digits.substring(2);
-      const formatted = '+63' + digits;
-      const isValid = digits.length === 10;
-      return { formatted, cleaned: '0' + digits, isValid, digitsAfter63: digits.length };
     }
 
-    if (digits.startsWith('9')) {
-      const formatted = '+63' + digits;
-      const isValid = digits.length === 10;
-      return { formatted, cleaned: '0' + digits, isValid, digitsAfter63: digits.length };
-    }
+    // ✅ STRICT CHECK: Must start with 9
+    const isValidStart = digits.startsWith('9');
+    const isValidLength = digits.length === 10;
+    const isValid = isValidStart && isValidLength;
 
     const formatted = '+63' + digits;
-    const isValid = digits.length === 10;
-    return { formatted, cleaned: digits.length === 10 ? '0' + digits : '', isValid, digitsAfter63: digits.length };
+    const cleaned = digits.length === 10 ? '0' + digits : '';
+
+    return {
+      formatted,
+      cleaned,
+      isValid,
+      digitsAfter63: digits.length,
+      startsWith9: isValidStart
+    };
   };
 
   const handlePhoneChange = (e) => {
     let value = e.target.value;
 
+    // Ensure +63 prefix
     if (!value.startsWith('+63')) {
       if (value.startsWith('63')) {
         value = '+' + value;
@@ -406,10 +409,12 @@ export default function Signup() {
 
     let digitsAfter63 = value.replace('+63', '').replace(/\D/g, '');
 
+    // Limit to 10 digits
     if (digitsAfter63.length > 10) {
       digitsAfter63 = digitsAfter63.slice(0, 10);
     }
 
+    // Format with spaces
     let formattedValue = '+63';
     if (digitsAfter63.length > 0) {
       if (digitsAfter63.length <= 3) {
@@ -423,12 +428,17 @@ export default function Signup() {
 
     setPhone(formattedValue);
 
-    if (digitsAfter63.length === 10) {
-      setValidationErrors(prev => ({ ...prev, phone: null }));
-    } else if (digitsAfter63.length > 0 && digitsAfter63.length < 10) {
-      setValidationErrors(prev => ({ ...prev, phone: `Need ${10 - digitsAfter63.length} more digit(s) (${digitsAfter63.length}/10 digits after +63)` }));
+    // ✅ STRICT VALIDATION
+    if (digitsAfter63.length === 0) {
+      setValidationErrors(prev => ({ ...prev, phone: "Phone number is required" }));
+    } else if (!digitsAfter63.startsWith('9')) {
+      setValidationErrors(prev => ({ ...prev, phone: "❌ Phone number must start with 9 (e.g., +63 912 345 6789)" }));
+    } else if (digitsAfter63.length < 10) {
+      setValidationErrors(prev => ({ ...prev, phone: `Need ${10 - digitsAfter63.length} more digit(s) (${digitsAfter63.length}/10 digits)` }));
     } else if (digitsAfter63.length > 10) {
       setValidationErrors(prev => ({ ...prev, phone: `Too many digits (${digitsAfter63.length - 10} extra digits)` }));
+    } else if (digitsAfter63.length === 10 && digitsAfter63.startsWith('9')) {
+      setValidationErrors(prev => ({ ...prev, phone: null })); // ✅ Valid!
     }
   };
 
@@ -913,7 +923,9 @@ export default function Signup() {
                     />
                   </div>
                 </fieldset>
-                <p className="text-gray-400 text-xs mt-1">Enter 10 digits after +63 (e.g., +63 912 345 6789 or type 09123456789)</p>
+                <p className="text-gray-400 text-xs mt-1">
+                  Must start with <strong>9</strong> and have exactly 10 digits (e.g., +63 912 345 6789 or type 09123456789)
+                </p>
                 {validationErrors.phone && (
                   <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>
                 )}
