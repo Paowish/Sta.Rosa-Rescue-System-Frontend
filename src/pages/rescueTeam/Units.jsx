@@ -57,7 +57,6 @@ const ScheduleBar = ({ schedule }) => {
 // --- Main Component ---
 export default function Units() {
     const [selectedId, setSelectedId] = useState(null);
-    const [selectedMember, setSelectedMember] = useState(null);
     const [stats] = useState({
         total: 4,
         available: 1,
@@ -133,6 +132,12 @@ export default function Units() {
 
     const activeResponder = responders.find(r => r.id === selectedId);
 
+    // Get member count display
+    const getMemberCount = (members) => {
+        if (!members) return '0 Members';
+        return members;
+    };
+
     return (
         <div className="min-h-screen bg-[#fafbfc] p-6 font-sans text-gray-800 relative">
 
@@ -174,10 +179,7 @@ export default function Units() {
                         {responders.map((r) => (
                             <div
                                 key={r.id}
-                                onClick={() => {
-                                    setSelectedId(r.id);
-                                    setSelectedMember(null);
-                                }}
+                                onClick={() => setSelectedId(r.id)}
                                 className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'}`}
                             >
                                 <div className="p-5 pb-3">
@@ -226,10 +228,7 @@ export default function Units() {
                                     <p className="text-xs text-blue-600 font-medium truncate">Team Leader: {activeResponder.teamLeader}</p>
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        setSelectedId(null);
-                                        setSelectedMember(null);
-                                    }}
+                                    onClick={() => setSelectedId(null)}
                                     className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                                 >
                                     <Icon icon="mdi:close" className="w-6 h-6" />
@@ -245,23 +244,7 @@ export default function Units() {
                                 <div className="flex flex-col">
                                     <div className="flex items-center justify-between py-3 px-6 border-b border-gray-100 bg-white">
                                         <span className="text-gray-500 font-medium">Members</span>
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-gray-800 font-bold">{activeResponder.members}</span>
-                                            <div className="relative inline-block ml-1">
-                                                <select
-                                                    value={selectedMember || ''}
-                                                    onChange={(e) => setSelectedMember(e.target.value)}
-                                                    className="appearance-none border-0 bg-transparent pr-6 py-1 text-sm text-gray-700 focus:outline-none focus:ring-0 cursor-pointer w-8"
-                                                    aria-label="Select team member"
-                                                >
-                                                    <option value=""> </option>
-                                                    {activeResponder.teamMembers && activeResponder.teamMembers.map((member, idx) => (
-                                                        <option key={idx} value={member}>{member}</option>
-                                                    ))}
-                                                </select>
-                                                <Icon icon="mdi:chevron-down" className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                            </div>
-                                        </div>
+                                        <span className="text-gray-800 font-bold">{getMemberCount(activeResponder.members)}</span>
                                     </div>
 
                                     <div className="flex justify-between py-3 px-6 border-b border-gray-100 bg-white">
@@ -270,11 +253,20 @@ export default function Units() {
                                     </div>
                                 </div>
 
-                                {/* Selected Member Display */}
-                                {selectedMember && (
-                                    <div className="bg-blue-50 border-l-4 border-blue-500 px-4 py-3 mx-4 my-3 rounded">
-                                        <p className="text-sm font-medium text-blue-800">Selected: {selectedMember}</p>
-                                        <p className="text-xs text-blue-600">Member of {activeResponder.name}</p>
+                                {/* Team Members List - View Only */}
+                                {activeResponder.teamMembers && activeResponder.teamMembers.length > 0 && (
+                                    <div className="px-6 py-3 border-b border-gray-100 bg-white">
+                                        <span className="text-gray-500 font-medium block mb-2">Team Members</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {activeResponder.teamMembers.map((member, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="bg-gray-100 text-gray-700 px-3 py-1 rounded text-[12px] font-medium border border-gray-200"
+                                                >
+                                                    {member}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 

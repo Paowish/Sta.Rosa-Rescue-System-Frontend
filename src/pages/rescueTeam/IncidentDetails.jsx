@@ -11,6 +11,7 @@ import LocationSection from "./LocationSection";
 import ReporterSection from "./ReporterSection";
 import DescriptionSection from "./DescriptionSection";
 import TimelineSection from "./TimelineSection";
+import { useNavigate } from 'react-router-dom';
 
 export default function IncidentDetails({ data, onClose, onDispatch, onResolve, onViewReport }) {
     const [imageError, setImageError] = useState(false);
@@ -28,6 +29,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const [loadingVolunteers, setLoadingVolunteers] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState('volunteers');
+    const navigate = useNavigate();
 
     // Success Data
     const [successData, setSuccessData] = useState(null);
@@ -401,13 +403,36 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    // ✅ FIXED: handleViewReport with better error handling and debugging
     const handleViewReport = () => {
         const incident = incidentDataRef.current || data;
-        if (onViewReport) {
-            onViewReport(incident);
+        const incidentId = incident._id || incident.id || incident.incidentId;
+
+        console.log('🔍 View Report clicked');
+        console.log('📋 Incident data:', incident);
+        console.log('📋 Incident ID:', incidentId);
+
+        // ✅ Check if user is authenticated
+        const token = localStorage.getItem('token');
+        console.log('🔑 Token exists:', !!token);
+
+        if (!token) {
+            alert('Please log in to view the report.');
+            navigate('/login');
+            return;
+        }
+
+        if (incidentId && incidentId !== "N/A") {
+            // Close the details panel first
+            if (onClose) onClose();
+
+            // ✅ Navigate to the incidents page with view parameter
+            const targetPath = `/incidents?view=${incidentId}`;
+            console.log('🚀 Navigating to:', targetPath);
+            navigate(targetPath);
         } else {
-            console.log("View report for incident:", incident);
-            alert("View Report clicked");
+            console.error("No incident ID found");
+            alert("Cannot view report: Incident ID not found");
         }
     };
 

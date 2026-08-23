@@ -1,507 +1,24 @@
+// src/pages/rescueTeam/IncidentManagement.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { createPortal } from "react-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { incidentService } from "../../services/api";
 import { Icon } from "@iconify/react";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
-// Leaflet setup
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// ✅ Import separated components
+import IncidentDetailModal from "./IncidentDetailModal";
+import {
+  StatCard,
+  SearchIcon,
+  ChevronDown,
+  CalendarIcon,
+  XIcon,
+  CheckboxCheck,
+  CheckboxAll
+} from "./IncidentComponents";
 
-const orangeIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// --- PROFESSIONAL ICONS ---
-const SearchIcon = () => <Icon icon="mdi:search" className="w-5 h-5 text-slate-500" />;
-const ChevronDown = () => <Icon icon="mdi:chevron-down" className="w-4 h-4 text-slate-500" />;
-const CalendarIcon = () => <Icon icon="mdi:calendar" className="w-5 h-5 text-slate-500" />;
-const XIcon = () => <Icon icon="mdi:close" className="w-5 h-5 text-slate-500" />;
-const CheckboxCheck = () => <Icon icon="mdi:check" className="w-4 h-4 text-white" />;
-const CheckboxAll = () => (
-  <div className="bg-[#4081EE] rounded-[4px] w-5 h-5 flex items-center justify-center cursor-pointer mx-auto">
-    <Icon icon="mdi:minus" className="w-4 h-4 text-white" />
-  </div>
-);
-
-// --- PROFESSIONAL STAT CARD COMPONENT (Copied from Dashboard.jsx) ---
-function StatCard({ title, value, icon, color, trend }) {
-  // Determine bg color class based on the text color
-  const bgColorClass = color
-    .replace('text-', 'bg-')
-    .replace('-600', '-100')
-    .replace('-700', '-100');
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-300">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-          <p className={`text-3xl font-bold ${color}`}>{value}</p>
-        </div>
-        <div className={`p-3 rounded-lg ${bgColorClass}`}>
-          <Icon icon={icon} className={`text-xl ${color}`} />
-        </div>
-      </div>
-      {trend && (
-        <div className="mt-3 flex items-center gap-1 text-xs">
-          <span className={trend.positive ? 'text-emerald-600' : 'text-red-600'}>
-            {trend.positive ? '↑' : '↓'} {trend.value}%
-          </span>
-          <span className="text-gray-400">vs last week</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// --- STANDALONE DISPATCH MODAL ---
-const DispatchSelectionModal = ({ isOpen, onClose, incidentTitle, incidentId, onDispatch }) => {
-  const [volunteers, setVolunteers] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [loadingVolunteers, setLoadingVolunteers] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState('volunteers');
-
-  useEffect(() => {
-    if (isOpen) {
-      loadAvailableVolunteers();
-      setSelectedIds([]);
-      setSearchTerm("");
-    }
-  }, [isOpen]);
-
-  const loadAvailableVolunteers = async () => {
-    setLoadingVolunteers(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/volunteers/available', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setVolunteers(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to load volunteers:', error);
-    } finally {
-      setLoadingVolunteers(false);
-    }
-  };
-
-  const handleVolunteerToggle = (volunteerId) => {
-    setSelectedIds(prev =>
-      prev.includes(volunteerId)
-        ? prev.filter(id => id !== volunteerId)
-        : [...prev, volunteerId]
-    );
-  };
-
-  const handleRemoveSelected = (volunteerId) => {
-    setSelectedIds(prev => prev.filter(id => id !== volunteerId));
-  };
-
-  const handleDispatch = async () => {
-    if (selectedIds.length === 0) {
-      alert('Please select at least one volunteer to dispatch');
-      return;
-    }
-    setIsDispatching(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/incidents/${incidentId}/dispatch`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          volunteerIds: selectedIds,
-          dispatchNotes: 'Dispatched from Incident Management'
-        })
-      });
-      const result = await response.json();
-      if (result.success) {
-        alert(`Incident dispatched to ${result.data.volunteersDispatched} responder(s)!`);
-        if (onDispatch) onDispatch();
-        onClose();
-      } else {
-        alert('Failed to dispatch: ' + result.message);
-      }
-    } catch (error) {
-      console.error('Dispatch error:', error);
-      alert('Error dispatching incident.');
-    } finally {
-      setIsDispatching(false);
-    }
-  };
-
-  const filteredVolunteers = volunteers.filter(v =>
-    `${v.firstName} ${v.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const selectedVolunteersData = volunteers.filter(v => selectedIds.includes(v._id));
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
-        <div className="bg-[#9fb2c2] p-5 flex justify-between items-start relative">
-          <div className="text-white">
-            <p className="text-xs font-medium opacity-90">Dispatch to</p>
-            <h2 className="text-2xl font-bold tracking-tight leading-tight truncate max-w-[250px]">
-              {incidentTitle}
-            </h2>
-            <p className="text-[10px] font-medium opacity-80 mt-0.5">{incidentId}</p>
-          </div>
-          <button onClick={onClose} className="text-white hover:opacity-75 transition-opacity">
-            <Icon icon="mdi:close" className="w-7 h-7" />
-          </button>
-        </div>
-
-        <div className="flex border-b border-gray-200 bg-white">
-          <button onClick={() => setActiveTab('rescue')} className={`flex-1 py-4 text-center font-bold text-lg transition-colors relative ${activeTab === 'rescue' ? 'text-black' : 'text-gray-500'}`}>
-            Rescue Team
-            {activeTab === 'rescue' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d7aff]"></div>}
-          </button>
-          <button onClick={() => setActiveTab('volunteers')} className={`flex-1 py-4 text-center font-bold text-lg transition-colors relative ${activeTab === 'volunteers' ? 'text-black' : 'text-gray-500'}`}>
-            Volunteers
-            {activeTab === 'volunteers' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2d7aff]"></div>}
-          </button>
-        </div>
-
-        <div className="p-4 pt-5 pb-3 bg-white">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <input type="text" placeholder="Search name, status, role..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-md bg-gray-50/50 focus:outline-none focus:ring-1 focus:ring-blue-400 placeholder-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 pb-2 bg-white">
-          <p className="text-[11px] font-medium text-[#6b7280]">Within Incident Barangay Range (Publication)</p>
-        </div>
-
-        <div className="px-4 pb-4 h-[340px] overflow-y-auto custom-scrollbar">
-          {loadingVolunteers ? (
-            <p className="text-center py-4 text-gray-500 text-sm">Loading volunteers...</p>
-          ) : filteredVolunteers.length === 0 ? (
-            <p className="text-center py-4 text-gray-500 text-sm">No available volunteers found</p>
-          ) : (
-            filteredVolunteers.map((volunteer) => {
-              const isSelected = selectedIds.includes(volunteer._id);
-              return (
-                <div key={volunteer._id} className="flex items-start gap-4 py-4 border-b border-gray-200">
-                  <div className="pt-1.5">
-                    <div onClick={() => handleVolunteerToggle(volunteer._id)} className={`w-6 h-6 rounded flex items-center justify-center cursor-pointer shadow-sm transition-colors ${isSelected ? 'bg-[#25d366]' : 'border-2 border-gray-300 bg-white hover:border-blue-400'}`}>
-                      {isSelected && <Icon icon="mdi:check" className="w-4 h-4 text-white" />}
-                    </div>
-                  </div>
-                  <div className="relative flex-shrink-0">
-                    <div className="w-14 h-14 rounded-full bg-[#cbd5e1] border-2 border-white shadow-sm flex items-center justify-center text-gray-500 text-lg font-bold">
-                      {volunteer.firstName?.charAt(0)}{volunteer.lastName?.charAt(0)}
-                    </div>
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2d7aff] rounded-full border border-white"></div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-gray-900">{volunteer.firstName} {volunteer.lastName}</h3>
-                      <span className="text-[10px] font-semibold text-[#25d366] uppercase tracking-wide">Active</span>
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">Volunteer Responder</p>
-                    <div className="flex flex-wrap gap-2 mt-1.5">
-                      <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">BLS/CPR</span>
-                      <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">First Aid</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-[#6b7280]">
-                      <Icon icon="mdi:location-on" className="w-3 h-3 text-gray-800" />
-                      <span>{volunteer.address1 || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div className="bg-white border-t border-gray-200 p-4">
-          {selectedIds.length > 0 && (
-            <div className="mb-3">
-              <h4 className="text-base font-bold text-gray-800 mb-2">Selected</h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedVolunteersData.map(v => (
-                  <div key={v._id} className="flex items-center bg-[#dbeafe] text-[#1e40af] px-3 py-1 rounded text-sm font-medium">
-                    {v.firstName} {v.lastName.charAt(0)}.
-                    <button onClick={() => handleRemoveSelected(v._id)} className="ml-2 hover:bg-blue-200 rounded-full p-0.5 transition-colors">
-                      <Icon icon="mdi:close" className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="flex justify-end gap-3">
-            <button onClick={onClose} className="px-6 py-2 text-gray-500 font-medium hover:bg-gray-100 rounded-md transition-colors">Cancel</button>
-            <button onClick={handleDispatch} disabled={isDispatching || selectedIds.length === 0} className="px-6 py-2 bg-[#1d7bf0] text-white font-bold rounded-md shadow-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {isDispatching ? 'Dispatching...' : 'Dispatch'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
-
-// --- THE DETAIL MODAL COMPONENT ---
-const IncidentDetailModal = ({ isOpen, onClose, incident, onDispatch }) => {
-  const [showDispatch, setShowDispatch] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-
-  if (!isOpen || !incident) return null;
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Resolved': return 'text-green-600';
-      case 'Active': return 'text-red-600';
-      case 'Pending': return 'text-orange-500';
-      case 'Dispatched': return 'text-blue-600';
-      default: return 'text-orange-500';
-    }
-  };
-
-  const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat || 15.3611;
-  const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng || 120.9371;
-  const position = [lat, lng];
-
-  const getResponderName = (incident) => {
-    if (!incident || !incident.assignedTo || incident.assignedTo.length === 0) return "--";
-    const first = incident.assignedTo[0];
-    if (first.responder && first.responder.firstName && first.responder.lastName) {
-      return `${first.responder.firstName} ${first.responder.lastName}`;
-    }
-    return "Assigned";
-  };
-
-  return (
-    <>
-      {/* Main Details Modal */}
-      <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm p-4 pt-15">
-        <div className="w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200 max-h-[90vh] flex flex-col">
-
-          {/* HEADER */}
-          <div className="bg-[#5B7486] px-6 py-4 flex justify-between items-center text-white shrink-0">
-            <div>
-              <p className="text-xs opacity-80 font-medium tracking-wide">{incident.incidentId || "INC-001"}</p>
-              <h2 className="text-lg font-bold mt-0.5">{incident.type || "Incident Report"}</h2>
-            </div>
-            <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
-              <Icon icon="mdi:close" className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* TABS */}
-          <div className="flex border-b border-gray-200 shrink-0 bg-gray-50/30">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`flex-1 py-3 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview' ? 'border-blue-600 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('report')}
-              className={`flex-1 py-3 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === 'report' ? 'border-blue-600 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              Report
-            </button>
-          </div>
-
-          {/* SCROLLABLE CONTENT */}
-          <div className="overflow-y-auto flex-1 p-6 space-y-6">
-
-            {/* === OVERVIEW TAB === */}
-            {activeTab === 'overview' && (
-              <div className="animate-in fade-in duration-300">
-                <div className="border-b border-gray-200 pb-4 mb-4">
-                  <h3 className="text-sm font-medium text-gray-600 mb-3">Incident Details</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-500 mb-1">Location</p>
-                      <p className="font-medium text-gray-900 leading-snug">{incident.location?.address || "N/A"}</p>
-                      <p className="text-gray-500 text-xs">{incident.location?.barangay || "N/A"}, {incident.location?.city || "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">Barangay</p>
-                      <p className="font-medium text-gray-900">{incident.location?.barangay || "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">Victim</p>
-                      <p className="font-medium text-gray-900">{incident.victimCount || incident.victimsAffected || "0"} People</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 mb-1">Responders</p>
-                      <p className="font-medium text-gray-900">{getResponderName(incident)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-gray-500 mb-1">Status</p>
-                      <p className={`font-medium text-sm ${getStatusColor(incident.status)}`}>{incident.status || "Pending"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Location Section */}
-                <div className="border-b border-gray-200 pb-6 mb-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Icon icon="mdi:map-marker" className="w-5 h-5 text-red-500" />
-                    <h3 className="text-sm font-medium text-gray-700">Location</h3>
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start mb-3 gap-2 text-xs">
-                    <p className="font-medium text-gray-900">{incident.location?.address || "N/A"}</p>
-                    <p className="text-gray-500 whitespace-nowrap">{lat}°N {lng}°E</p>
-                  </div>
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300 bg-gray-100 z-0">
-                    <MapContainer center={position} zoom={15} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <Marker position={position} icon={orangeIcon}>
-                        <Popup>{incident.location?.address || "Incident Location"}</Popup>
-                      </Marker>
-                    </MapContainer>
-                  </div>
-                </div>
-
-                {/* Activity Timeline */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">Activity Timeline</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-400/70"></div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-700">Incident reported by {incident.reporterName || "community member"}</p>
-                        <p className="text-xs text-gray-400">{incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : "N/A"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 rounded-full bg-orange-400/70"></div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-700">Incident status: {incident.status || "Pending"}</p>
-                        <p className="text-xs text-gray-400">{incident.updatedAt ? new Date(incident.updatedAt).toLocaleTimeString() : "N/A"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* === REPORT TAB === */}
-            {activeTab === 'report' && (
-              <div className="animate-in fade-in duration-300 space-y-5 pb-4">
-                {/* Header Section */}
-                <div>
-                  <h3 className="text-sm font-bold text-gray-800 mb-1">After-Action Report — Responder Section</h3>
-                  <div className="flex items-center gap-2 bg-blue-50 p-3 rounded text-xs text-blue-700">
-                    <div className="w-4 h-4 rounded-full bg-blue-400 text-white flex items-center justify-center text-[10px] font-bold">i</div>
-                    <p>Fill in the fields below after the incident is handled. This forms part of the official incident record.</p>
-                  </div>
-                </div>
-
-                {/* Actions Taken */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Actions Taken at Scene</label>
-                  <p className="text-xs text-gray-500 mb-2">Describe what the rescue team did on the scene - e.g. administered first aid, evacuated residents.</p>
-                  <textarea className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" rows={3} placeholder="Type here..."></textarea>
-                </div>
-
-                {/* Narrative */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Responder Narrative / Observations</label>
-                  <p className="text-xs text-gray-500 mb-2">Describe conditions observed on arrival, hazards, people involved.</p>
-                  <textarea className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" rows={3} placeholder="Type here..."></textarea>
-                </div>
-
-                {/* 2-Column Grid for Casualties and Agencies */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Casualties & Victims (Final Count)</label>
-                    <p className="text-xs text-gray-500 mb-2">Victims Affected</p>
-                    <div className="flex items-center gap-3">
-                      <button className="w-6 h-6 rounded bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors">-</button>
-                      <div className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center text-sm font-medium bg-white">1</div>
-                      <button className="w-6 h-6 rounded bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors">+</button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Other Agencies Notified</label>
-                    <p className="text-xs text-gray-500 mb-1 mt-1">Role / Position</p>
-                    <select className="block w-full border border-gray-300 rounded py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
-                      <option>Select Other Agencies</option>
-                      <option>Barangay</option>
-                      <option>City Hall</option>
-                      <option>Red Cross</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Recommendations */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Recommendations / Follow-up Actions</label>
-                  <p className="text-xs text-gray-500 mb-2">Any follow-up needed?</p>
-                  <input type="text" className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Type here..." />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* STICKY FOOTER - ONLY VISIBLE ON REPORT TAB */}
-          {activeTab === 'report' && (
-            <div className="shrink-0 bg-white p-4 border-t border-gray-200 flex justify-center gap-4">
-              <button
-                onClick={onClose}
-                className="px-8 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors min-w-[120px]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  alert("Report saved successfully!");
-                  onClose();
-                }}
-                className="px-8 py-2 bg-[#1d4ed8] text-white text-sm font-medium rounded hover:bg-blue-800 transition-colors min-w-[120px]"
-              >
-                Save Report
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Dispatch Modal */}
-      <DispatchSelectionModal
-        isOpen={showDispatch}
-        onClose={() => setShowDispatch(false)}
-        incidentTitle={incident.type || "Incident Report"}
-        incidentId={incident._id}
-        onDispatch={onDispatch}
-      />
-    </>
-  );
-};
-
-// --- MAIN PAGE COMPONENT ---
 export default function IncidentManagement() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [incidents, setIncidents] = useState([]);
   const [filteredIncidents, setFilteredIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -512,21 +29,61 @@ export default function IncidentManagement() {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
 
-  useEffect(() => { loadIncidents(); }, []);
-  useEffect(() => { applyFilters(); }, [incidents, searchTerm, statusFilter]);
+  useEffect(() => {
+    loadIncidents();
+  }, []);
+
+  // ✅ Check for view parameter after incidents are loaded
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+    console.log('🔍 Checking for view parameter:', viewId);
+    console.log('📋 Incidents loaded:', incidents.length);
+
+    if (viewId && incidents.length > 0) {
+      // Find the incident by ID - try multiple fields
+      const incident = incidents.find(i =>
+        i._id === viewId ||
+        i.id === viewId ||
+        i.incidentId === viewId ||
+        String(i._id) === viewId ||
+        String(i.id) === viewId ||
+        String(i.incidentId) === viewId
+      );
+
+      console.log('🔍 Found incident:', incident);
+
+      if (incident) {
+        setSelectedIncident(incident);
+        setIsModalOpen(true);
+        // ✅ Clean up the URL by removing the view parameter
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('view');
+        setSearchParams(newParams, { replace: true });
+        console.log('✅ Modal opened for incident:', incident.incidentId);
+      } else {
+        console.warn('⚠️ No incident found with ID:', viewId);
+        console.log('📋 Available incident IDs:', incidents.map(i => i._id || i.id || i.incidentId));
+      }
+    }
+  }, [incidents, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [incidents, searchTerm, statusFilter]);
 
   const loadIncidents = async () => {
     try {
       setLoading(true);
+      console.log('📡 Loading incidents...');
       const response = await incidentService.getAllIncidents();
       let dataArray = [];
       if (response && response.success && Array.isArray(response.data)) dataArray = response.data;
       else if (Array.isArray(response)) dataArray = response;
       else if (response && Array.isArray(response.data)) dataArray = response.data;
+      console.log('📡 Incidents loaded:', dataArray.length);
       setIncidents(dataArray);
       setSelectedIds([]);
       const total = dataArray.length;
-      // ✅ Matches Dashboard.jsx logic: counts Pending, Active, Acknowledged, Dispatched as "Active"
       const active = dataArray.filter(i =>
         i.status === 'Active' ||
         i.status === 'Pending' ||
@@ -557,7 +114,10 @@ export default function IncidentManagement() {
     setFilteredIncidents(filtered);
   };
 
-  const handleViewIncident = (incident) => { setSelectedIncident(incident); setIsModalOpen(true); };
+  const handleViewIncident = (incident) => {
+    setSelectedIncident(incident);
+    setIsModalOpen(true);
+  };
 
   const handleResolveIncident = async (incident) => {
     if (window.confirm(`Mark incident ${incident.incidentId} as resolved?`)) {
@@ -568,7 +128,9 @@ export default function IncidentManagement() {
           setIsModalOpen(false);
           loadIncidents();
         }
-      } catch (error) { alert("Failed to resolve incident: " + error.message); }
+      } catch (error) {
+        alert("Failed to resolve incident: " + error.message);
+      }
     }
   };
 
@@ -577,17 +139,26 @@ export default function IncidentManagement() {
     loadIncidents();
   };
 
-  const clearFilters = () => { setSearchTerm(""); setStatusFilter("All Statuses"); };
-  const toggleRowSelection = (id) => {
-    if (selectedIds.includes(id)) setSelectedIds(selectedIds.filter(i => i !== id));
-    else setSelectedIds([...selectedIds, id]);
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("All Statuses");
   };
+
+  const toggleRowSelection = (id) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
   const formatAssignedTo = (assignees) => {
     if (!assignees || !Array.isArray(assignees) || assignees.length === 0) return "Unassigned";
     const first = assignees[0];
     if (first.responder) return `${first.responder.firstName} ${first.responder.lastName}`;
     return "Assigned";
   };
+
   const getStatusBadge = (status) => {
     const commonPill = "bg-gray-200/60 text-gray-700 px-3 py-1 rounded-full text-xs font-medium";
     switch (status) {
@@ -599,18 +170,28 @@ export default function IncidentManagement() {
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64"><div className="text-gray-500">Loading incidents...</div></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Loading incidents...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-white min-h-screen font-sans text-slate-700">
+      {/* ✅ Incident Detail Modal - Imported from separate file */}
       <IncidentDetailModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedIncident(null);
+        }}
         incident={selectedIncident}
         onDispatch={handleDispatchSuccess}
       />
 
-      {/* ✅ ENHANCED HEADER WITH PROFESSIONAL STAT CARDS */}
+      {/* Header with Stat Cards */}
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold text-gray-700">INCIDENT MANAGEMENT</h1>
@@ -649,16 +230,26 @@ export default function IncidentManagement() {
         </div>
       </div>
 
-      {/* ENHANCED FILTERS BAR */}
+      {/* Filters Bar */}
       <div className="flex flex-wrap items-center gap-4 mt-6 mb-6">
         <div className="relative w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon />
           </div>
-          <input type="text" placeholder="Search ID, type, location..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-md text-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" />
+          <input
+            type="text"
+            placeholder="Search ID, type, location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-md text-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
         <div className="relative w-40">
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none block w-full border border-slate-200 rounded-md pl-4 pr-10 py-2.5 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="appearance-none block w-full border border-slate-200 rounded-md pl-4 pr-10 py-2.5 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          >
             <option>All Statuses</option>
             <option>Pending</option>
             <option>Active</option>
@@ -673,15 +264,20 @@ export default function IncidentManagement() {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <CalendarIcon />
           </div>
-          <div className="block w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-md text-sm bg-white text-slate-500">dd / mm / yy</div>
+          <div className="block w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-md text-sm bg-white text-slate-500">
+            dd / mm / yy
+          </div>
         </div>
-        <button onClick={clearFilters} className="flex items-center gap-2 border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 text-slate-600">
+        <button
+          onClick={clearFilters}
+          className="flex items-center gap-2 border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 text-slate-600"
+        >
           <XIcon />
           <span>clear</span>
         </button>
       </div>
 
-      {/* ENHANCED TABLE */}
+      {/* Table */}
       <div className="border border-slate-200 rounded-sm overflow-hidden">
         <table className="w-full text-left border-collapse table-fixed">
           <thead>
@@ -702,17 +298,27 @@ export default function IncidentManagement() {
                 return (
                   <tr key={incident._id} className="hover:bg-slate-50/50 transition-colors h-16">
                     <td className="p-4 text-center border-r border-slate-200">
-                      <div onClick={() => toggleRowSelection(incident._id)} className={`w-5 h-5 rounded-[4px] border mx-auto cursor-pointer flex items-center justify-center transition-colors ${isSelected ? 'bg-[#4081EE] border-[#4081EE]' : 'border-slate-300'}`}>
+                      <div
+                        onClick={() => toggleRowSelection(incident._id)}
+                        className={`w-5 h-5 rounded-[4px] border mx-auto cursor-pointer flex items-center justify-center transition-colors ${isSelected ? 'bg-[#4081EE] border-[#4081EE]' : 'border-slate-300'
+                          }`}
+                      >
                         {isSelected && <CheckboxCheck />}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">{incident.incidentId || "N/A"}</td>
-                    <td className="p-4 border-r border-slate-200">{getStatusBadge(incident.status)}</td>
+                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
+                      {incident.incidentId || "N/A"}
+                    </td>
+                    <td className="p-4 border-r border-slate-200">
+                      {getStatusBadge(incident.status)}
+                    </td>
                     <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
                       <div className="truncate">{incident.location?.address || "N/A"}</div>
                       <div className="text-xs text-gray-400">{incident.location?.barangay}</div>
                     </td>
-                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">{formatAssignedTo(incident.assignedTo)}</td>
+                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
+                      {formatAssignedTo(incident.assignedTo)}
+                    </td>
                     <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
                       <div className="flex items-center gap-1">
                         <Icon icon="mdi:clock-outline" className="w-4 h-4 text-slate-400" />
@@ -721,9 +327,19 @@ export default function IncidentManagement() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleViewIncident(incident)} className="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded bg-white hover:bg-blue-50 transition-colors whitespace-nowrap">View</button>
+                        <button
+                          onClick={() => handleViewIncident(incident)}
+                          className="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded bg-white hover:bg-blue-50 transition-colors whitespace-nowrap"
+                        >
+                          View
+                        </button>
                         {incident.status !== 'Resolved' && (
-                          <button onClick={() => handleResolveIncident(incident)} className="px-3 py-1.5 text-sm text-green-600 border border-green-300 rounded bg-white hover:bg-green-50 transition-colors whitespace-nowrap">Resolve</button>
+                          <button
+                            onClick={() => handleResolveIncident(incident)}
+                            className="px-3 py-1.5 text-sm text-green-600 border border-green-300 rounded bg-white hover:bg-green-50 transition-colors whitespace-nowrap"
+                          >
+                            Resolve
+                          </button>
                         )}
                       </div>
                     </td>
@@ -731,7 +347,13 @@ export default function IncidentManagement() {
                 );
               })
             ) : (
-              <tr><td colSpan="7" className="p-8 text-center text-gray-500">{searchTerm || statusFilter !== "All Statuses" ? "No incidents match your filters" : "No incidents found in the system."}</td></tr>
+              <tr>
+                <td colSpan="7" className="p-8 text-center text-gray-500">
+                  {searchTerm || statusFilter !== "All Statuses"
+                    ? "No incidents match your filters"
+                    : "No incidents found in the system."}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
