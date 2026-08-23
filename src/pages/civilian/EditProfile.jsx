@@ -284,8 +284,9 @@ export default function EditProfile() {
     if (!passwordData.newPassword) {
       errors.newPassword = "New password is required";
     } else {
-      if (passwordData.newPassword.length < 12) {
-        errors.newPassword = "Password must be at least 12 characters";
+      // ✅ CHANGED: Minimum length from 12 to 8
+      if (passwordData.newPassword.length < 8) {
+        errors.newPassword = "Password must be at least 8 characters";
       } else if (!/[A-Z]/.test(passwordData.newPassword)) {
         errors.newPassword = "Password must contain an uppercase letter";
       } else if (!/[a-z]/.test(passwordData.newPassword)) {

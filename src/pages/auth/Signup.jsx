@@ -360,84 +360,50 @@ export default function Signup() {
     return { valid: true, error: null };
   };
 
-  // Format and validate phone number - STRICT: must start with 9
-  const formatAndValidatePhone = (inputValue) => {
-    let digits = inputValue.replace(/\D/g, '');
-
-    // Remove leading 0 if present
-    if (digits.startsWith('0')) {
-      digits = digits.substring(1);
-    }
-
-    // Remove 63 if present
-    if (digits.startsWith('63')) {
-      digits = digits.substring(2);
-    }
-
-    // ✅ STRICT CHECK: Must start with 9
-    const isValidStart = digits.startsWith('9');
-    const isValidLength = digits.length === 10;
-    const isValid = isValidStart && isValidLength;
-
-    const formatted = '+63' + digits;
-    const cleaned = digits.length === 10 ? '0' + digits : '';
-
-    return {
-      formatted,
-      cleaned,
-      isValid,
-      digitsAfter63: digits.length,
-      startsWith9: isValidStart
-    };
-  };
 
   const handlePhoneChange = (e) => {
     let value = e.target.value;
 
-    // Ensure +63 prefix
-    if (!value.startsWith('+63')) {
-      if (value.startsWith('63')) {
-        value = '+' + value;
-      } else if (value.startsWith('0')) {
-        const digits = value.replace(/\D/g, '');
-        const afterZero = digits.substring(1);
-        value = '+63' + afterZero;
-      } else {
-        value = '+63' + value.replace(/\D/g, '');
-      }
+    // ✅ Get only digits
+    let digits = value.replace(/\D/g, '');
+
+    // ✅ If it starts with 0, remove it (user typed 0912...)
+    if (digits.startsWith('0')) {
+      digits = digits.substring(1);
     }
 
-    let digitsAfter63 = value.replace('+63', '').replace(/\D/g, '');
-
-    // Limit to 10 digits
-    if (digitsAfter63.length > 10) {
-      digitsAfter63 = digitsAfter63.slice(0, 10);
+    // ✅ If it starts with 63, remove it (user typed 63912...)
+    if (digits.startsWith('63')) {
+      digits = digits.substring(2);
     }
 
-    // Format with spaces
+    // ✅ Limit to 10 digits
+    if (digits.length > 10) {
+      digits = digits.slice(0, 10);
+    }
+
+    // ✅ Format with spaces
     let formattedValue = '+63';
-    if (digitsAfter63.length > 0) {
-      if (digitsAfter63.length <= 3) {
-        formattedValue += ' ' + digitsAfter63;
-      } else if (digitsAfter63.length <= 6) {
-        formattedValue += ' ' + digitsAfter63.slice(0, 3) + ' ' + digitsAfter63.slice(3);
+    if (digits.length > 0) {
+      if (digits.length <= 3) {
+        formattedValue += ' ' + digits;
+      } else if (digits.length <= 6) {
+        formattedValue += ' ' + digits.slice(0, 3) + ' ' + digits.slice(3);
       } else {
-        formattedValue += ' ' + digitsAfter63.slice(0, 3) + ' ' + digitsAfter63.slice(3, 6) + ' ' + digitsAfter63.slice(6, 10);
+        formattedValue += ' ' + digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6, 10);
       }
     }
 
     setPhone(formattedValue);
 
     // ✅ STRICT VALIDATION
-    if (digitsAfter63.length === 0) {
+    if (digits.length === 0) {
       setValidationErrors(prev => ({ ...prev, phone: "Phone number is required" }));
-    } else if (!digitsAfter63.startsWith('9')) {
+    } else if (!digits.startsWith('9')) {
       setValidationErrors(prev => ({ ...prev, phone: "❌ Phone number must start with 9 (e.g., +63 912 345 6789)" }));
-    } else if (digitsAfter63.length < 10) {
-      setValidationErrors(prev => ({ ...prev, phone: `Need ${10 - digitsAfter63.length} more digit(s) (${digitsAfter63.length}/10 digits)` }));
-    } else if (digitsAfter63.length > 10) {
-      setValidationErrors(prev => ({ ...prev, phone: `Too many digits (${digitsAfter63.length - 10} extra digits)` }));
-    } else if (digitsAfter63.length === 10 && digitsAfter63.startsWith('9')) {
+    } else if (digits.length < 10) {
+      setValidationErrors(prev => ({ ...prev, phone: `Need ${10 - digits.length} more digit(s) (${digits.length}/10 digits)` }));
+    } else if (digits.length === 10 && digits.startsWith('9')) {
       setValidationErrors(prev => ({ ...prev, phone: null })); // ✅ Valid!
     }
   };
@@ -476,9 +442,12 @@ export default function Signup() {
       errors.lastName = "Last name must be at least 2 characters";
     }
 
+    // ✅ FIXED: Phone validation - must start with 9
     const digitsAfter63 = phone.replace('+63', '').replace(/\D/g, '');
     if (!phone.trim() || phone === '+63') {
       errors.phone = "Phone number is required";
+    } else if (!digitsAfter63.startsWith('9')) {
+      errors.phone = "Phone number must start with 9 (e.g., +63 912 345 6789)";
     } else if (digitsAfter63.length !== 10) {
       errors.phone = `Phone number must have exactly 10 digits after +63 (you have ${digitsAfter63.length} digits)`;
     }
@@ -907,24 +876,25 @@ export default function Signup() {
               </div>
 
               <div className="w-full">
-                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'
-                  }`}>
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'}`}>
                   <legend className="text-sm px-2 text-gray-700">Phone Number</legend>
                   <div className="flex items-center">
+                    <span className="text-gray-500 font-medium mr-1">+63</span>
                     <input
                       ref={phoneInputRef}
                       type="tel"
-                      value={phone}
+                      value={phone.replace('+63', '').trim()}
                       onChange={handlePhoneChange}
                       onFocus={handlePhoneFocus}
-                      placeholder="+63 912 345 6789"
+                      placeholder="912 345 6789"
                       className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
                       required
+                      maxLength={13}
                     />
                   </div>
                 </fieldset>
                 <p className="text-gray-400 text-xs mt-1">
-                  Must start with <strong>9</strong> and have exactly 10 digits (e.g., +63 912 345 6789 or type 09123456789)
+                  Must start with <strong>9</strong> and have exactly 10 digits (e.g., 912 345 6789)
                 </p>
                 {validationErrors.phone && (
                   <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>
