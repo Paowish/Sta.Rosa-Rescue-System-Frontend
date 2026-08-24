@@ -29,6 +29,11 @@ export default function IncidentManagement() {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
 
+  // ✅ Date Filter States
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   useEffect(() => {
     loadIncidents();
   }, []);
@@ -40,7 +45,6 @@ export default function IncidentManagement() {
     console.log('📋 Incidents loaded:', incidents.length);
 
     if (viewId && incidents.length > 0) {
-      // Find the incident by ID - try multiple fields
       const incident = incidents.find(i =>
         i._id === viewId ||
         i.id === viewId ||
@@ -55,7 +59,6 @@ export default function IncidentManagement() {
       if (incident) {
         setSelectedIncident(incident);
         setIsModalOpen(true);
-        // ✅ Clean up the URL by removing the view parameter
         const newParams = new URLSearchParams(searchParams);
         newParams.delete('view');
         setSearchParams(newParams, { replace: true });
@@ -69,7 +72,7 @@ export default function IncidentManagement() {
 
   useEffect(() => {
     applyFilters();
-  }, [incidents, searchTerm, statusFilter]);
+  }, [incidents, searchTerm, statusFilter, startDate, endDate]);
 
   const loadIncidents = async () => {
     try {
@@ -101,7 +104,13 @@ export default function IncidentManagement() {
 
   const applyFilters = () => {
     let filtered = [...incidents];
-    if (statusFilter !== "All Statuses") filtered = filtered.filter(i => i.status === statusFilter);
+
+    // ✅ Status Filter
+    if (statusFilter !== "All Statuses") {
+      filtered = filtered.filter(i => i.status === statusFilter);
+    }
+
+    // ✅ Search Filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(i =>
@@ -111,7 +120,49 @@ export default function IncidentManagement() {
         (i.location?.barangay && i.location.barangay.toLowerCase().includes(term))
       );
     }
+
+    // ✅ Date Range Filter
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(i => {
+        const date = new Date(i.reportedAt || i.createdAt);
+        return date >= start;
+      });
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(i => {
+        const date = new Date(i.reportedAt || i.createdAt);
+        return date <= end;
+      });
+    }
+
     setFilteredIncidents(filtered);
+  };
+
+  // ✅ Clear Date Filter
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setShowDatePicker(false);
+  };
+
+  // ✅ Format Date for Display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return "N/A";
+    }
   };
 
   const handleViewIncident = (incident) => {
@@ -119,7 +170,14 @@ export default function IncidentManagement() {
     setIsModalOpen(true);
   };
 
+  // ✅ Updated Resolve - Check if Dispatched first (matching IncidentDetails)
   const handleResolveIncident = async (incident) => {
+    // ✅ Check if incident is dispatched first
+    if (incident.status !== 'Dispatched' && incident.status !== 'Active') {
+      alert('⚠️ This incident must be dispatched before it can be resolved.');
+      return;
+    }
+
     if (window.confirm(`Mark incident ${incident.incidentId} as resolved?`)) {
       try {
         const response = await incidentService.resolveIncident(incident._id, "Resolved by team");
@@ -134,6 +192,11 @@ export default function IncidentManagement() {
     }
   };
 
+  // ✅ Check if Resolve button should be disabled
+  const isResolveDisabled = (incident) => {
+    return incident.status !== 'Dispatched' && incident.status !== 'Active';
+  };
+
   const handleDispatchSuccess = () => {
     setIsModalOpen(false);
     loadIncidents();
@@ -142,6 +205,7 @@ export default function IncidentManagement() {
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("All Statuses");
+    clearDateFilter();
   };
 
   const toggleRowSelection = (id) => {
@@ -180,7 +244,7 @@ export default function IncidentManagement() {
 
   return (
     <div className="p-6 bg-white min-h-screen font-sans text-slate-700">
-      {/* ✅ Incident Detail Modal - Imported from separate file */}
+      {/* ✅ Incident Detail Modal */}
       <IncidentDetailModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -232,6 +296,7 @@ export default function IncidentManagement() {
 
       {/* Filters Bar */}
       <div className="flex flex-wrap items-center gap-4 mt-6 mb-6">
+        {/* Search */}
         <div className="relative w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon />
@@ -244,6 +309,8 @@ export default function IncidentManagement() {
             className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-md text-sm placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
+
+        {/* Status Filter */}
         <div className="relative w-40">
           <select
             value={statusFilter}
@@ -260,41 +327,123 @@ export default function IncidentManagement() {
             <ChevronDown />
           </div>
         </div>
-        <div className="relative w-40">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+
+        {/* ✅ Date Filter - Clickable */}
+        <div className="relative w-48">
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="flex items-center gap-2 w-full border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 transition-colors text-slate-600"
+          >
             <CalendarIcon />
-          </div>
-          <div className="block w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-md text-sm bg-white text-slate-500">
-            dd / mm / yy
-          </div>
+            <span className="truncate">
+              {startDate || endDate
+                ? `${startDate ? formatDate(startDate) : 'Start'} - ${endDate ? formatDate(endDate) : 'End'}`
+                : 'Select Date Range'
+              }
+            </span>
+            {startDate || endDate ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearDateFilter();
+                }}
+                className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0"
+              >
+                <XIcon />
+              </button>
+            ) : null}
+          </button>
+
+          {/* ✅ Date Picker Dropdown */}
+          {showDatePicker && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-lg p-4 z-50">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      const sevenDaysAgo = new Date(today);
+                      sevenDaysAgo.setDate(today.getDate() - 7);
+                      setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+                      setEndDate(today.toISOString().split('T')[0]);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      const thirtyDaysAgo = new Date(today);
+                      thirtyDaysAgo.setDate(today.getDate() - 30);
+                      setStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+                      setEndDate(today.toISOString().split('T')[0]);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    Last 30 Days
+                  </button>
+                  <button
+                    onClick={clearDateFilter}
+                    className="px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Clear All Filters */}
         <button
           onClick={clearFilters}
           className="flex items-center gap-2 border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 text-slate-600"
         >
           <XIcon />
-          <span>clear</span>
+          <span>Clear All</span>
         </button>
       </div>
 
-      {/* Table */}
-      <div className="border border-slate-200 rounded-sm overflow-hidden">
-        <table className="w-full text-left border-collapse table-fixed">
+      {/* ✅ Table - Full Width with overflow-x-auto */}
+      <div className="border border-slate-200 rounded-sm overflow-hidden overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="border-b border-slate-200 bg-white">
               <th className="p-4 w-10 text-center border-r border-slate-200"><CheckboxAll /></th>
-              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[15%]">ID</th>
-              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[15%]">Status</th>
-              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[25%]">Location</th>
-              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[15%]">Assigned</th>
-              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[15%]">Reported</th>
-              <th className="p-4 text-sm font-medium text-slate-600 w-[15%]">Action</th>
+              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[12%]">ID</th>
+              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[12%]">Status</th>
+              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[20%]">Location</th>
+              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[12%]">Assigned</th>
+              <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[18%]">Reported</th>
+              <th className="p-4 text-sm font-medium text-slate-600 w-[16%]">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
             {filteredIncidents.length > 0 ? (
               filteredIncidents.map((incident) => {
                 const isSelected = selectedIds.includes(incident._id);
+                const isResolved = incident.status === 'Resolved';
+                const resolveDisabled = isResolveDisabled(incident);
+
                 return (
                   <tr key={incident._id} className="hover:bg-slate-50/50 transition-colors h-16">
                     <td className="p-4 text-center border-r border-slate-200">
@@ -312,17 +461,22 @@ export default function IncidentManagement() {
                     <td className="p-4 border-r border-slate-200">
                       {getStatusBadge(incident.status)}
                     </td>
-                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
-                      <div className="truncate">{incident.location?.address || "N/A"}</div>
+                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200">
+                      <div className="truncate max-w-[200px]">{incident.location?.address || "N/A"}</div>
                       <div className="text-xs text-gray-400">{incident.location?.barangay}</div>
                     </td>
                     <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
                       {formatAssignedTo(incident.assignedTo)}
                     </td>
-                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
-                      <div className="flex items-center gap-1">
-                        <Icon icon="mdi:clock-outline" className="w-4 h-4 text-slate-400" />
-                        <span>{incident.reportedAt ? new Date(incident.reportedAt).toLocaleString() : "N/A"}</span>
+                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <Icon icon="mdi:clock-outline" className="w-4 h-4 text-slate-400" />
+                          <span className="text-sm">{formatDate(incident.reportedAt || incident.createdAt)}</span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : ''}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4">
@@ -333,14 +487,16 @@ export default function IncidentManagement() {
                         >
                           View
                         </button>
-                        {incident.status !== 'Resolved' && (
-                          <button
-                            onClick={() => handleResolveIncident(incident)}
-                            className="px-3 py-1.5 text-sm text-green-600 border border-green-300 rounded bg-white hover:bg-green-50 transition-colors whitespace-nowrap"
-                          >
-                            Resolve
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleResolveIncident(incident)}
+                          disabled={resolveDisabled || isResolved}
+                          className={`px-3 py-1.5 text-sm rounded border whitespace-nowrap transition-colors ${resolveDisabled || isResolved
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'text-green-600 border-green-300 bg-white hover:bg-green-50'
+                            }`}
+                        >
+                          {isResolved ? 'Resolved' : 'Resolve'}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -349,7 +505,7 @@ export default function IncidentManagement() {
             ) : (
               <tr>
                 <td colSpan="7" className="p-8 text-center text-gray-500">
-                  {searchTerm || statusFilter !== "All Statuses"
+                  {searchTerm || statusFilter !== "All Statuses" || startDate || endDate
                     ? "No incidents match your filters"
                     : "No incidents found in the system."}
                 </td>
@@ -358,6 +514,21 @@ export default function IncidentManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* ✅ Show active filter count */}
+      {(searchTerm || statusFilter !== "All Statuses" || startDate || endDate) && (
+        <div className="mt-4 text-sm text-gray-500 flex items-center justify-between">
+          <span>
+            Showing {filteredIncidents.length} of {incidents.length} incidents
+          </span>
+          <button
+            onClick={clearFilters}
+            className="text-blue-500 hover:text-blue-700 underline"
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
     </div>
   );
 }

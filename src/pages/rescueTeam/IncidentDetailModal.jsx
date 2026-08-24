@@ -79,8 +79,8 @@ export default function IncidentDetailModal({ isOpen, onClose, incident, onDispa
                         <button
                             onClick={() => setActiveTab('overview')}
                             className={`flex-1 py-3 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview'
-                                    ? 'border-blue-600 text-gray-900'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                ? 'border-blue-600 text-gray-900'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Overview
@@ -88,8 +88,8 @@ export default function IncidentDetailModal({ isOpen, onClose, incident, onDispa
                         <button
                             onClick={() => setActiveTab('report')}
                             className={`flex-1 py-3 text-center text-sm font-medium border-b-2 transition-colors ${activeTab === 'report'
-                                    ? 'border-blue-600 text-gray-900'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                ? 'border-blue-600 text-gray-900'
+                                : 'border-transparent text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             Report

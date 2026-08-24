@@ -236,7 +236,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             console.log('📡 Dispatching to:', `${apiUrl}/incidents/${incident._id || incident.id}/dispatch`);
             console.log('📡 Selected IDs:', selectedIds);
 
-            // ✅ REMOVE the artificial delay!
             const response = await fetch(`${apiUrl}/incidents/${incident._id || incident.id}/dispatch`, {
                 method: 'POST',
                 headers: {
@@ -360,6 +359,13 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
     const handleResolve = async () => {
         const incident = incidentDataRef.current || data;
+
+        // ✅ Check if dispatched - if not, show warning
+        if (!isDispatched) {
+            alert('⚠️ This incident must be dispatched before it can be resolved.');
+            return;
+        }
+
         if (isActionLocked) {
             alert('This incident is already resolved or dispatched.');
             return;
@@ -603,7 +609,11 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                         <div className="flex gap-2">
                             <button
                                 onClick={handleResolve}
-                                className="flex-1 py-2 rounded text-sm flex items-center justify-center gap-1 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                                disabled={!isDispatched}  // ✅ Disabled until dispatched
+                                className={`flex-1 py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors duration-200 ${isDispatched
+                                    ? 'bg-green-600 text-white hover:bg-green-700'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
                             >
                                 <Icon icon="material-symbols:check-circle" width="16" />
                                 Resolve
@@ -616,6 +626,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                                 View Report
                             </button>
                         </div>
+
                     </>
                 )}
             </div>
