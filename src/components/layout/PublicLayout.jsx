@@ -66,11 +66,11 @@ export default function PublicLayout() {
                 {/* Logo */}
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
                     <img src="/logo.png" alt="iRespond Logo" className="w-8 h-8" />
-                    <h1 className="text-xl font-bold text-[#1A1A1A] tracking-tight">
-                        <h1 className="text-xl font-bold text-black tracking-tight">
+                    <span className="text-xl font-bold text-[#1A1A1A] tracking-tight">
+                        <span className="text-xl font-bold text-black tracking-tight">
                             iRespond
-                        </h1>
-                    </h1>
+                        </span>
+                    </span>
                 </div>
 
                 {/* PRECISE NAVIGATION LINKS */}

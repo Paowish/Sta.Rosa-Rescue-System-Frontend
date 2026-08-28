@@ -8,9 +8,9 @@ import { useState, useEffect } from 'react';
 
 export default function LandingHome() {
     const [fakeIncidents, setFakeIncidents] = useState([
-        { id: '02:72:96', type: 'Medical Emergency', loc: 'Brgy. San Mariano', time: 'Just Now', status: 'PENDING', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-        { id: '02:72:96', type: 'Crime Incident', loc: 'Brgy. Gomez', time: '1 Minute Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
-        { id: '02:72:96', type: 'Landslide', loc: 'Brgy. San Pedro', time: '2 Minutes Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
+        { id: '01:11:11', type: 'Medical Emergency', loc: 'Brgy. San Mariano', time: 'Just Now', status: 'PENDING', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+        { id: '01:22:22', type: 'Crime Incident', loc: 'Brgy. Gomez', time: '1 Minute Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
+        { id: '01:33:33', type: 'Landslide', loc: 'Brgy. San Pedro', time: '2 Minutes Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
     ]);
 
     useEffect(() => {
