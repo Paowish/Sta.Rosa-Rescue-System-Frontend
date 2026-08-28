@@ -1,14 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+// src/index.js
 
-// ✅ Disable console logs in production
+// ✅ DISABLE ALL CONSOLE LOGS IN PRODUCTION
 if (process.env.NODE_ENV === 'production') {
     console.log = () => { };
     console.warn = () => { };
-    console.error = () => { };
     console.info = () => { };
     console.debug = () => { };
+    console.error = () => { };
 }
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
