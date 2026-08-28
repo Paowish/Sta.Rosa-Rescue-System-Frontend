@@ -4,8 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import ExportUserModal from "./ExportUserModal";
 
-
-
 export default function UserAccount() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,7 +59,12 @@ export default function UserAccount() {
             });
             const data = await response.json();
             if (data.success) {
-                const formattedUsers = data.data.map(user => {
+                // ✅ Filter out Admin and Rescuer accounts
+                const filteredData = data.data.filter(user =>
+                    user.role !== 'admin' && user.role !== 'rescuer' && user.role !== 'responder'
+                );
+
+                const formattedUsers = filteredData.map(user => {
                     let status = 'PENDING';
                     if (user.isApproved) {
                         status = 'ACTIVE';
@@ -279,9 +282,7 @@ export default function UserAccount() {
     const getRoleColor = (role) => {
         switch (role) {
             case 'VOLUNTEER': return 'bg-purple-100 text-purple-700 border-purple-200';
-            case 'RESCUER': return 'bg-blue-100 text-blue-700 border-blue-200';
             case 'CIVILIAN': return 'bg-pink-100 text-pink-700 border-pink-200';
-            case 'ADMIN': return 'bg-red-100 text-red-700 border-red-200';
             default: return 'bg-gray-100 text-gray-700 border-gray-200';
         }
     };
@@ -345,9 +346,7 @@ export default function UserAccount() {
                         >
                             <option value="all">All Roles</option>
                             <option value="VOLUNTEER">Volunteer</option>
-                            <option value="RESCUER">Rescuer</option>
                             <option value="CIVILIAN">Civilian</option>
-                            <option value="ADMIN">Admin</option>
                         </select>
 
                         {/* Status Filter */}
