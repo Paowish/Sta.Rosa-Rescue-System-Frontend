@@ -1,3 +1,4 @@
+// src/pages/rescueTeam/Dashboard.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -5,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { incidentService, notificationService } from "../../services/api";
 import io from 'socket.io-client';
 import { Icon } from "@iconify/react";
+import IncidentDetails from "./IncidentDetails";
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -216,7 +218,7 @@ export default function Dashboard({ onIncidentClick }) {
   const [latestIncidentAlert, setLatestIncidentAlert] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [selectedIncident, setSelectedIncident] = useState(null); // ✅ KEEP THIS
   const [mapCenter, setMapCenter] = useState([15.3613, 120.9365]);
   const socketRef = useRef(null);
   const audioRef = useRef(null);
@@ -406,10 +408,11 @@ export default function Dashboard({ onIncidentClick }) {
     if (incident._id) {
       setNewIncidentIds(prev => prev.filter(id => id !== incident._id));
     }
-    if (typeof onIncidentClick === 'function') {
-      onIncidentClick(incident);
-    }
+
+    // ✅ SET THE SELECTED INCIDENT HERE (so the panel opens)
     setSelectedIncident(incident);
+
+    // ✅ Update the map center
     const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
     const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
     if (lat && lng) {
@@ -502,7 +505,7 @@ export default function Dashboard({ onIncidentClick }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className={`h-screen bg-gray-50 p-6 flex gap-6 overflow-hidden transition-all duration-300 ${selectedIncident ? 'pr-[420px]' : 'pr-6'}`}>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -573,196 +576,148 @@ export default function Dashboard({ onIncidentClick }) {
         </div>
       )}
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="min-w-0 flex-1 pr-4">
-          <h1 className="text-2xl font-bold text-gray-800 truncate">Incident Dashboard</h1>
-          <p className="text-sm text-gray-500 truncate">Real-time incident monitoring and response coordination</p>
-        </div>
-        <div className="flex items-center gap-4 shrink-0">
-          {unreadCount > 0 && (
-            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 shrink-0">
-              <Icon icon="mdi:bell" className="w-5 h-5 text-blue-500" />
-              <span className="text-sm font-medium text-blue-700">{unreadCount} new</span>
-            </div>
-          )}
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50 shrink-0"
-          >
-            <span className={`${isRefreshing ? 'animate-spin' : ''}`}>↻</span>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          title="Total Incidents"
-          value={stats.total}
-          icon="mdi:chart-bar"           // ✅ Clean professional bar chart
-          color="text-gray-700"
-          trend={{ value: 5, positive: false }}
-        />
-        <StatCard
-          title="Active"
-          value={stats.active}
-          icon="mdi:lightning-bolt"      // ✅ Clean sharp bolt
-          color="text-red-600"
-          trend={{ value: 12, positive: true }}
-        />
-        <StatCard
-          title="Pending"
-          value={stats.pending}
-          icon="mdi:hourglass-outline"   // ✅ Thin, clean hourglass
-          color="text-amber-600"
-          trend={{ value: 3, positive: false }}
-        />
-        <StatCard
-          title="Resolved"
-          value={stats.resolved}
-          icon="mdi:check-circle-outline" // ✅ Clean outlined checkmark
-          color="text-emerald-600"
-          trend={{ value: 8, positive: true }}
-        />
-      </div>
-
-      {/* MAIN CONTENT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* INCIDENTS LIST */}
-        <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-800">Active Incidents</h3>
-              <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-medium">
-                {stats.active}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Search incidents..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
-              />
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
-              >
-                <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="dispatched">Dispatched</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
+      {/* MAIN CONTENT AREA (LEFT SIDE) */}
+      <div className="flex-1 min-w-0">
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="min-w-0 flex-1 pr-4">
+            <h1 className="text-2xl font-bold text-gray-800 truncate">Incident Dashboard</h1>
+            <p className="text-sm text-gray-500 truncate">Real-time incident monitoring and response coordination</p>
           </div>
-
-          <div className="p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-3">
-            {filteredIncidents.slice(0, 20).map((incident) => {
-              const isNew = newIncidentIds.includes(incident._id);
-              const volunteerStatus = getVolunteerStatusForIncident(incident._id);
-              const timeAgo = getTimeAgo(incident.reportedAt);
-              const severity = incident.severity || 'Medium';
-
-              return (
-                <IncidentCard
-                  key={incident._id}
-                  incident={incident}
-                  isSelected={selectedIncident?._id === incident._id}
-                  onClick={handleIncidentClick}
-                  isNew={isNew}
-                  volunteerStatus={volunteerStatus}
-                  timeAgo={timeAgo}
-                  severity={severity}
-                />
-              );
-            })}
-            {filteredIncidents.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-400">No incidents found</p>
-                <p className="text-xs text-gray-300 mt-1">Try adjusting your search or filters</p>
+          <div className="flex items-center gap-4 shrink-0">
+            {unreadCount > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 shrink-0">
+                <Icon icon="mdi:bell" className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-medium text-blue-700">{unreadCount} new</span>
               </div>
             )}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 disabled:opacity-50 shrink-0"
+            >
+              <span className={`${isRefreshing ? 'animate-spin' : ''}`}>↻</span>
+              Refresh
+            </button>
           </div>
         </div>
 
-        {/* MAP */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
-          <MapContainer
-            center={mapCenter}
-            zoom={13}
-            style={{ height: "600px", width: "100%" }}
-            key={mapCenter.toString()}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapCenter position={mapCenter} />
-
-            {filteredIncidents.slice(0, 20).map((incident) => {
-              const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
-              const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
-
-              if (lat && lng) {
-                return (
-                  <Marker
-                    key={incident._id}
-                    position={[parseFloat(lat), parseFloat(lng)]}
-                    icon={getMarkerIcon(incident.severity)}
-                  >
-                    <Popup>
-                      <div className="p-1">
-                        <h4 className="font-semibold text-sm mb-1">{incident.type}</h4>
-                        <p className="text-xs text-gray-600 mb-1">{incident.location?.address}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <StatusBadge status={incident.status} />
-                          <SeverityBadge severity={incident.severity} />
-                        </div>
-                        <p className="text-[10px] text-gray-400 mt-2">ID: {incident.incidentId}</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              }
-              return null;
-            })}
-          </MapContainer>
-
-          {selectedIncident && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-sm border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="text-blue-500 shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 0116 0z" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-medium text-gray-700 truncate">
-                    {selectedIncident.type}
-                  </span>
-                  <span className="text-xs text-gray-400 truncate">
-                    {selectedIncident.location?.address}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelectedIncident(null)}
-                  className="text-xs text-gray-400 hover:text-gray-600 shrink-0 ml-2"
+        {/* MAIN CONTENT GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* INCIDENTS LIST */}
+          <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-800">Active Incidents</h3>
+                <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                  {stats.active}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search incidents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0"
+                />
+                <select
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  className="border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
                 >
-                  Clear
-                </button>
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="dispatched">Dispatched</option>
+                  <option value="resolved">Resolved</option>
+                </select>
               </div>
             </div>
-          )}
+
+            <div className="p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-3">
+              {filteredIncidents.slice(0, 20).map((incident) => {
+                const isNew = newIncidentIds.includes(incident._id);
+                const volunteerStatus = getVolunteerStatusForIncident(incident._id);
+                const timeAgo = getTimeAgo(incident.reportedAt);
+                const severity = incident.severity || 'Medium';
+
+                return (
+                  <IncidentCard
+                    key={incident._id}
+                    incident={incident}
+                    isSelected={selectedIncident?._id === incident._id}
+                    onClick={handleIncidentClick}
+                    isNew={isNew}
+                    volunteerStatus={volunteerStatus}
+                    timeAgo={timeAgo}
+                    severity={severity}
+                  />
+                );
+              })}
+              {filteredIncidents.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No incidents found</p>
+                  <p className="text-xs text-gray-300 mt-1">Try adjusting your search or filters</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* MAP */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
+            <MapContainer
+              center={mapCenter}
+              zoom={13}
+              style={{ height: "600px", width: "100%" }}
+              key={mapCenter.toString()}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <MapCenter position={mapCenter} />
+
+              {filteredIncidents.slice(0, 20).map((incident) => {
+                const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
+                const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
+
+                if (lat && lng) {
+                  return (
+                    <Marker
+                      key={incident._id}
+                      position={[parseFloat(lat), parseFloat(lng)]}
+                      icon={getMarkerIcon(incident.severity)}
+                    >
+                      <Popup>
+                        <div className="p-1">
+                          <h4 className="font-semibold text-sm mb-1">{incident.type}</h4>
+                          <p className="text-xs text-gray-600 mb-1">{incident.location?.address}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <StatusBadge status={incident.status} />
+                            <SeverityBadge severity={incident.severity} />
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-2">ID: {incident.incidentId}</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                }
+                return null;
+              })}
+            </MapContainer>
+          </div>
         </div>
       </div>
+      {selectedIncident && (
+        <IncidentDetails
+          data={selectedIncident}
+          onClose={() => setSelectedIncident(null)}
+          onDispatch={() => { }}
+          onResolve={() => { }}
+          onViewReport={() => { }}
+        />
+      )}
     </div>
   );
 }

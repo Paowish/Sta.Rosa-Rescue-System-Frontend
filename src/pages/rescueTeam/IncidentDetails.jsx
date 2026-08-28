@@ -473,15 +473,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     }
 
     return (
-        <div
-            className={`h-full flex flex-col bg-white transition-all duration-400 ease-out transform ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
-                }`}
-            style={{
-                transitionProperty: 'opacity, transform',
-                transitionDuration: '400ms',
-                transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-        >
+        <div className="fixed top-0 right-0 h-screen w-[400px] bg-white shadow-2xl flex flex-col z-[999] border-l border-gray-200">
             {/* Modals */}
             <LoadingModal isOpen={showLoadingModal} />
             <SuccessModal isOpen={showSuccessModal} data={successData} onClose={handleCloseSuccessModal} />
@@ -521,8 +513,8 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 incidentId={getIncidentId()}
             />
 
-            {/* Header */}
-            <div className="sticky top-0 bg-white z-10 p-4 border-b relative">
+            {/* Header - STAYS AT TOP */}
+            <div className="shrink-0 bg-white z-10 p-4 border-b relative">
                 <button
                     onClick={onClose}
                     className="absolute top-3 right-3 text-gray-400 text-xl hover:text-gray-600 transition-transform duration-200 hover:scale-110"
@@ -532,7 +524,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 <h2 className="font-semibold text-[#262D31]">Incident Details</h2>
             </div>
 
-            {/* Content */}
+            {/* Content - SCROLLS IN THE MIDDLE */}
             <div className="flex-1 overflow-y-auto">
                 <IncidentHeader
                     title={getTitle()}
@@ -553,9 +545,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 <TimelineSection timeline={timeline} />
             </div>
 
-            {/* =========================================== */}
-            {/* ✅ UPDATED ACTIONS FOOTER WITH DISPATCH LOCK */}
-            {/* =========================================== */}
+            {/* Footer/Buttons - STAYS AT BOTTOM */}
             <div className="sticky bottom-0 bg-white z-10 p-3 border-t space-y-2">
                 {isActionLocked ? (
                     <div className="rounded-lg p-3 text-center border bg-blue-50 border-blue-200">
@@ -626,10 +616,11 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                                 View Report
                             </button>
                         </div>
-
                     </>
                 )}
             </div>
         </div>
     );
+
+
 }

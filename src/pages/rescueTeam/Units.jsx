@@ -139,82 +139,68 @@ export default function Units() {
     };
 
     return (
-        <div className="min-h-screen bg-[#fafbfc] p-6 font-sans text-gray-800 relative">
-
-            {/* --- Header --- */}
-            <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                        <Icon icon="mdi:account-group" className="w-8 h-8 text-[#1f4e6f]" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-[#1f4e6f] tracking-tight">Responders</h1>
-                        <p className="text-xs text-gray-400 font-medium">Team roster & deployment status</p>
-                        <p className="text-xs text-gray-400 font-medium">Santa Rosa Emergency Response</p>
-                    </div>
-                </div>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors shadow-sm"
-                >
-                    <Icon icon="mdi:refresh" className="w-4 h-4" /> Refresh
-                </button>
-            </header>
-
+        <div className="min-h-screen bg-[#fafbfc] font-sans text-gray-800 relative">
+            {/* Main Flex Container - No top padding */}
             <div className="flex gap-6">
 
-                {/* --- Left Column --- */}
-                <div className="flex-1">
+                {/* --- Left Column (Header + Content) --- */}
+                <div className="flex-1 min-w-0 pb-6">
+                    {/* --- Header --- */}
+                    <header className="flex justify-between items-center pt-6 pb-4 pl-6 border-b border-gray-200">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                                <Icon icon="mdi:account-group" className="w-8 h-8 text-[#1f4e6f]" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-[#1f4e6f] tracking-tight">Responders</h1>
+                                <p className="text-xs text-gray-400 font-medium">Santa Rosa Emergency Response</p>
+                            </div>
+                        </div>
+                    </header>
 
-                    {/* 🔹 Enhanced Stats Row */}
-                    <div className="grid grid-cols-4 gap-4 mb-6">
-                        <StatCard title="Total Units" value={stats.total} color="text-gray-700" />
-                        <StatCard title="Available" value={stats.available} color="text-emerald-600" />
-                        <StatCard title="Deployed" value={stats.deployed} color="text-orange-500" />
-                        <StatCard title="Stand by" value={stats.standby} color="text-amber-500" />
-                    </div>
-
-                    {/* Grid Cards */}
-                    <div className="grid grid-cols-2 gap-5">
-                        {responders.map((r) => (
-                            <div
-                                key={r.id}
-                                onClick={() => setSelectedId(r.id)}
-                                className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'}`}
-                            >
-                                <div className="p-5 pb-3">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-12 h-12 rounded-full bg-[#f0f2f5] flex-shrink-0 flex items-center justify-center text-gray-500 border border-gray-200">
-                                            <Icon icon="mdi:account-group" className="w-6 h-6" />
+                    {/* --- Content --- */}
+                    <div className="pl-6 pt-6">
+                        <div className="grid grid-cols-2 gap-5">
+                            {responders.map((r) => (
+                                <div
+                                    key={r.id}
+                                    onClick={() => setSelectedId(r.id)}
+                                    className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'}`}
+                                >
+                                    <div className="p-5 pb-3">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="w-12 h-12 rounded-full bg-[#f0f2f5] flex-shrink-0 flex items-center justify-center text-gray-500 border border-gray-200">
+                                                <Icon icon="mdi:account-group" className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-[15px] text-gray-800">{r.name}</div>
+                                                <div className="text-[12px] text-gray-500">{r.role}</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div className="font-bold text-[15px] text-gray-800">{r.name}</div>
-                                            <div className="text-[12px] text-gray-500">{r.role}</div>
-                                        </div>
-                                    </div>
 
-                                    <div className="border-t border-gray-100 pt-3 mt-2">
-                                        <div className="text-[12px] font-medium text-gray-500 mb-1.5">Speciality</div>
-                                        <div className="flex flex-wrap">
-                                            {r.specialties.length > 0 ? (
-                                                r.specialties.slice(0, 4).map(s => <Tag key={s} label={s} />)
-                                            ) : (
-                                                <span className="text-xs text-gray-400">No specialties</span>
-                                            )}
+                                        <div className="border-t border-gray-100 pt-3 mt-2">
+                                            <div className="text-[12px] font-medium text-gray-500 mb-1.5">Speciality</div>
+                                            <div className="flex flex-wrap">
+                                                {r.specialties.length > 0 ? (
+                                                    r.specialties.slice(0, 4).map(s => <Tag key={s} label={s} />)
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">No specialties</span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="mt-2 pt-2 border-t border-gray-100">
-                                        <ScheduleBar schedule={r.schedule} />
+                                        <div className="mt-2 pt-2 border-t border-gray-100">
+                                            <ScheduleBar schedule={r.schedule} />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* --- Right Column (Side Panel) --- */}
-                <div className="w-[380px] bg-white rounded-xl border border-gray-200 shadow-lg h-[calc(100vh-140px)] sticky top-6 overflow-hidden shrink-0 flex flex-col">
+                {/* --- Right Column (Sticky Top) --- */}
+                <div className="w-[400px] shrink-0 bg-white border-l border-gray-200 shadow-xl h-screen sticky top-0 overflow-y-auto flex flex-col">
                     {activeResponder ? (
                         <>
                             {/* Top Section */}
@@ -236,7 +222,7 @@ export default function Units() {
                             </div>
 
                             {/* Info Rows */}
-                            <div className="flex-1 overflow-y-auto text-[13px] bg-white pb-4">
+                            <div className="flex-1 text-[13px] bg-white pb-4">
 
                                 <div className="bg-[#f8f9fa] py-2.5 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[12px]">
                                     Profile

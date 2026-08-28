@@ -463,13 +463,14 @@ export default function DashboardLayout({ children }) {
 
       {/* 🟢 RESTORED ORIGINAL TEAL NAVBAR */}
       <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
-        <div className="flex items-center gap-3">
+        {/* ✅ WRAP IN A CLICKABLE NAVLINK */}
+        <NavLink to="/dashboard" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
           <img src="/logo.png" className="w-10 h-10" alt="logo" />
           <div>
             <h1 className="font-semibold text-lg tracking-tight">Rescue Team</h1>
             <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
           </div>
-        </div>
+        </NavLink>
         <NotificationBell />
       </div>
 
@@ -567,7 +568,7 @@ export default function DashboardLayout({ children }) {
               <div className="w-full h-full bg-black/20 backdrop-blur-[1px]"></div>
             </div>
             <div
-              className={`absolute top-0 right-0 h-full w-[450px] bg-white border-l border-gray-200 shadow-2xl flex flex-col z-20 transition-transform duration-300 ease-in-out ${isSidebarClosing ? 'translate-x-full' : 'translate-x-0'}`}
+              className={`absolute top-0 right-0 h-full w-[450px] border-l border-gray-200 shadow-2xl z-20 transition-transform duration-300 ease-in-out ${isSidebarClosing ? 'translate-x-full' : 'translate-x-0'}`}
             >
               <IncidentDetails
                 key={selectedIncident?._id || selectedIncident?.id}
