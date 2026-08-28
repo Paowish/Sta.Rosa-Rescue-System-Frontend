@@ -15,10 +15,20 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: ' https://sta-rosa-rescue-system-backend.onrender.com',
+        target: 'https://sta-rosa-rescue-system-backend.onrender.com',
         changeOrigin: true,
         secure: false,
         ws: true
+      }
+    }
+  },
+  // ✅ ADD THIS BUILD CONFIGURATION
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
       }
     }
   }
