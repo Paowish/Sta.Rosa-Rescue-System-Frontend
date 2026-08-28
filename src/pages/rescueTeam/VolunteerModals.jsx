@@ -1,3 +1,4 @@
+// src/components/modals/DispatchModal.jsx
 import React, { useState, useEffect } from 'react';
 import { Icon } from "@iconify/react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -32,7 +33,7 @@ const getMarkerIcon = (severity) => {
 export const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText, confirmColor = 'bg-green-600 hover:bg-green-700', icon, iconColor = 'text-green-500' }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center bg-black/40 backdrop-blur-sm pt-8">
             <div className="bg-white rounded-xl shadow-2xl w-[420px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-center mb-4">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${iconColor === 'text-green-500' ? 'bg-green-100' : iconColor === 'text-red-500' ? 'bg-red-100' : 'bg-blue-100'}`}>
@@ -74,7 +75,7 @@ export const ToastModal = ({ isOpen, onClose, title, message, type = 'success' }
         return 'bg-blue-500 hover:bg-blue-600';
     };
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-start justify-center bg-black/40 backdrop-blur-sm pt-8">
             <div className="bg-white rounded-xl shadow-2xl w-[420px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-center mb-4"><div className={`w-16 h-16 rounded-full flex items-center justify-center ${getBgColor()}`}>{getIcon()}</div></div>
                 <h3 className="text-xl font-bold text-gray-800 text-center mb-2">{title}</h3>
@@ -149,7 +150,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
     const defaultMapCenter = [15.428991, 120.938698];
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 backdrop-blur-sm overflow-y-auto pt-0">
             <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="bg-[#5e747f] px-6 py-4 flex justify-between items-center shrink-0">
                     <div><h2 className="text-white text-lg font-semibold">Dispatch Volunteer</h2><p className="text-blue-100 text-xs opacity-90">Assign a volunteer to an active incident</p></div>
@@ -266,8 +267,8 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                             </div>
                         </div>
 
-                        {/* Incidents List */}
-                        <div className="bg-white flex-1 p-5 space-y-5 overflow-y-auto">
+                        {/* Incidents List - SCROLLABLE */}
+                        <div className="bg-white flex-1 p-5 space-y-5 overflow-y-auto max-h-[400px]">
                             {fetching ? (
                                 <div className="flex justify-center items-center h-32">
                                     <div className="text-gray-400">Loading incidents...</div>

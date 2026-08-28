@@ -20,6 +20,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const [dispatchNotes, setDispatchNotes] = useState("");
     const [isDispatching, setIsDispatching] = useState(false);
 
+    // ✅ NEW: Fullscreen image state
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     // Modal States
     const [showDispatchModal, setShowDispatchModal] = useState(false);
     const [showPoliceModal, setShowPoliceModal] = useState(false);
@@ -513,6 +516,26 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 incidentId={getIncidentId()}
             />
 
+            {/* ✅ FULLSCREEN IMAGE OVERLAY */}
+            {isFullscreen && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-pointer"
+                    onClick={() => setIsFullscreen(false)}
+                >
+                    <button
+                        className="absolute top-4 right-4 text-white hover:text-gray-300"
+                        onClick={() => setIsFullscreen(false)}
+                    >
+                        <Icon icon="material-symbols:close" className="w-8 h-8" />
+                    </button>
+                    <img
+                        src={imageSrc}
+                        alt="Fullscreen"
+                        className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+                    />
+                </div>
+            )}
+
             {/* Header - STAYS AT TOP */}
             <div className="shrink-0 bg-white z-10 p-4 border-b relative">
                 <button
@@ -536,12 +559,26 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
                 <LocationSection address={getAddress()} coordinates={getCoordinates()} />
                 <ReporterSection name={getReporterName()} contact={getReporterContact()} />
-                <DescriptionSection
-                    description={data.description}
-                    imageSrc={imageSrc}
-                    hasImage={hasImage}
-                    onImageError={() => setImageError(true)}
-                />
+
+                {/* ✅ IMAGE - CLICKABLE TO OPEN FULLSCREEN (ORIGINAL SIZE) */}
+                <div
+                    className="cursor-pointer relative group"
+                    onClick={() => setIsFullscreen(true)}
+                >
+                    <DescriptionSection
+                        description={data.description}
+                        imageSrc={imageSrc}
+                        hasImage={hasImage}
+                        onImageError={() => setImageError(true)}
+                    />
+                    {/* ✅ Overlay icon to indicate it's clickable */}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="bg-white/90 rounded-full p-2">
+                            <Icon icon="material-symbols:zoom-in" className="w-6 h-6 text-gray-800" />
+                        </div>
+                    </div>
+                </div>
+
                 <TimelineSection timeline={timeline} />
             </div>
 
@@ -621,6 +658,4 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             </div>
         </div>
     );
-
-
 }
