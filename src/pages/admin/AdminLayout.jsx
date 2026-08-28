@@ -190,14 +190,15 @@ export default function AdminLayout({ children }) {
 
             {/* 🟢 KEPT ORIGINAL TEAL/DARK BLUE NAVBAR */}
             <div className="h-16 bg-[#155e75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
-                <div className="flex items-center gap-3">
+                {/* ✅ WRAP IN A CLICKABLE NavLink */}
+                <NavLink to="/admin/overview" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
                     {/* Standalone Logo */}
                     <img src="/logo.png" className="w-10 h-10" alt="logo" />
                     <div>
                         <h1 className="font-semibold text-lg tracking-tight">System Admin</h1>
                         <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
                     </div>
-                </div>
+                </NavLink>
                 <Icon icon="material-symbols-light:notifications" className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" />
             </div>
 
