@@ -1,7 +1,7 @@
 // src/index.js
 
-// ✅ DISABLE ALL CONSOLE LOGS IN PRODUCTION
-if (process.env.NODE_ENV === 'production') {
+// ✅ DISABLE CONSOLE LOGS WHEN ENV VARIABLE IS SET
+if (process.env.REACT_APP_DISABLE_LOGS === 'true') {
     console.log = () => { };
     console.warn = () => { };
     console.info = () => { };
