@@ -1,7 +1,7 @@
 // src/index.js
 
-// ✅ DISABLE CONSOLE LOGS WHEN ENV VARIABLE IS SET
-if (process.env.REACT_APP_DISABLE_LOGS === 'true') {
+// ✅ DISABLE ALL CONSOLE LOGS AND WARNINGS IN PRODUCTION (Works with Vite!)
+if (process.env.NODE_ENV === 'production') {
     console.log = () => { };
     console.warn = () => { };
     console.info = () => { };
