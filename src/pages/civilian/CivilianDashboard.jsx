@@ -15,13 +15,9 @@ export default function CivilianDashboard({ children }) {
 
   const loadUserData = () => {
     const user = localStorage.getItem('user');
-    console.log("🔵 Loading user data from localStorage:", user);
-
     if (user) {
       try {
         const userData = JSON.parse(user);
-        console.log("🔵 Parsed user data:", userData);
-
         if (userData.firstName && userData.lastName) {
           setUserName(`${userData.firstName} ${userData.lastName}`);
         } else if (userData.firstName) {
@@ -57,9 +53,6 @@ export default function CivilianDashboard({ children }) {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
 
-    console.log('🔵 CivilianDashboard - Token:', token ? 'Exists' : 'Missing');
-    console.log('🔵 CivilianDashboard - User:', user ? JSON.parse(user) : 'Missing');
-
     loadUserData();
 
     if (!token || !user) {
@@ -83,7 +76,6 @@ export default function CivilianDashboard({ children }) {
       localStorage.removeItem('profileImage');
 
       await new Promise(resolve => setTimeout(resolve, 2000));
-
       navigate('/login');
     } catch (error) {
       console.error("Logout error:", error);
@@ -95,10 +87,8 @@ export default function CivilianDashboard({ children }) {
     setShowLogoutModal(false);
   };
 
-  // ✅ Function to handle logo click - navigate to overview
   const handleLogoClick = () => {
     navigate('/overview');
-    // Close sidebar on mobile
     setOpen(false);
   };
 
@@ -151,155 +141,161 @@ export default function CivilianDashboard({ children }) {
         </div>
       )}
 
-      {/* NAVBAR - STAYS ON TOP */}
-      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white flex-shrink-0 z-50 relative">
+      {/* NAVBAR - Responsive */}
+      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white">
         <div className="flex items-center gap-3">
+          {/* ✅ Mobile Hamburger Menu */}
           <button
             onClick={() => setOpen(true)}
-            className="block md:hidden text-2xl"
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Open Menu"
           >
-            ☰
+            <Icon icon="mdi:menu" className="w-6 h-6" />
           </button>
 
-          {/* ✅ Logo with click handler - navigates to overview */}
           <button
             onClick={handleLogoClick}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <img src="/logo.png" className="w-10 h-10" alt="logo" />
-            <div className="hidden sm:block text-left">
-              <h1 className="font-semibold">Civilian</h1>
-              <p className="text-xs opacity-70">
-                Municipality of Santa Rosa
-              </p>
+            <img src="/logo.png" className="w-9 h-9 sm:w-10 sm:h-10" alt="logo" />
+            <div className="justify-center text-left">
+              <h1 className="font-semibold text-base sm:text-lg">Civilian</h1>
+              <p className="text-[10px] sm:text-xs opacity-70">Municipality of Santa Rosa</p>
             </div>
           </button>
         </div>
-
         <NotificationBell />
       </div>
 
-      {/* BODY - Starts BELOW Navbar */}
-      <div className="flex flex-1 overflow-hidden relative">
+      {/* BODY */}
+      <div className="flex flex-1 overflow-hidden relative bg-[#EEF2F6]">
 
+        {/* ✅ Mobile Overlay */}
         {open && (
           <div
-            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
         )}
 
-        {/* SIDEBAR - Starts below Navbar (top-16) */}
+        {/* ✅ PROFESSIONAL RESPONSIVE SIDEBAR */}
         <div
           className={`
-            fixed md:static z-50 top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-[#F5F4FF] p-5 flex flex-col justify-between
-            transform transition-transform duration-300
+            fixed md:static z-50 top-0 left-0 h-full w-72 sm:w-64 bg-white border-r border-gray-200 shadow-md
+            p-5 flex flex-col justify-between
+            transform transition-transform duration-300 ease-in-out
             ${open ? "translate-x-0" : "-translate-x-full"}
             md:translate-x-0
           `}
         >
           <div>
+            {/* ✅ Mobile Close Button */}
+            <div className="flex justify-between items-center mb-6 md:hidden">
+              <span className="font-bold text-gray-800 text-lg">Menu</span>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Close Menu"
+              >
+                <Icon icon="mdi:close" className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
 
-            {/* <div className="flex justify-between items-center mb-6 md:hidden">
-              <span className="font-semibold">Menu</span>
-              <button onClick={() => setOpen(false)}>✕</button>
-            </div> */}
-
-            {/* PROFILE */}
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 rounded-full border-2 border-blue-500 overflow-hidden bg-gray-200 flex items-center justify-center">
-                {profileImage ? (
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error("Image failed to load:", profileImage);
-                      e.target.style.display = 'none';
-                      const parent = e.target.parentElement;
-                      const icon = document.createElement('div');
-                      icon.innerHTML = '<svg class="w-6 h-6 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-                      parent.appendChild(icon);
-                    }}
-                  />
-                ) : (
-                  <svg className="w-6 h-6 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                )}
-              </div>
-
-              <div>
-                <p className="text-xs text-gray-500">
-                  {localStorage.getItem('userRole') === 'civilian' ? 'Civilian' : 'Civilian'}
-                </p>
-                <p className="text-sm font-medium text-gray-700">
-                  {userName || "Civilian User"}
-                </p>
+            {/* PROFILE SECTION - With Gradient Background */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-500 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Icon icon="mdi:account" className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Civilian</p>
+                  <p className="text-sm font-bold text-gray-800 truncate">
+                    {userName || "Civilian User"}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* MENU */}
-            <div className="space-y-2 text-gray-600 text-sm">
+            {/* MENU - Responsive */}
+            <div className="space-y-1.5">
               <NavLink
                 to="/overview"
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                  `group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-[#1f6b75] text-white shadow-md'
+                    : 'text-gray-700 hover:bg-[#f0f4f8] hover:text-[#1f6b75]'
+                  }`
                 }
               >
-                <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5" />
-                Overview
+                <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Overview</span>
               </NavLink>
 
               <NavLink
                 to="/report"
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                  `group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-[#1f6b75] text-white shadow-md'
+                    : 'text-gray-700 hover:bg-[#f0f4f8] hover:text-[#1f6b75]'
+                  }`
                 }
               >
-                <Icon icon="mdi:report" className="w-5 h-5" />
-                Report Incident
+                <Icon icon="mdi:report" className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Report Incident</span>
               </NavLink>
 
               <NavLink
                 to="/track-reports"
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                  `group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-[#1f6b75] text-white shadow-md'
+                    : 'text-gray-700 hover:bg-[#f0f4f8] hover:text-[#1f6b75]'
+                  }`
                 }
               >
-                <Icon icon="material-symbols:track-changes" className="w-5 h-5" />
-                Track Reports
+                <Icon icon="material-symbols:track-changes" className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Track Reports</span>
               </NavLink>
 
               <NavLink
                 to="/edit-profile"
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                  `group flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${isActive
+                    ? 'bg-[#1f6b75] text-white shadow-md'
+                    : 'text-gray-700 hover:bg-[#f0f4f8] hover:text-[#1f6b75]'
+                  }`
                 }
               >
-                <Icon icon="material-symbols:settings" className="w-5 h-5" />
-                Profile
+                <Icon icon="material-symbols:settings" className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Profile</span>
               </NavLink>
             </div>
           </div>
 
-          {/* LOGOUT */}
+          {/* LOGOUT - Responsive */}
           <div
             onClick={handleLogoutClick}
-            className="text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3"
+            className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
           >
-            <Icon icon="material-symbols:logout" className="w-5 h-5" />
-            Logout
+            <Icon icon="material-symbols:logout" className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium">Logout</span>
           </div>
         </div>
 
-        {/* MAIN CONTENT AREA - NO PADDING (FULL WIDTH BANNER) */}
-        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-4 md:p-6 z-0">
+        {/* MAIN CONTENT AREA - Responsive */}
+        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-3 sm:p-4 md:p-6 z-0">
           {children}
         </div>
 
@@ -307,4 +303,3 @@ export default function CivilianDashboard({ children }) {
     </div>
   );
 }
-
