@@ -1,3 +1,4 @@
+// src/components/layout/CivilianDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
@@ -150,9 +151,8 @@ export default function CivilianDashboard({ children }) {
         </div>
       )}
 
-      {/* NAVBAR */}
-      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white">
-
+      {/* NAVBAR - STAYS ON TOP */}
+      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white flex-shrink-0 z-50 relative">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setOpen(true)}
@@ -179,7 +179,7 @@ export default function CivilianDashboard({ children }) {
         <NotificationBell />
       </div>
 
-      {/* BODY */}
+      {/* BODY - Starts BELOW Navbar */}
       <div className="flex flex-1 overflow-hidden relative">
 
         {open && (
@@ -189,9 +189,10 @@ export default function CivilianDashboard({ children }) {
           />
         )}
 
+        {/* SIDEBAR - Starts below Navbar (top-16) */}
         <div
           className={`
-            fixed md:static z-50 top-0 left-0 h-full w-64 bg-[#F5F4FF] p-5 flex flex-col justify-between
+            fixed md:static z-50 top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-[#F5F4FF] p-5 flex flex-col justify-between
             transform transition-transform duration-300
             ${open ? "translate-x-0" : "-translate-x-full"}
             md:translate-x-0
@@ -199,10 +200,10 @@ export default function CivilianDashboard({ children }) {
         >
           <div>
 
-            <div className="flex justify-between items-center mb-6 md:hidden">
+            {/* <div className="flex justify-between items-center mb-6 md:hidden">
               <span className="font-semibold">Menu</span>
               <button onClick={() => setOpen(false)}>✕</button>
-            </div>
+            </div> */}
 
             {/* PROFILE */}
             <div className="flex items-center gap-3 mb-8">
@@ -297,6 +298,7 @@ export default function CivilianDashboard({ children }) {
           </div>
         </div>
 
+        {/* MAIN CONTENT AREA - NO PADDING (FULL WIDTH BANNER) */}
         <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-4 md:p-6 z-0">
           {children}
         </div>
@@ -305,3 +307,4 @@ export default function CivilianDashboard({ children }) {
     </div>
   );
 }
+

@@ -50,8 +50,10 @@ export default function Overview() {
                     setNotification(notif);
                     setShowNotification(true);
 
+                    // Refresh data
                     loadData();
 
+                    // Auto-hide after 5 seconds
                     setTimeout(() => {
                         setShowNotification(false);
                     }, 5000);
@@ -156,25 +158,14 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ BANNER SECTION - KEEPS ROUNDED CORNERS */}
-            <div className="w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 rounded-xl overflow-hidden">
-                <div className="relative w-full h-full">
-                    <img
-                        src="/shersroof.png"
-                        alt="Banner"
-                        className="w-full h-full object-cover object-center blur-[14px]"
-                    />
-                    <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
-                        <div className="text-left">
-                            <h2 className="text-3xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
-                                {greeting}, {userName?.split(' ')[0] + "!" || "Civilian User"}
-                            </h2>
-                            <p className="text-m sm:text-base md:text-lg text-[#4A5568] font-medium">
-                                File incident reports, track status updates, and connect directly with the Rescue Team.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            {/* ✅ ORIGINAL GREETING - NO IMAGE */}
+            <div className="bg-[#DFF1FF] w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg mb-4">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-semibold text-[#474C53]">
+                    {greeting}, {userName?.split(' ')[0] || "Civilian User"}!
+                </h1>
+                <p className="text-sm sm:text-base text-[#5D7285] font-normal">
+                    File incident reports, track status updates, and connect directly with the Rescue Team.
+                </p>
             </div>
 
             {/* Report Incident Card */}
@@ -265,6 +256,7 @@ export default function Overview() {
                 )}
             </div>
 
+            {/* Add CSS animation */}
             <style>{`
                 @keyframes slideIn {
                     from {
