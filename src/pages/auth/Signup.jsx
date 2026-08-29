@@ -179,7 +179,7 @@ function TermsModal({ isOpen, onClose, onAccept }) {
 }
 
 // ✅ Success Modal Component
-function SuccessModal({ isOpen, onClose, message, onNavigate }) {
+function SuccessModal({ isOpen, onClose, message }) {
   if (!isOpen) return null;
 
   return (
@@ -194,7 +194,6 @@ function SuccessModal({ isOpen, onClose, message, onNavigate }) {
           <h3 className="text-xl font-bold text-gray-800">Registration Successful!</h3>
           <p className="text-sm text-gray-600 mt-2">{message}</p>
         </div>
-        {/* ✅ REMOVED THE "Go to Login" BUTTON - Auto-redirects now! */}
       </div>
     </div>
   );
@@ -284,17 +283,6 @@ export default function Signup() {
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
 
-  // ✅ AUTO-REDIRECT AFTER SUCCESSFUL SIGNUP (Production Friendly)
-  useEffect(() => {
-    if (showSuccessModal) {
-      const timer = setTimeout(() => {
-        handleSuccessNavigate();
-      }, 1500); // Waits 1.5 seconds so they can read the success message
-
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccessModal]);
-
   // Account fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -324,6 +312,17 @@ export default function Signup() {
   const navigate = useNavigate();
   const phoneInputRef = useRef(null);
 
+  // ✅ AUTO-REDIRECT AFTER SUCCESSFUL SIGNUP (Production Friendly)
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        handleSuccessNavigate();
+      }, 1500); // Waits 1.5 seconds so they can read the success message
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
+
   // ✅ GOOGLE SIGNUP HANDLER
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -331,7 +330,6 @@ export default function Signup() {
       const res = await authService.googleLogin(credentialResponse.credential);
 
       if (res.success) {
-        // If backend validates, store the user and token from your backend
         const userToStore = {
           id: res.user._id,
           firstName: res.user.firstName,
@@ -341,7 +339,6 @@ export default function Signup() {
           profileImage: res.user.profileImage
         };
 
-        // ✅ IMPORTANT: Store the token from your backend, not the Google credential!
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
@@ -848,6 +845,13 @@ export default function Signup() {
             Register your credentials to join the Santa Rosa Rescue Team operations network.
           </p>
 
+          {/* ✅ NOTE ABOVE GOOGLE BUTTON */}
+          <div className="w-full mb-2">
+            <p className="text-[11px] text-center text-gray-500">
+              *Using Google Sign-Up will automatically create a <span className="font-bold text-blue-600">Civilian</span> account.
+            </p>
+          </div>
+
           {/* ✅ GOOGLE SIGN UP BUTTON */}
           <div className="w-full mb-6 flex justify-center">
             <GoogleLogin
@@ -855,7 +859,7 @@ export default function Signup() {
               size="large"
               text="signup_with"
               shape="rectangular"
-              width="100" // ✅ FIXED NUMBER - Fills most of the container!
+              width="400"
               onSuccess={handleGoogleSuccess}
               onError={() => console.log('Login Failed')}
             />
@@ -866,7 +870,6 @@ export default function Signup() {
             <span className="text-sm text-gray-500 font-medium shrink-0">OR</span>
             <hr className="w-full border-gray-300" />
           </div>
-          {/* ✅ END GOOGLE SIGN UP BUTTON */}
 
           {/* Remove the inline error display since we use modals now */}
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignup(); }}>
@@ -972,19 +975,29 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Role Selection - ✅ ONLY CIVILIAN CAN SIGN UP HERE */}
+            {/* Role Selection - ✅ ENABLED */}
             <div className="w-full">
-              <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA]">
+              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'}`}>
                 <legend className="text-sm px-2 text-gray-700">Role / Position</legend>
                 <select
-                  value="civilian" // ✅ LOCKED TO CIVILIAN
-                  disabled // ✅ PREVENT CHANGING
-                  className="w-full bg-transparent outline-none text-gray-500 cursor-not-allowed"
+                  value={selectedRole}
+                  onChange={(e) => {
+                    handleRoleChange(e);
+                    if (validationErrors.role) {
+                      setValidationErrors({ ...validationErrors, role: null });
+                    }
+                  }}
+                  className="w-full bg-transparent outline-none text-gray-600"
+                  required
                 >
+                  <option value="">- Select Role / Position -</option>
                   <option value="civilian">Civilian</option>
+                  <option value="volunteer">Volunteer</option>
                 </select>
               </fieldset>
-              {/* ✅ Note: Volunteer applications are handled separately */}
+              {validationErrors.role && (
+                <p className="text-red-500 text-xs mt-1">{validationErrors.role}</p>
+              )}
             </div>
 
             {/* Volunteer Additional Fields */}

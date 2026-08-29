@@ -481,8 +481,9 @@ export default function DashboardLayout({ children }) {
         <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container">
           <div className="flex flex-col h-full">
             {/* Profile Header Section - REMOVED overflow-hidden */}
-            <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative">
-              <div className="flex items-center gap-3 relative z-10">
+            {/* Profile Header Section - BULLETPROOF & LOCKED */}
+            <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative overflow-hidden">
+              <div className="flex items-center gap-3 relative z-10 w-full">
 
                 {/* ✅ BULLETPROOF AVATAR CIRCLE */}
                 <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
@@ -497,7 +498,7 @@ export default function DashboardLayout({ children }) {
                     />
                   ) : (
                     <svg
-                      className="w-6 h-6 text-black" /* ✅ CHANGED TO PURE BLACK */
+                      className="w-6 h-6 text-black"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -508,9 +509,17 @@ export default function DashboardLayout({ children }) {
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider user-role">{userRole}</p>
-                  <p className="text-sm font-semibold text-gray-800 truncate user-name">{userName}</p>
+                {/* ✅ FULL WIDTH TEXT CONTAINER WITH STRICT TRUNCATION */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider user-role truncate">
+                    {userRole}
+                  </p>
+                  <p
+                    className="text-sm font-semibold text-gray-800 truncate user-name"
+                    title={userName} // Shows full name on hover
+                  >
+                    {userName}
+                  </p>
                 </div>
               </div>
             </div>
