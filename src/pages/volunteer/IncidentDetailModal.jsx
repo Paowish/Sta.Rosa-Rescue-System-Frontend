@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 
 const IncidentDetailModal = React.memo(({
@@ -15,6 +15,8 @@ const IncidentDetailModal = React.memo(({
     isNotReadyMode,
     onResolve
 }) => {
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     if (!isOpen && !isClosing) return null;
 
     const incidentTitle = incident?.title || incident?.type || 'N/A';
@@ -74,12 +76,48 @@ const IncidentDetailModal = React.memo(({
                     </div>
 
                     {incidentImage && (
-                        <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in">
-                            <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg">📸 Incident Photo</div>
-                            <div className="px-3 py-2 border border-t-0 border-[#DFDFF0] rounded-b-lg">
-                                <img src={incidentImage} alt={incidentTitle} className="w-full rounded-lg object-cover max-h-[180px] border border-gray-200" onError={(e) => { e.target.style.display = 'none'; }} />
+                        <>
+                            <div className="border-t border-[#DFDFF0] pt-4 modal-content-fade-in">
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 font-semibold text-[#0F5C73] text-xs rounded-t-xl border border-b-0 border-[#DFDFF0]">
+                                    📸 Incident Photo
+                                </div>
+                                <div className="px-4 py-3 border border-t-0 border-[#DFDFF0] rounded-b-xl bg-white">
+                                    <img
+                                        src={incidentImage}
+                                        alt={incidentTitle}
+                                        className="w-full rounded-lg object-cover max-h-[200px] border border-[#DFDFF0] shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                                        onClick={() => setIsFullscreen(true)}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                </div>
                             </div>
-                        </div>
+
+                            {/* Fullscreen Modal */}
+                            {isFullscreen && (
+                                <div
+                                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                                    onClick={() => setIsFullscreen(false)}
+                                >
+                                    <div className="relative max-w-[90vw] max-h-[90vh]">
+                                        <button
+                                            className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white hover:text-gray-200 flex items-center justify-center transition-all duration-200 z-10"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsFullscreen(false);
+                                            }}
+                                            aria-label="Close fullscreen"
+                                        >
+                                            <Icon icon="material-symbols:close" className="w-6 h-6" />
+                                        </button>
+                                        <img
+                                            src={incidentImage}
+                                            alt={incidentTitle}
+                                            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.05s' }}>

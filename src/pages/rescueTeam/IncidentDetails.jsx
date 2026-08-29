@@ -518,21 +518,24 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
             {/* ✅ FULLSCREEN IMAGE OVERLAY */}
             {isFullscreen && (
-                <div
-                    className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-pointer"
-                    onClick={() => setIsFullscreen(false)}
-                >
-                    <button
-                        className="absolute top-4 right-4 text-white hover:text-gray-300"
-                        onClick={() => setIsFullscreen(false)}
-                    >
-                        <Icon icon="material-symbols:close" className="w-8 h-8" />
-                    </button>
-                    <img
-                        src={imageSrc}
-                        alt="Fullscreen"
-                        className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
-                    />
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-transparent" onClick={() => setIsFullscreen(false)}>
+                    <div className="relative max-w-[90vw] max-h-[90vh]">
+                        <button
+                            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white hover:text-gray-200 flex items-center justify-center transition-all duration-200 z-10"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsFullscreen(false);
+                            }}
+                            aria-label="Close fullscreen"
+                        >
+                            <Icon icon="material-symbols:close" className="w-5 h-5" />
+                        </button>
+                        <img
+                            src={imageSrc}
+                            alt="Fullscreen"
+                            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+                        />
+                    </div>
                 </div>
             )}
 
