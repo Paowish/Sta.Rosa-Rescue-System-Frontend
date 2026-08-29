@@ -297,7 +297,7 @@ export default function CivilianDashboard({ children }) {
           </div>
         </div>
 
-        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto z-0">
+        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-4 md:p-6 z-0">
           {children}
         </div>
 

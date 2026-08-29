@@ -50,10 +50,8 @@ export default function Overview() {
                     setNotification(notif);
                     setShowNotification(true);
 
-                    // Refresh data
                     loadData();
 
-                    // Auto-hide after 5 seconds
                     setTimeout(() => {
                         setShowNotification(false);
                     }, 5000);
@@ -158,114 +156,115 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ BANNER SECTION - TEXT LEFT-ALIGNED (NOT CENTERED) */}
-            <div className="relative w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 rounded-none overflow-hidden">
+            {/* ✅ BANNER SECTION - FULL WIDTH (edge-to-edge) */}
+            <div className="relative w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden">
+                {/* ✅ Image - Full size, no scaling */}
                 <img
                     src="/shersroof.png"
                     alt="Banner"
                     className="w-full h-full object-cover object-center blur-[6px]"
                 />
-                <div className="absolute inset-0 bg-white/20 flex items-center justify-start p-4 sm:p-8 md:p-12">
+                {/* ✅ Light overlay - keeps text readable */}
+                <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
                     <div className="text-left">
-                        <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
-                            {greeting}, {userName || "Civilian User"}
+                        {/* ✅ Title - Responsive */}
+                        <h2 className="text-3xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
+                            {greeting}, {userName?.split(' ')[0] || "Civilian User"}
                         </h2>
-                        <p className="text-xs sm:text-base md:text-lg text-[#4A5568] font-medium">
+                        {/* ✅ Description - Responsive */}
+                        <p className="text-m sm:text-base md:text-lg text-[#4A5568] font-medium">
                             File incident reports, track status updates, and connect directly with the Rescue Team.
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* ✅ EVERYTHING ELSE HAS PADDING (px-4 sm:px-6) */}
-            <div className="px-4 sm:px-6">
-                {/* Report Incident Card */}
-                <div
-                    onClick={() => navigate("/report")}
-                    className="bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-4 sm:mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
-                >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <Icon icon="solar:siren-bold" width={40} className="sm:w-12 md:w-16 text-white flex-shrink-0" />
-                        <div>
-                            <h2 className="text-lg sm:text-xl md:text-4xl font-semibold text-[#FAFAFF]">Report an Incident</h2>
-                            <p className="text-xs sm:text-sm md:text-base text-[#FAFAFF] font-light hidden sm:block">File a new emergency report with your location, photo evidence, and incident details. Responders are notified immediately.</p>
-                            <p className="text-xs text-[#FAFAFF] font-light sm:hidden">File a new emergency report now.</p>
-                        </div>
+            {/* Report Incident Card */}
+            <div
+                onClick={() => navigate("/report")}
+                className="bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-4 sm:mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
+            >
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Icon icon="solar:siren-bold" width={40} className="sm:w-12 md:w-16 text-white flex-shrink-0" />
+                    <div>
+                        <h2 className="text-lg sm:text-xl md:text-4xl font-semibold text-[#FAFAFF]">Report an Incident</h2>
+                        <p className="text-xs sm:text-sm md:text-base text-[#FAFAFF] font-light hidden sm:block">File a new emergency report with your location, photo evidence, and incident details. Responders are notified immediately.</p>
+                        <p className="text-xs text-[#FAFAFF] font-light sm:hidden">File a new emergency report now.</p>
                     </div>
-                    <Icon icon="mdi:chevron-right" width={24} className="sm:w-8 md:w-10 text-white flex-shrink-0" />
                 </div>
+                <Icon icon="mdi:chevron-right" width={24} className="sm:w-8 md:w-10 text-white flex-shrink-0" />
+            </div>
 
-                {/* Quick Actions */}
-                <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold mb-3">Quick Actions</h2>
+            {/* Quick Actions */}
+            <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold mb-3">Quick Actions</h2>
 
-                <div
+            <div
+                onClick={() => navigate("/track-reports")}
+                className="bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-4 sm:mb-6"
+            >
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Icon icon="mdi:magnify" width={36} className="sm:w-12 md:w-16 text-[#DC2626] flex-shrink-0" />
+                    <div>
+                        <h3 className="text-base sm:text-xl md:text-[26px] font-semibold text-[#262D31]">Track Reports</h3>
+                        <p className="text-xs sm:text-sm md:text-base text-[#5D7285] font-normal">Check the real-time status of your filed reports</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Recent Reports */}
+            <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold">Recent Reports</h2>
+                <button
                     onClick={() => navigate("/track-reports")}
-                    className="bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-4 sm:mb-6"
+                    className="text-sm sm:text-[22px] text-[#474C53] font-semibold hover:text-blue-600 flex items-center gap-1"
                 >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <Icon icon="mdi:magnify" width={36} className="sm:w-12 md:w-16 text-[#DC2626] flex-shrink-0" />
-                        <div>
-                            <h3 className="text-base sm:text-xl md:text-[26px] font-semibold text-[#262D31]">Track Reports</h3>
-                            <p className="text-xs sm:text-sm md:text-base text-[#5D7285] font-normal">Check the real-time status of your filed reports</p>
-                        </div>
-                    </div>
-                </div>
+                    View All <Icon icon="mdi:chevron-right" width={16} />
+                </button>
+            </div>
 
-                {/* Recent Reports */}
-                <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold">Recent Reports</h2>
-                    <button
-                        onClick={() => navigate("/track-reports")}
-                        className="text-sm sm:text-[22px] text-[#474C53] font-semibold hover:text-blue-600 flex items-center gap-1"
-                    >
-                        View All <Icon icon="mdi:chevron-right" width={16} />
-                    </button>
-                </div>
-
-                <div className="space-y-3">
-                    {recentIncidents.length > 0 ? (
-                        recentIncidents.map((incident) => (
-                            <div
-                                key={incident._id}
-                                onClick={() => navigate(`/track-reports`)}
-                                className="flex items-center gap-3 sm:gap-4 bg-[#F7F7F7] border border-gray-200 rounded-md px-3 sm:px-5 py-3 sm:py-4 hover:bg-gray-100 transition cursor-pointer"
-                            >
-                                <div className="w-[3px] self-stretch bg-red-500 rounded-full"></div>
-                                <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
-                                    <div>
-                                        <h3 className="text-base sm:text-xl font-semibold text-[#262D31] mb-0.5 sm:mb-1">{incident.type || "Unknown Incident"}</h3>
-                                        <div className="flex flex-col gap-0.5 sm:gap-1 text-[#5D7285] text-xs sm:text-sm font-normal">
-                                            <div className="flex items-center gap-1">
-                                                <Icon icon="mdi:map-marker" width="14" />
-                                                <span className="truncate max-w-[150px] sm:max-w-none">{incident.location?.address || "Unknown location"}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Icon icon="mdi:calendar" width="14" />
-                                                <span>{formatDateTime(incident.reportedAt)}</span>
-                                            </div>
+            <div className="space-y-3">
+                {recentIncidents.length > 0 ? (
+                    recentIncidents.map((incident) => (
+                        <div
+                            key={incident._id}
+                            onClick={() => navigate(`/track-reports`)}
+                            className="flex items-center gap-3 sm:gap-4 bg-[#F7F7F7] border border-gray-200 rounded-md px-3 sm:px-5 py-3 sm:py-4 hover:bg-gray-100 transition cursor-pointer"
+                        >
+                            <div className="w-[3px] self-stretch bg-red-500 rounded-full"></div>
+                            <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+                                <div>
+                                    <h3 className="text-base sm:text-xl font-semibold text-[#262D31] mb-0.5 sm:mb-1">{incident.type || "Unknown Incident"}</h3>
+                                    <div className="flex flex-col gap-0.5 sm:gap-1 text-[#5D7285] text-xs sm:text-sm font-normal">
+                                        <div className="flex items-center gap-1">
+                                            <Icon icon="mdi:map-marker" width="14" />
+                                            <span className="truncate max-w-[150px] sm:max-w-none">{incident.location?.address || "Unknown location"}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Icon icon="mdi:calendar" width="14" />
+                                            <span>{formatDateTime(incident.reportedAt)}</span>
                                         </div>
                                     </div>
-                                    <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
-                                        <span className="text-xs sm:text-sm text-[#8B8A8A] font-normal">{incident.incidentId || "N/A"}</span>
-                                        <span className={`text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-[2px] rounded-lg ${getStatusColor(incident.status)}`}>
-                                            {incident.status || "Pending"}
-                                        </span>
-                                    </div>
+                                </div>
+                                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
+                                    <span className="text-xs sm:text-sm text-[#8B8A8A] font-normal">{incident.incidentId || "N/A"}</span>
+                                    <span className={`text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-[2px] rounded-lg ${getStatusColor(incident.status)}`}>
+                                        {incident.status || "Pending"}
+                                    </span>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <div className="bg-[#F7F7F7] border border-gray-200 rounded-md p-6 sm:p-8 text-center">
-                            <p className="text-gray-500 text-sm sm:text-base">No incidents found</p>
-                            <button
-                                onClick={() => navigate("/report")}
-                                className="mt-2 sm:mt-3 text-blue-500 hover:text-blue-600 text-sm sm:text-base"
-                            >
-                                Report an Incident →
-                            </button>
                         </div>
-                    )}
-                </div>
+                    ))
+                ) : (
+                    <div className="bg-[#F7F7F7] border border-gray-200 rounded-md p-6 sm:p-8 text-center">
+                        <p className="text-gray-500 text-sm sm:text-base">No incidents found</p>
+                        <button
+                            onClick={() => navigate("/report")}
+                            className="mt-2 sm:mt-3 text-blue-500 hover:text-blue-600 text-sm sm:text-base"
+                        >
+                            Report an Incident →
+                        </button>
+                    </div>
+                )}
             </div>
 
             <style>{`
