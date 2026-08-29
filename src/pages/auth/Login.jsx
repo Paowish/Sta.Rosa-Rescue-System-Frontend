@@ -3,6 +3,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
 import { motion, AnimatePresence } from "framer-motion"; // ✅ ADD AnimatePresence
+
 // ✅ NEW IMPORTS FOR GOOGLE LOGIN
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
@@ -366,18 +367,23 @@ export default function Login() {
                 </div>
               )}
 
-              {/* ✅ GOOGLE LOGIN BUTTON - PERFECT WIDTH FIX */}
-              <div className="w-full mb-5 [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full">
+              {/* ✅ GOOGLE LOGIN BUTTON */}
+              <div className="w-full mb-5">
                 <GoogleLogin
                   theme="outline"
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="100%" // Keep 400 here for the base, CSS will override it
+
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
-                  className="!w-full [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full !h-[50px]"
                 />
+              </div>
+
+              <div className="flex items-center gap-3 mb-5">
+                <hr className="w-full border-gray-300" />
+                <span className="text-sm text-gray-500 font-medium shrink-0">OR</span>
+                <hr className="w-full border-gray-300" />
               </div>
 
               <div className="w-full mb-5">
