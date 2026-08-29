@@ -3,6 +3,9 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
+// ✅ NEW IMPORTS FOR GOOGLE LOGIN
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
 
 // Certifications Component - Same as in VolunteerApplication
 function Certifications({ selected, setSelected, others, setOthers }) {
@@ -191,15 +194,7 @@ function SuccessModal({ isOpen, onClose, message, onNavigate }) {
           <h3 className="text-xl font-bold text-gray-800">Registration Successful!</h3>
           <p className="text-sm text-gray-600 mt-2">{message}</p>
         </div>
-        <button
-          onClick={() => {
-            onClose();
-            if (onNavigate) onNavigate();
-          }}
-          className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-        >
-          Go to Login
-        </button>
+        {/* ✅ REMOVED THE "Go to Login" BUTTON - Auto-redirects now! */}
       </div>
     </div>
   );
@@ -289,6 +284,17 @@ export default function Signup() {
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
 
+  // ✅ AUTO-REDIRECT AFTER SUCCESSFUL SIGNUP (Production Friendly)
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        handleSuccessNavigate();
+      }, 1500); // Waits 1.5 seconds so they can read the success message
+
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
+
   // Account fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -317,6 +323,38 @@ export default function Signup() {
 
   const navigate = useNavigate();
   const phoneInputRef = useRef(null);
+
+  // ✅ GOOGLE SIGNUP HANDLER
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      // Send the credential to your backend for verification
+      const res = await authService.googleLogin(credentialResponse.credential);
+
+      if (res.success) {
+        // If backend validates, store the user and token from your backend
+        const userToStore = {
+          id: res.user._id,
+          firstName: res.user.firstName,
+          lastName: res.user.lastName,
+          email: res.user.email,
+          role: res.user.role,
+          profileImage: res.user.profileImage
+        };
+
+        // ✅ IMPORTANT: Store the token from your backend, not the Google credential!
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify(userToStore));
+        localStorage.setItem('userRole', userToStore.role);
+
+        setSuccessMessage("Successfully signed up with Google!");
+        setShowSuccessModal(true);
+      }
+    } catch (err) {
+      console.error("Google signup error:", err);
+      setError("Google signup failed on the server.");
+      setShowErrorModal(true);
+    }
+  };
 
   // Helper function to validate email addresses properly
   const validateEmail = (email) => {
@@ -734,7 +772,20 @@ export default function Signup() {
   };
 
   const handleSuccessNavigate = () => {
-    navigate("/login");
+    // Get the role you saved in localStorage
+    const role = localStorage.getItem('userRole');
+
+    // Map roles to their specific dashboard routes
+    const roleRoutes = {
+      civilian: "/overview",           // or "/civilian-dashboard"
+      volunteer: "/volunteer-dashboard",
+      responder: "/dashboard",
+      dispatcher: "/dashboard",
+      admin: "/admin/overview"
+    };
+
+    // Redirect to the correct dashboard
+    navigate(roleRoutes[role] || "/login");
   };
 
   // Show full screen spinner when loading
@@ -764,7 +815,6 @@ export default function Signup() {
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           message={successMessage}
-          onNavigate={handleSuccessNavigate}
         />
 
         {/* ✅ Error Modal */}
@@ -797,6 +847,27 @@ export default function Signup() {
           <p className="text-gray-500 text-sm mb-6">
             Register your credentials to join the Santa Rosa Rescue Team operations network.
           </p>
+
+          {/* ✅ GOOGLE SIGN UP BUTTON */}
+          <div className="w-full mb-6 grid grid-cols-1">
+            <GoogleLogin
+              theme="outline"
+              size="large"
+              text="signup_with"
+              shape="rectangular"
+              width="100%" // ✅ FIXED: Set to a fixed number so it stretches across the grid
+              onSuccess={handleGoogleSuccess}
+              onError={() => console.log('Login Failed')}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <hr className="w-full border-gray-300" />
+            {/* ✅ CHANGED: Shortened text and added shrink-0 to keep it on one line */}
+            <span className="text-sm text-gray-500 font-medium shrink-0">OR</span>
+            <hr className="w-full border-gray-300" />
+          </div>
+          {/* ✅ END GOOGLE SIGN UP BUTTON */}
 
           {/* Remove the inline error display since we use modals now */}
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignup(); }}>
@@ -902,30 +973,19 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Role Selection */}
+            {/* Role Selection - ✅ ONLY CIVILIAN CAN SIGN UP HERE */}
             <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'
-                }`}>
+              <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA]">
                 <legend className="text-sm px-2 text-gray-700">Role / Position</legend>
                 <select
-                  value={selectedRole}
-                  onChange={(e) => {
-                    handleRoleChange(e);
-                    if (validationErrors.role) {
-                      setValidationErrors({ ...validationErrors, role: null });
-                    }
-                  }}
-                  className="w-full bg-transparent outline-none text-gray-600"
-                  required
+                  value="civilian" // ✅ LOCKED TO CIVILIAN
+                  disabled // ✅ PREVENT CHANGING
+                  className="w-full bg-transparent outline-none text-gray-500 cursor-not-allowed"
                 >
-                  <option value="">- Select Role / Position -</option>
                   <option value="civilian">Civilian</option>
-                  <option value="volunteer">Volunteer</option>
                 </select>
               </fieldset>
-              {validationErrors.role && (
-                <p className="text-red-500 text-xs mt-1">{validationErrors.role}</p>
-              )}
+              {/* ✅ Note: Volunteer applications are handled separately */}
             </div>
 
             {/* Volunteer Additional Fields */}

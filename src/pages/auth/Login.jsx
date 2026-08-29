@@ -3,6 +3,9 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
 import { motion, AnimatePresence } from "framer-motion"; // ✅ ADD AnimatePresence
+// ✅ NEW IMPORTS FOR GOOGLE LOGIN
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
 
 // ✅ Pending Approval Modal Component
 function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
@@ -188,6 +191,39 @@ export default function Login() {
 
   const navigate = useNavigate();
 
+  // ✅ GOOGLE LOGIN HANDLER
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await authService.googleLogin(credentialResponse.credential);
+
+      if (res.success) {
+        const userToStore = {
+          id: res.user._id,
+          firstName: res.user.firstName,
+          lastName: res.user.lastName,
+          email: res.user.email,
+          role: res.user.role,
+          profileImage: res.user.profileImage
+        };
+
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify(userToStore));
+        localStorage.setItem('userRole', userToStore.role);
+
+        // ✅ REDIRECT BASED ON ROLE
+        const userRole = res.user.role || 'civilian';
+        if (userRole === "admin") navigate("/admin/overview");
+        else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
+        else if (userRole === "volunteer") navigate("/volunteer-dashboard");
+        else if (userRole === "civilian") navigate("/overview");
+        else navigate("/dashboard");
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError("Google login failed. Please try again.");
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -329,6 +365,19 @@ export default function Login() {
                   {error}
                 </div>
               )}
+
+              {/* ✅ GOOGLE LOGIN BUTTON - PERFECT WIDTH FIX */}
+              <div className="w-full mb-5 [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full">
+                <GoogleLogin
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  width="100%" // Keep 350 here for the base, CSS will override it
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => console.log('Google Login Failed')}
+                />
+              </div>
 
               <div className="w-full mb-5">
                 <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'}`}>

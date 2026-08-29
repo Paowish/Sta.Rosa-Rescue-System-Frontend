@@ -450,6 +450,17 @@ export const authService = {
         }
     },
 
+    // ✅ GOOGLE LOGIN
+    googleLogin: async (credential) => {
+        try {
+            const response = await axios.post(`${API_URL}/auth/google`, { token: credential });
+            return response.data;
+        } catch (error) {
+            console.error('❌ Google login error:', error);
+            return error.response?.data || { success: false, message: "Google authentication failed." };
+        }
+    },
+
     forgotPassword: async (email) => {
         try {
             const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
