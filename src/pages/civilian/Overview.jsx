@@ -1,3 +1,4 @@
+// src/pages/civilian/Overview.jsx
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
@@ -32,8 +33,6 @@ export default function Overview() {
         try {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-            console.log("Setting up socket connection for user:", user._id);
 
             if (token && user._id) {
                 socketRef.current = io('http://localhost:5000', {
@@ -159,20 +158,32 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ Greeting Section - No extra margin */}
-            <div className="bg-[#DFF1FF] w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg mb-4">
-                <h1 className="text-xl sm:text-2xl md:text-4xl font-semibold text-[#474C53]">
-                    {greeting}, {userName}
-                </h1>
-                <p className="text-sm sm:text-base text-[#5D7285] font-normal">
-                    File incident reports, track status updates, and connect directly with the Rescue Team.
-                </p>
+            {/* ✅ BANNER SECTION - RESPONSIVE */}
+            <div className="relative w-full h-40 sm:h-56 md:h-64 mb-4 sm:mb-6 rounded-lg sm:rounded-xl overflow-hidden">
+                {/* ✅ Image - Full size, no scaling */}
+                <img
+                    src="/shersroof.png"
+                    alt="Banner"
+                    className="w-full h-full object-cover object-center blur-[6px]"
+                />
+                <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
+                    <div className="text-center">
+                        {/* ✅ Title - Responsive sizes */}
+                        <h2 className="text-xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
+                            {greeting}, {userName || "Civilian User"}
+                        </h2>
+                        {/* ✅ Description - Responsive sizes */}
+                        <p className="text-xs sm:text-base md:text-lg text-[#4A5568] font-medium">
+                            File incident reports, track status updates, and connect directly with the Rescue Team.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Report Incident Card */}
             <div
                 onClick={() => navigate("/report")}
-                className="bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
+                className="bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-4 sm:mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
             >
                 <div className="flex items-center gap-3 sm:gap-4">
                     <Icon icon="solar:siren-bold" width={40} className="sm:w-12 md:w-16 text-white flex-shrink-0" />
@@ -190,7 +201,7 @@ export default function Overview() {
 
             <div
                 onClick={() => navigate("/track-reports")}
-                className="bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-6"
+                className="bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-4 sm:mb-6"
             >
                 <div className="flex items-center gap-3 sm:gap-4">
                     <Icon icon="mdi:magnify" width={36} className="sm:w-12 md:w-16 text-[#DC2626] flex-shrink-0" />

@@ -266,7 +266,7 @@ export default function Login() {
         if (userRole === "admin") navigate("/admin/overview");
         else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
         else if (userRole === "volunteer") navigate("/volunteer-dashboard");
-        else if (userRole === "civilian") navigate("/civilian-dashboard");
+        else if (userRole === "civilian") navigate("/overview");
         else navigate("/dashboard");
       } else {
         setError("Invalid response from server");

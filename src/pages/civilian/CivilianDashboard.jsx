@@ -1,3 +1,4 @@
+// src/components/layout/CivilianDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
@@ -151,8 +152,7 @@ export default function CivilianDashboard({ children }) {
       )}
 
       {/* NAVBAR */}
-      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white">
-
+      <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white relative z-50">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setOpen(true)}
@@ -297,7 +297,8 @@ export default function CivilianDashboard({ children }) {
           </div>
         </div>
 
-        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-4 md:p-6 z-0">
+        {/* MAIN CONTENT AREA - NO PADDING TOP/RIGHT */}
+        <div className="flex-1 bg-[#EEF2F6] overflow-y-auto z-0">
           {children}
         </div>
 
