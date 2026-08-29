@@ -192,7 +192,7 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  // ✅ GOOGLE LOGIN HANDLER
+  // ✅ GOOGLE LOGIN HANDLER (RECEIVES TOKEN AUTOMATICALLY)
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const res = await authService.googleLogin(credentialResponse.credential);
@@ -211,7 +211,6 @@ export default function Login() {
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
 
-        // ✅ REDIRECT BASED ON ROLE
         const userRole = res.user.role || 'civilian';
         if (userRole === "admin") navigate("/admin/overview");
         else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
@@ -224,7 +223,6 @@ export default function Login() {
       setError("Google login failed. Please try again.");
     }
   };
-
   const validateForm = () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
