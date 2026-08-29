@@ -1879,7 +1879,7 @@ export default function VolunteerDashboard() {
                     <button onClick={() => setOpen(!open)} className="block lg:hidden text-xl">☰</button>
                     <button onClick={handleLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
                         <img src="/logo.png" className="w-8 h-8" alt="logo" />
-                        <div className="hidden sm:block text-left">
+                        <div className="block text-left"> {/* Changed from hidden sm:block to block */}
                             <h1 className="font-semibold text-sm">Volunteer</h1>
                             <p className="text-[9px] opacity-70">Municipality of Santa Rosa</p>
                         </div>
@@ -1934,48 +1934,76 @@ export default function VolunteerDashboard() {
                     <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />
                 )}
 
-                {/* LEFT SIDEBAR */}
-                <div className={`fixed lg:static top-14 left-0 h-[calc(100vh-56px)] w-64 lg:w-[280px] bg-[#F5F4FF] flex flex-col z-[60] transform transition-all duration-300 ease-in-out ${open ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"} lg:translate-x-0 lg:opacity-100 border-r border-gray-200 shadow-lg lg:shadow-none`}>
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0">
-                        {/* Profile Section */}
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="w-10 h-10 rounded-full border-2 border-blue-500 overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                {profileImage ? (
-                                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-gray-500">{getUserRole()}</p>
-                                <p className="text-xs font-medium text-gray-700">{userName || "Volunteer"}</p>
+                {/* LEFT SIDEBAR - FULL HEIGHT OVER NAV */}
+                <div className={`fixed lg:static top-0 left-0 h-full w-72 sm:w-80 lg:w-[280px] bg-white flex flex-col z-[110] transform transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 border-r border-gray-200`}>
+
+                    {/* Mobile Close Button - Only on mobile */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-white lg:hidden">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800 text-sm">Menu</span>
+                        </div>
+                        <button
+                            onClick={() => setOpen(false)}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label="Close Menu"
+                        >
+                            <Icon icon="mdi:close" className="w-5 h-5 text-gray-600" />
+                        </button>
+                    </div>
+
+                    {/* Rest of content - scrollable */}
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 min-h-0">
+                        {/* Profile Section - Matches Civilian */}
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
+                                    {profileImage ? (
+                                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Icon icon="mdi:account" className="w-6 h-6 text-white" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">{getUserRole()}</p>
+                                    <p className="text-sm font-bold text-gray-800">{userName || "Volunteer"}</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Duty Toggle */}
-                        <div className="bg-[#E9F5FE] rounded-lg p-2 mb-2">
+                        {/* Duty Toggle - Matches Civilian style */}
+                        <div className="bg-[#F0F7FF] rounded-xl p-3 mb-3 border border-blue-100">
                             <div className="flex items-center justify-between">
-                                <span className={`text-xs font-medium ${isOnDuty ? 'text-[#157A3B]' : 'text-gray-400'}`}>
-                                    {isOnDuty ? 'On Duty' : 'Off Duty'}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                    <span className={`text-sm font-medium ${isOnDuty ? 'text-[#157A3B]' : 'text-gray-400'}`}>
+                                        {isOnDuty ? 'On Duty' : 'Off Duty'}
+                                    </span>
+                                </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" checked={isOnDuty} onChange={(e) => handleToggleDuty(e.target.checked)} className="sr-only peer" />
-                                    <div className="w-9 h-5 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                    <div className="w-10 h-5 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                                 </label>
                             </div>
                         </div>
 
-                        <button onClick={handleEditProfile} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium py-1.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1 mb-2 border border-blue-200">
-                            <Icon icon="material-symbols:edit" className="w-3 h-3" /> Edit Profile
+                        {/* Edit Profile Button - Matches Civilian */}
+                        <button
+                            onClick={handleEditProfile}
+                            className="w-full bg-white hover:bg-blue-50 text-blue-600 font-medium py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center justify-center gap-2 mb-3 border border-blue-200 hover:border-blue-300 hover:shadow-sm"
+                        >
+                            <Icon icon="material-symbols:edit" className="w-4 h-4" /> Edit Profile
                         </button>
 
-                        {/* Search */}
-                        <div className="relative mb-2">
-                            <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-7 pr-2 py-1.5 border border-[#D3D2DE] rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                            <Icon icon="material-symbols:search" className="absolute left-2 top-1/2 transform -translate-y-1/2 text-[#5D7285] w-3 h-3" />
+                        {/* Search - Matches Civilian */}
+                        <div className="relative mb-3">
+                            <input
+                                type="text"
+                                placeholder="Search incidents..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+                            />
+                            <Icon icon="material-symbols:search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                         </div>
 
                         {/* Filters */}
@@ -1985,46 +2013,51 @@ export default function VolunteerDashboard() {
                             incidents={incidents}
                         />
 
-                        {/* Incident List */}
-                        <div className="space-y-3">
+                        {/* Incident List - Matches Civilian */}
+                        <div className="space-y-2.5 mt-2">
                             {filteredIncidentsList.length === 0 ? (
-                                <div className="text-center py-6 text-gray-500">
-                                    <Icon icon="material-symbols:search-off" className="w-8 h-8 mx-auto mb-1 text-gray-300" />
-                                    <p className="text-xs">No incidents</p>
+                                <div className="text-center py-10 text-gray-500">
+                                    <Icon icon="material-symbols:search-off" className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                    <p className="text-sm font-medium">No incidents found</p>
+                                    <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
                                 </div>
                             ) : (
                                 filteredIncidentsList.map((incident) => {
                                     const statusColors = {
-                                        'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                                        'dispatched': 'bg-blue-100 text-blue-800 border-blue-200',
-                                        'active': 'bg-red-100 text-red-800 border-red-200',
-                                        'en route': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                                        'on scene': 'bg-purple-100 text-purple-800 border-purple-200',
-                                        'resolved': 'bg-green-100 text-green-800 border-green-200',
-                                        'accepted': 'bg-green-100 text-green-800 border-green-200'
+                                        'pending': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                                        'dispatched': 'bg-blue-50 text-blue-700 border-blue-200',
+                                        'active': 'bg-red-50 text-red-700 border-red-200',
+                                        'en route': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                        'on scene': 'bg-purple-50 text-purple-700 border-purple-200',
+                                        'resolved': 'bg-green-50 text-green-700 border-green-200',
+                                        'accepted': 'bg-green-50 text-green-700 border-green-200'
                                     };
-                                    const statusColor = statusColors[incident.status] || 'bg-gray-100 text-gray-800 border-gray-200';
+                                    const statusColor = statusColors[incident.status] || 'bg-gray-50 text-gray-700 border-gray-200';
                                     const statusDisplay = incident.status?.charAt(0).toUpperCase() + incident.status?.slice(1) || 'Pending';
 
                                     return (
-                                        <div key={incident.id} className={`bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer ${selectedIncident?.id === incident.id ? 'ring-2 ring-blue-500' : ''} ${actionedIncidents[incident.id || incident._id] ? 'opacity-60' : ''}`} onClick={() => handleIncidentClick(incident)}>
+                                        <div
+                                            key={incident.id}
+                                            className={`bg-white rounded-xl p-3.5 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer ${selectedIncident?.id === incident.id ? 'ring-2 ring-blue-500 shadow-md' : ''} ${actionedIncidents[incident.id || incident._id] ? 'opacity-60' : ''}`}
+                                            onClick={() => handleIncidentClick(incident)}
+                                        >
                                             <div className="flex items-start justify-between">
-                                                <div className="flex flex-col gap-0.5 flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${statusColor}`}>{statusDisplay}</span>
+                                                <div className="flex flex-col gap-1 flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full border ${statusColor}`}>{statusDisplay}</span>
                                                         <span className="text-xs text-gray-400 font-medium">{incident.id}</span>
                                                     </div>
-                                                    <h4 className="font-semibold text-gray-800 text-sm mt-1">{incident.title}</h4>
-                                                    <p className="text-xs text-gray-500 flex items-center gap-0.5 mt-0.5">
-                                                        <Icon icon="mdi:circle" className="w-1.5 h-1.5 text-gray-400" />
+                                                    <h4 className="font-semibold text-gray-800 text-sm mt-0.5 line-clamp-1">{incident.title}</h4>
+                                                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                                        <Icon icon="mdi:map-marker" className="w-3 h-3 text-gray-400" />
                                                         {incident.shortLocation || incident.location}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-400 flex items-center gap-0.5 mt-0.5">
-                                                        <Icon icon="mdi:calendar-outline" className="w-3 h-3" />
+                                                    <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                                        <Icon icon="mdi:clock-outline" className="w-3 h-3" />
                                                         {incident.date}
                                                     </p>
                                                 </div>
-                                                <Icon icon="mdi:chevron-right" className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
+                                                <Icon icon="mdi:chevron-right" className="w-5 h-5 text-gray-300 mt-1 flex-shrink-0" />
                                             </div>
                                         </div>
                                     );
@@ -2034,11 +2067,17 @@ export default function VolunteerDashboard() {
                         <div className="h-4"></div>
                     </div>
 
-                    {/* Logout Button */}
-                    <div className="flex-shrink-0 p-2 border-t border-gray-200 bg-[#F5F4FF] sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-                        <button onClick={handleLogoutClick} className="w-4/5 text-gray-500 text-xs hover:text-red-600 flex items-center relative left-4 gap-1 py-2.5 transition-colors rounded-lg hover:bg-red-50">
-                            <Icon icon="material-symbols:logout" className="w-4 h-4" />
-                            <span className="text-sm">Logout</span>
+                    {/* Logout Button - Professional */}
+                    <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-white/95 backdrop-blur-sm sticky bottom-0">
+                        <button
+                            onClick={handleLogoutClick}
+                            className="group w-full text-gray-600 hover:text-red-600 flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-xl hover:bg-red-50 text-sm font-medium"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-red-100 transition-colors duration-200 flex items-center justify-center">
+                                <Icon icon="material-symbols:logout" className="w-4 h-4 group-hover:text-red-600 transition-colors duration-200" />
+                            </div>
+                            <span className="group-hover:translate-x-0.5 transition-transform duration-200">Logout</span>
+                            <Icon icon="mdi:chevron-right" className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 text-red-500" />
                         </button>
                     </div>
                 </div>

@@ -203,23 +203,14 @@ export default function CivilianDashboard({ children }) {
 
             {/* PROFILE SECTION - With Gradient Background */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200">
+              {/* Profile Section */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-500 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Icon icon="mdi:account" className="w-6 h-6 text-white" />
-                  )}
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
+                  <Icon icon="mdi:account" className="w-6 h-6 text-white" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-blue-600 font-semibold uppercase tracking-wider">Civilian</p>
-                  <p className="text-sm font-bold text-gray-800 truncate">
-                    {userName || "Civilian User"}
-                  </p>
+                <div>
+                  <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">Civilian</p>
+                  <p className="text-sm font-bold text-gray-800 truncate">{userName || "Civilian User"}</p>
                 </div>
               </div>
             </div>
@@ -287,10 +278,13 @@ export default function CivilianDashboard({ children }) {
           {/* LOGOUT - Responsive */}
           <div
             onClick={handleLogoutClick}
-            className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer"
+            className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50/80 transition-all duration-300 cursor-pointer"
           >
-            <Icon icon="material-symbols:logout" className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium">Logout</span>
+            <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-red-100 transition-all duration-300 flex items-center justify-center flex-shrink-0">
+              <Icon icon="material-symbols:logout" className="w-4 h-4 text-gray-500 group-hover:text-red-600 transition-colors duration-300" />
+            </div>
+            <span className="font-medium group-hover:translate-x-0.5 transition-transform duration-300">Logout</span>
+            <Icon icon="mdi:chevron-right" className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 text-red-500" />
           </div>
         </div>
 
