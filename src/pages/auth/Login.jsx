@@ -373,7 +373,7 @@ export default function Login() {
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="400" // Keep 400 here for the base, CSS will override it
+                  width="100%" // Keep 400 here for the base, CSS will override it
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                   className="!w-full [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full !h-[50px]"
