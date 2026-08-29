@@ -51,12 +51,7 @@ const getApiUrl = () => {
         return 'http://localhost:5000/api';
     }
 
-    // 2. If on Vercel web domain, use relative /api path (works via proxy)
-    if (window.location.hostname.includes('vercel.app')) {
-        return '/api';
-    }
-
-    // 3. APK / Production Mobile: Force the absolute Render URL
+    // 2. For ANY other domain (Vercel, custom domain, etc.), use the absolute Render URL
     return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
 };
 
