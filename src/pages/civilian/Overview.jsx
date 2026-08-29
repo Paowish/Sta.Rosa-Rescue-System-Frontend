@@ -156,25 +156,23 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ BANNER SECTION - FULL WIDTH (edge-to-edge) */}
-            <div className="relative w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden">
-                {/* ✅ Image - Full size, no scaling */}
-                <img
-                    src="/shersroof.png"
-                    alt="Banner"
-                    className="w-full h-full object-cover object-center blur-[6px]"
-                />
-                {/* ✅ Light overlay - keeps text readable */}
-                <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
-                    <div className="text-left">
-                        {/* ✅ Title - Responsive */}
-                        <h2 className="text-3xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
-                            {greeting}, {userName?.split(' ')[0] || "Civilian User"}
-                        </h2>
-                        {/* ✅ Description - Responsive */}
-                        <p className="text-m sm:text-base md:text-lg text-[#4A5568] font-medium">
-                            File incident reports, track status updates, and connect directly with the Rescue Team.
-                        </p>
+            {/* ✅ BANNER SECTION - KEEPS ROUNDED CORNERS */}
+            <div className="w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 rounded-xl overflow-hidden">
+                <div className="relative w-full h-full">
+                    <img
+                        src="/shersroof.png"
+                        alt="Banner"
+                        className="w-full h-full object-cover object-center blur-[14px]"
+                    />
+                    <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
+                        <div className="text-left">
+                            <h2 className="text-3xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
+                                {greeting}, {userName?.split(' ')[0] + "!" || "Civilian User"}
+                            </h2>
+                            <p className="text-m sm:text-base md:text-lg text-[#4A5568] font-medium">
+                                File incident reports, track status updates, and connect directly with the Rescue Team.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
