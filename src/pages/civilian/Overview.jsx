@@ -158,24 +158,26 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ BANNER SECTION - RESPONSIVE */}
-            <div className="relative w-full h-40 sm:h-56 md:h-64 mb-4 sm:mb-6 rounded-lg sm:rounded-xl overflow-hidden">
-                {/* ✅ Image - Full size, no scaling */}
-                <img
-                    src="/shersroof.png"
-                    alt="Banner"
-                    className="w-full h-full object-cover object-center blur-[6px]"
-                />
-                <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
-                    <div className="text-center">
-                        {/* ✅ Title - Responsive sizes */}
-                        <h2 className="text-xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
-                            {greeting}, {userName || "Civilian User"}
-                        </h2>
-                        {/* ✅ Description - Responsive sizes */}
-                        <p className="text-xs sm:text-base md:text-lg text-[#4A5568] font-medium">
-                            File incident reports, track status updates, and connect directly with the Rescue Team.
-                        </p>
+            {/* ✅ BANNER SECTION - WITH MARGIN (DOES NOT OVERLAP NAV) */}
+            <div className="relative w-full h-40 sm:h-48 md:h-56 mb-4 sm:mb-6 mt-4 sm:mt-6 px-4 sm:px-6">
+                <div className="relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden">
+                    <img
+                        src="/shersroof.png"
+                        alt="Banner"
+                        className="w-full h-full object-cover object-center blur-[6px]"
+                    />
+                    {/* ✅ Light overlay - keeps text readable */}
+                    <div className="absolute inset-0 bg-white/20 flex items-center justify-center p-4">
+                        <div className="text-center">
+                            {/* ✅ Title - Responsive */}
+                            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-[#1E252B] drop-shadow-sm mb-1 sm:mb-2">
+                                {greeting}, {userName || "Civilian User"}
+                            </h2>
+                            {/* ✅ Description - Responsive */}
+                            <p className="text-xs sm:text-base md:text-lg text-[#4A5568] font-medium">
+                                File incident reports, track status updates, and connect directly with the Rescue Team.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -183,7 +185,7 @@ export default function Overview() {
             {/* Report Incident Card */}
             <div
                 onClick={() => navigate("/report")}
-                className="bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-4 sm:mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
+                className="mx-4 sm:mx-6 bg-gradient-to-r from-red-700 to-red-500 rounded-xl p-4 sm:p-6 py-3 sm:py-2 mb-4 sm:mb-6 flex items-center justify-between cursor-pointer hover:shadow-lg transition"
             >
                 <div className="flex items-center gap-3 sm:gap-4">
                     <Icon icon="solar:siren-bold" width={40} className="sm:w-12 md:w-16 text-white flex-shrink-0" />
@@ -197,11 +199,11 @@ export default function Overview() {
             </div>
 
             {/* Quick Actions */}
-            <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold mb-3">Quick Actions</h2>
+            <h2 className="mx-4 sm:mx-6 text-lg sm:text-2xl text-[#474C53] font-semibold mb-3">Quick Actions</h2>
 
             <div
                 onClick={() => navigate("/track-reports")}
-                className="bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-4 sm:mb-6"
+                className="mx-4 sm:mx-6 bg-white rounded-xl p-4 sm:p-6 py-3 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer border border-gray-100 mb-4 sm:mb-6"
             >
                 <div className="flex items-center gap-3 sm:gap-4">
                     <Icon icon="mdi:magnify" width={36} className="sm:w-12 md:w-16 text-[#DC2626] flex-shrink-0" />
@@ -213,7 +215,7 @@ export default function Overview() {
             </div>
 
             {/* Recent Reports */}
-            <div className="flex justify-between items-center mb-3">
+            <div className="mx-4 sm:mx-6 flex justify-between items-center mb-3">
                 <h2 className="text-lg sm:text-2xl text-[#474C53] font-semibold">Recent Reports</h2>
                 <button
                     onClick={() => navigate("/track-reports")}
@@ -223,7 +225,7 @@ export default function Overview() {
                 </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="mx-4 sm:mx-6 space-y-3">
                 {recentIncidents.length > 0 ? (
                     recentIncidents.map((incident) => (
                         <div
@@ -268,7 +270,6 @@ export default function Overview() {
                 )}
             </div>
 
-            {/* Add CSS animation */}
             <style>{`
                 @keyframes slideIn {
                     from {
