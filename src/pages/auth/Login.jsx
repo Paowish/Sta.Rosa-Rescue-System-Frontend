@@ -366,13 +366,13 @@ export default function Login() {
               )}
 
               {/* ✅ GOOGLE LOGIN BUTTON */}
-              <div className="w-full mb-5">
+              <div className="w-full mb-5 flex justify-center">
                 <GoogleLogin
                   theme="outline"
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-
+                  width="300" // ✅ FIXED NUMBER - Fills most of the container!
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />
