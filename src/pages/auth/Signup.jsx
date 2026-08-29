@@ -849,22 +849,20 @@ export default function Signup() {
           </p>
 
           {/* ✅ GOOGLE SIGN UP BUTTON */}
-          <div className="w-full mb-6 grid grid-cols-1">
+          <div className="w-full mb-6 flex justify-center">
             <GoogleLogin
               theme="outline"
               size="large"
               text="signup_with"
               shape="rectangular"
-              width="100%" // ✅ FIXED: Set to a fixed number so it stretches across the grid
+              width="100" // ✅ FIXED NUMBER - Fills most of the container!
               onSuccess={handleGoogleSuccess}
               onError={() => console.log('Login Failed')}
-              className="!w-full [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full !h-[50px]"
             />
           </div>
 
           <div className="flex items-center gap-3 mb-6">
             <hr className="w-full border-gray-300" />
-            {/* ✅ CHANGED: Shortened text and added shrink-0 to keep it on one line */}
             <span className="text-sm text-gray-500 font-medium shrink-0">OR</span>
             <hr className="w-full border-gray-300" />
           </div>
