@@ -855,9 +855,10 @@ export default function Signup() {
               size="large"
               text="signup_with"
               shape="rectangular"
-              width="100%" // ✅ FIXED: Set to a fixed number so it stretches across the grid
+              width="400" // ✅ FIXED: Set to a fixed number so it stretches across the grid
               onSuccess={handleGoogleSuccess}
               onError={() => console.log('Login Failed')}
+              className="!w-full [&>div]:!w-full [&>div>div]:!w-full [&>div>div>iframe]:!w-full !h-[50px]"
             />
           </div>
 

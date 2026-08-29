@@ -115,7 +115,7 @@ export const reportService = {
         errors.push("Location address is required");
       }
       if (!data.incidentDetails.reporterNumber || data.incidentDetails.reporterNumber.trim() === "") {
-        errors.push("Contact number is required");
+        data.incidentDetails.reporterNumber = "N/A"; // ✅ Allow fallback for users without a phone
       }
 
       if (errors.length > 0) {

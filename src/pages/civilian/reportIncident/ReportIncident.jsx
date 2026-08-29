@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // ✅ ADDED useEffect
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import IncidentReportLayout from './IncidentReportLayout';
 import { reportService } from '../../../services/reportService';
-import { incidentService } from '../../../services/api';
+import { incidentService, authService } from '../../../services/api'; // ✅ ADDED authService
 
 export default function ReportIncident() {
     const navigate = useNavigate();
@@ -11,11 +11,6 @@ export default function ReportIncident() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isLocationReady, setIsLocationReady] = useState(false);
     const [slideDirection, setSlideDirection] = useState('right');
-
-    // ✅ Get user data
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userFirstName = user.firstName || "";
-    const userPhoneRaw = user.phoneNumber || "";
 
     // ✅ Helper to clean phone number to 11 digits (e.g., 09123456789)
     const getCleanPhone = (phone) => {
@@ -26,6 +21,11 @@ export default function ReportIncident() {
         }
         return digits;
     };
+
+    // ✅ Get user data
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userFirstName = user.firstName || "";
+    const userPhoneRaw = user.phoneNumber || "";
     const cleanPhoneNumber = getCleanPhone(userPhoneRaw);
 
     // Step 1 State
@@ -46,6 +46,27 @@ export default function ReportIncident() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState('');
+
+    // ✅ FETCH FRESH USER DATA ON MOUNT
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await authService.getCurrentUser();
+                if (res && res.data) {
+                    const cleanPhone = getCleanPhone(res.data.phoneNumber);
+                    setIncidentDetails(prev => ({ ...prev, reporterNumber: cleanPhone }));
+                    // Update state for the UI display
+                    setPhoneNumber(cleanPhone);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user:", error);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    // ✅ STATE FOR THE DISPLAYED PHONE NUMBER
+    const [phoneNumber, setPhoneNumber] = useState(cleanPhoneNumber);
 
     // --- LOGIC FOR STEP 1: LOCATION ---
     const getAddressFromCoordinates = async (lat, lng) => {
@@ -153,7 +174,7 @@ export default function ReportIncident() {
             victimsAffected: incidentDetails.victimsAffected,
             description: incidentDetails.description,
             reporterName: userFirstName || "Anonymous",
-            reporterNumber: cleanPhoneNumber
+            reporterNumber: phoneNumber || "N/A" // ✅ Uses fetched phone number
         });
 
         try {
@@ -355,7 +376,7 @@ export default function ReportIncident() {
                                         <label className="block text-sm text-gray-600 mb-1.5">Your Contact Number</label>
                                         <input
                                             type="text"
-                                            value={cleanPhoneNumber || userPhoneRaw}
+                                            value={phoneNumber || userPhoneRaw}
                                             disabled
                                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-200 cursor-not-allowed text-gray-500 focus:outline-none"
                                         />
