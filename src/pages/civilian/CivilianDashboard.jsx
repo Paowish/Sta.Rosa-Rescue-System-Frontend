@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import NotificationBell from "../../components/layout/NotificationBell";
+import { authService } from "../../services/api"; // ✅ IMPORT THIS
 
 export default function CivilianDashboard({ children }) {
   const [open, setOpen] = useState(false);
@@ -13,37 +14,30 @@ export default function CivilianDashboard({ children }) {
 
   const navigate = useNavigate();
 
-  const loadUserData = () => {
-    const user = localStorage.getItem('user');
+  const loadUserData = (data = null) => {
+    const user = data || JSON.parse(localStorage.getItem('user') || 'null');
     if (user) {
-      try {
-        const userData = JSON.parse(user);
-        if (userData.firstName && userData.lastName) {
-          setUserName(`${userData.firstName} ${userData.lastName}`);
-        } else if (userData.firstName) {
-          setUserName(userData.firstName);
-        } else if (userData.email) {
-          setUserName(userData.email.split('@')[0]);
-        } else {
-          setUserName("Civilian User");
-        }
-
-        if (userData.profileImage && userData.profileImage !== "") {
-          if (userData.profileImage.startsWith('http')) {
-            setProfileImage(userData.profileImage);
-          } else {
-            setProfileImage(`http://localhost:5000/${userData.profileImage}`);
-          }
-        } else {
-          setProfileImage("");
-        }
-      } catch (e) {
-        console.error("❌ Error parsing user data:", e);
+      if (user.firstName && user.lastName) {
+        setUserName(`${user.firstName} ${user.lastName}`);
+      } else if (user.firstName) {
+        setUserName(user.firstName);
+      } else if (user.email) {
+        setUserName(user.email.split('@')[0]);
+      } else {
         setUserName("Civilian User");
+      }
+
+      if (user.profileImage && user.profileImage !== "") {
+        // ✅ CHECK IF IT'S A FULL URL (GOOGLE IMAGES) OR A LOCAL UPLOAD
+        if (user.profileImage.startsWith('http') || user.profileImage.startsWith('data:')) {
+          setProfileImage(user.profileImage); // Use directly (Google URL)
+        } else {
+          setProfileImage(`http://localhost:5000/${user.profileImage}`); // Local upload
+        }
+      } else {
         setProfileImage("");
       }
     } else {
-      console.log("🔴 No user data found in localStorage");
       setUserName("Civilian User");
       setProfileImage("");
     }
@@ -56,9 +50,29 @@ export default function CivilianDashboard({ children }) {
     loadUserData();
 
     if (!token || !user) {
-      console.log('🔴 No token or user found, redirecting to login');
       navigate('/login');
     }
+
+    // ✅ FETCH FRESH USER DATA FROM BACKEND (Updates Google Info)
+    const fetchUser = async () => {
+      try {
+        const res = await authService.getCurrentUser();
+        if (res && res.data) {
+          const freshUser = {
+            ...res.data,
+            id: res.data._id || res.data.id,
+          };
+          // Save to localStorage so it persists
+          localStorage.setItem('user', JSON.stringify(freshUser));
+          // Update the UI state immediately
+          loadUserData(freshUser);
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest user data:", error);
+      }
+    };
+
+    fetchUser();
   }, [navigate]);
 
   const handleLogoutClick = () => {
@@ -206,7 +220,16 @@ export default function CivilianDashboard({ children }) {
               {/* Profile Section */}
               <div className="flex items-center gap-3 w-full overflow-hidden">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
-                  <Icon icon="mdi:account" className="w-6 h-6 text-white" />
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <Icon icon="mdi:account" className="w-6 h-6 text-white" />
+                  )}
                 </div>
 
                 {/* ✅ FIXED: min-w-0 allows the container to shrink, w-full forces it inside */}
@@ -214,7 +237,7 @@ export default function CivilianDashboard({ children }) {
                   <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider truncate">Civilian</p>
                   <p
                     className="text-sm font-bold text-gray-800 truncate w-full"
-                    title={userName || "Civilian User"} // Shows full name on long-press/hover
+                    title={userName || "Civilian User"}
                   >
                     {userName || "Civilian User"}
                   </p>
