@@ -204,13 +204,20 @@ export default function CivilianDashboard({ children }) {
             {/* PROFILE SECTION - With Gradient Background */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200">
               {/* Profile Section */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 w-full overflow-hidden">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
                   <Icon icon="mdi:account" className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">Civilian</p>
-                  <p className="text-sm font-bold text-gray-800 truncate">{userName || "Civilian User"}</p>
+
+                {/* ✅ FIXED: min-w-0 allows the container to shrink, w-full forces it inside */}
+                <div className="min-w-0 flex-1 w-full">
+                  <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider truncate">Civilian</p>
+                  <p
+                    className="text-sm font-bold text-gray-800 truncate w-full"
+                    title={userName || "Civilian User"} // Shows full name on long-press/hover
+                  >
+                    {userName || "Civilian User"}
+                  </p>
                 </div>
               </div>
             </div>
