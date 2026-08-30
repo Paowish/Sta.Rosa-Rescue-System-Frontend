@@ -182,6 +182,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
+  const [lockUntil, setLockUntil] = useState(null);
 
   // Modal states
   const [showPendingModal, setShowPendingModal] = useState(false);
@@ -311,6 +312,8 @@ export default function Login() {
       console.error("❌ Login error:", err);
       setError(err.message || "Login failed. Please try again.");
       setLoading(false);
+
+      setLockUntil(Date.now() + 30000);
     }
   };
 
@@ -359,12 +362,6 @@ export default function Login() {
               <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-              {error && (
-                <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️') ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                  {error}
-                </div>
-              )}
-
               {/* ✅ GOOGLE LOGIN BUTTON */}
               <div className="w-full mb-5 flex justify-center">
                 <GoogleLogin
@@ -383,6 +380,12 @@ export default function Login() {
                 <span className="text-sm text-gray-500 font-medium shrink-0">OR</span>
                 <hr className="w-full border-gray-300" />
               </div>
+
+              {error && (
+                <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️') ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                  {error}
+                </div>
+              )}
 
               <div className="w-full mb-5">
                 <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'}`}>
@@ -412,7 +415,14 @@ export default function Login() {
                 </button>
               </div>
 
-              <button onClick={handleLogin} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">Login</button>
+              {/* ✅ CORRECT BUTTON LOGIC */}
+              <button
+                onClick={handleLogin}
+                disabled={loading || (lockUntil && Date.now() < lockUntil)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Logging in..." : (lockUntil && Date.now() < lockUntil ? "Please wait 30s..." : "Login")}
+              </button>
 
               <button onClick={() => navigate('/Guest/Report')} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 mt-3">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>

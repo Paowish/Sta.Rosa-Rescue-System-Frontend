@@ -831,10 +831,12 @@ export default function Signup() {
 
         <div className="p-6 sm:p-8 md:p-10 max-w-4xl w-full">
           <div className="flex items-center gap-3 mb-8">
-            <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">
-              Rescue Team
-            </h1>
+            <Link to="/login" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">
+                Rescue Team
+              </h1>
+            </Link>
           </div>
 
           <h2 className="text-4xl font-bold text-[#1E252B] font-serif mb-2">
