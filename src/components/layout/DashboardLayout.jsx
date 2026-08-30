@@ -480,13 +480,12 @@ export default function DashboardLayout({ children }) {
         {/* LEFT SIDEBAR - ELEVATED & PROFESSIONAL */}
         <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container">
           <div className="flex flex-col h-full">
-            {/* Profile Header Section - REMOVED overflow-hidden */}
-            {/* Profile Header Section - BULLETPROOF & LOCKED */}
-            <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative overflow-hidden">
-              <div className="flex items-center gap-3 relative z-10 w-full">
+            {/* Profile Header Section - MOBILE PROOF */}
+            <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-4 border-b border-gray-200 relative overflow-hidden">
+              <div className="flex items-center gap-2 relative z-10 w-full">
 
                 {/* ✅ BULLETPROOF AVATAR CIRCLE */}
-                <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
+                <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
                   {profileImage ? (
                     <img
                       src={profileImage}
@@ -509,13 +508,13 @@ export default function DashboardLayout({ children }) {
                   )}
                 </div>
 
-                {/* ✅ FULL WIDTH TEXT CONTAINER WITH STRICT TRUNCATION */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider user-role truncate">
+                {/* ✅ TEXT WITH PROPER MOBILE TRUNCATION */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider user-role line-clamp-1">
                     {userRole}
                   </p>
                   <p
-                    className="text-sm font-semibold text-gray-800 truncate user-name"
+                    className="text-xs font-semibold text-gray-800 user-name line-clamp-2 break-words"
                     title={userName} // Shows full name on hover
                   >
                     {userName}
@@ -691,15 +690,28 @@ export default function DashboardLayout({ children }) {
           animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
-        @media (max-width: 768px) {
+                @media (max-width: 768px) {
           .sidebar-container {
-            width: 64px;
+            width: 90px; /* ✅ Wider so the name fits better */
+          }
+          .nav-link {
+            justify-content: center;
+            padding: 0.7rem 0.5rem; /* ✅ Reduce padding */
+            font-size: 10px; /* ✅ Smaller font for icons/text */
+            text-align: center;
+            flex-direction: column; /* ✅ Stack icon and text vertically */
           }
           .nav-link span:not(.ml-auto) {
-            display: none;
+            display: block; /* ✅ Show the text */
+            text-align: center;
           }
-          .user-name, .user-role, .logout-btn span:last-child {
-            display: none;
+          .user-name, .user-role {
+            display: block; /* ✅ KEEP THE NAME VISIBLE */
+            text-align: left;
+          }
+          .logout-btn {
+            justify-content: center;
+            font-size: 10px;
           }
         }
       `}</style>
