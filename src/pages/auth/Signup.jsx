@@ -3,6 +3,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
+import LegalPolicyModal from "./LegalPolicyModal"
 // ✅ NEW IMPORTS FOR GOOGLE LOGIN
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
@@ -282,6 +283,19 @@ export default function Signup() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
+  // Add inside your component
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalType, setLegalType] = useState("terms"); // 'terms' or 'privacy'
+
+  const openTerms = () => {
+    setLegalType("terms");
+    setShowLegalModal(true);
+  };
+
+  const openPrivacy = () => {
+    setLegalType("privacy");
+    setShowLegalModal(true);
+  };
 
   // Account fields
   const [firstName, setFirstName] = useState("");
@@ -761,11 +775,13 @@ export default function Signup() {
   };
 
   const handleTermsClick = () => {
-    navigate("/terms");
+    setLegalType("terms");
+    setShowLegalModal(true);
   };
 
   const handlePrivacyClick = () => {
-    navigate("/privacy");
+    setLegalType("privacy");
+    setShowLegalModal(true);
   };
 
   const handleSuccessNavigate = () => {
@@ -1279,11 +1295,9 @@ export default function Signup() {
               />
               <span>
                 I agree to all the{" "}
-                <span onClick={handleTermsClick} className="text-red-500 cursor-pointer hover:underline">
-                  Terms
-                </span>{" "}
+                <span onClick={(e) => { e.preventDefault(); handleTermsClick(); }} className="text-red-500 cursor-pointer hover:underline">Terms</span>{" "}
                 and{" "}
-                <span onClick={handlePrivacyClick} className="text-red-500 cursor-pointer hover:underline">
+                <span onClick={(e) => { e.preventDefault(); handlePrivacyClick(); }} className="text-red-500 cursor-pointer hover:underline">
                   Privacy Policies
                 </span>
               </span>
@@ -1306,6 +1320,12 @@ export default function Signup() {
 
           </form>
         </div>
+        {/* ✅ LEGAL POLICIES MODAL */}
+        <LegalPolicyModal
+          isOpen={showLegalModal}
+          onClose={() => setShowLegalModal(false)}
+          type={legalType}
+        />
       </motion.div>
     </AnimatePresence>
   );
