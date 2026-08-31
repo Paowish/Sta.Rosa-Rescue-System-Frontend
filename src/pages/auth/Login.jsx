@@ -369,7 +369,7 @@ export default function Login() {
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="100%" // ✅ FIXED NUMBER - Fills most of the container!
+                  width="300" // ✅ FIXED NUMBER - Fills most of the container!
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />
