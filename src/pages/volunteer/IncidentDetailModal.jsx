@@ -78,10 +78,17 @@ const IncidentDetailModal = React.memo(({
                     {incidentImage && (
                         <>
                             <div className="border-t border-[#DFDFF0] pt-4 modal-content-fade-in">
-                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 font-semibold text-[#0F5C73] text-xs rounded-t-xl border border-b-0 border-[#DFDFF0]">
-                                    📸 Incident Photo
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 font-semibold text-[#0F5C73] text-xs rounded-t-xl border border-b-0 border-[#DFDFF0] flex justify-between items-center">
+                                    <span className="flex items-center gap-1.5">
+                                        <Icon icon="material-symbols:image" className="w-3.5 h-3.5" />
+                                        Incident Photo
+                                    </span>
+                                    <span className="text-[#0F5C73] flex items-center gap-1 text-[10px] font-medium">
+                                        <Icon icon="material-symbols:zoom-in" className="w-3 h-3" />
+                                        Tap to Fullscreen
+                                    </span>
                                 </div>
-                                <div className="px-4 py-3 border border-t-0 border-[#DFDFF0] rounded-b-xl bg-white">
+                                <div className="px-4 py-3 border border-t-0 border-[#DFDFF0] rounded-b-xl bg-white relative">
                                     <img
                                         src={incidentImage}
                                         alt={incidentTitle}
@@ -89,6 +96,12 @@ const IncidentDetailModal = React.memo(({
                                         onClick={() => setIsFullscreen(true)}
                                         onError={(e) => { e.target.style.display = 'none'; }}
                                     />
+
+                                    {/* ✅ Expand Icon Badge */}
+                                    <div className="absolute bottom-6 right-6 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+                                        <Icon icon="material-symbols:fullscreen" className="w-3 h-3" />
+                                        View Full
+                                    </div>
                                 </div>
                             </div>
 
@@ -121,14 +134,20 @@ const IncidentDetailModal = React.memo(({
                     )}
 
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.05s' }}>
-                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg">📍 Location</div>
+                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
+                            <Icon icon="material-symbols:location-on" className="w-3 h-3" />
+                            Location
+                        </div>
                         <div className="px-3 py-2 border border-t-0 border-[#DFDFF0] rounded-b-lg">
                             <p className="text-sm text-gray-700">{incidentLocation}</p>
                         </div>
                     </div>
 
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.1s' }}>
-                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg">👤 Reporter</div>
+                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
+                            <Icon icon="material-symbols:person" className="w-3 h-3" />
+                            Reporter
+                        </div>
                         <div className="px-3 py-2 border border-t-0 border-[#DFDFF0] rounded-b-lg">
                             <p className="text-sm text-gray-700">{incident?.reporter || 'Anonymous'}</p>
                             <p className="text-xs text-gray-500">{incident?.reporterPhone || 'N/A'}</p>
@@ -136,7 +155,10 @@ const IncidentDetailModal = React.memo(({
                     </div>
 
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.15s' }}>
-                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg">📝 Description</div>
+                        <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
+                            <Icon icon="material-symbols:description" className="w-3 h-3" />
+                            Description
+                        </div>
                         <div className="px-3 py-2 border border-t-0 border-[#DFDFF0] rounded-b-lg">
                             <p className="text-sm text-gray-600">{incidentDescription}</p>
                         </div>
@@ -144,7 +166,10 @@ const IncidentDetailModal = React.memo(({
 
                     {incidentVictims > 0 && (
                         <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.2s' }}>
-                            <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg">👥 Victims</div>
+                            <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
+                                <Icon icon="material-symbols:group" className="w-3 h-3" />
+                                Victims
+                            </div>
                             <div className="px-3 py-2 border border-t-0 border-[#DFDFF0] rounded-b-lg">
                                 <p className="text-sm text-gray-700">{incidentVictims} person(s) affected</p>
                             </div>
