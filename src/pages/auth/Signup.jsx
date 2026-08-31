@@ -877,7 +877,7 @@ export default function Signup() {
               size="large"
               text="signup_with"
               shape="rectangular"
-              width="250"
+              width="350"
               onSuccess={handleGoogleSuccess}
               onError={() => console.log('Login Failed')}
             />

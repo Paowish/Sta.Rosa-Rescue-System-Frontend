@@ -348,7 +348,7 @@ export default function Login() {
           animate={{ opacity: 1, x: 0 }}          // Slides IN to the center
           exit={{ opacity: 0, x: 100 }}           // Slides OUT to the RIGHT
           transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="w-full max-w-md md:max-w-6xl py-4 md:py-10"
+          className="w-full max-w-6xl py-10"
         >
           <div className="flex items-center gap-3 mb-8">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -369,7 +369,7 @@ export default function Login() {
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="300" // ✅ FIXED NUMBER - Fills most of the container!
+                  width="400" // ✅ FIXED NUMBER - Fills most of the container!
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />
