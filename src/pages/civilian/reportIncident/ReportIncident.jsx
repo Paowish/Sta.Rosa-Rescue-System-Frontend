@@ -285,22 +285,20 @@ export default function ReportIncident() {
                                 </div>
                                 <p className="text-sm text-gray-500 mb-3">Attach a photo or video to help responders assess the situation before arrival.</p>
 
-                                <div className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 transition-colors ${selectedImage ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}>
+                                <label className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer ${selectedImage ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}>
                                     {selectedImage ? (
                                         <div className="relative w-full max-w-xs mx-auto">
                                             <img src={selectedImage} alt="Preview" className="w-full rounded-lg shadow-sm" />
-                                            <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">✕</button>
+                                            <button onClick={(e) => { e.preventDefault(); setSelectedImage(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">✕</button>
                                         </div>
                                     ) : (
                                         <>
                                             <Icon icon="mdi:camera" width="32" className="text-[#0C7FDA]" />
-                                            <button onClick={() => document.getElementById('cameraInput').click()} className="text-sm text-[#0C7FDA] font-medium hover:underline">
-                                                Add Photo
-                                            </button>
+                                            <span className="text-sm text-[#0C7FDA] font-medium">Add Photo</span>
                                             <input id="cameraInput" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
                                         </>
                                     )}
-                                </div>
+                                </label>
                             </div>
 
                             {/* Step 1 Footer */}
