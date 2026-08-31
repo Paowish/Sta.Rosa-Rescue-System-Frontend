@@ -283,6 +283,7 @@ export default function Signup() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
+
   // Add inside your component
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalType, setLegalType] = useState("terms"); // 'terms' or 'privacy'
@@ -337,7 +338,7 @@ export default function Signup() {
     }
   }, [showSuccessModal]);
 
-  // ✅ GOOGLE SIGNUP HANDLER
+  // ✅ GOOGLE SIGNUP HANDLER (Handles NEW vs EXISTING user)
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       // Send the credential to your backend for verification
@@ -357,8 +358,13 @@ export default function Signup() {
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
 
-        setSuccessMessage("Successfully signed up with Google!");
-        setShowSuccessModal(true);
+        // ✅ If backend says user is NEW, show the modal. If EXISTING, skip and go straight to dashboard.
+        if (res.isNewUser) {
+          setSuccessMessage("Successfully signed up with Google!");
+          setShowSuccessModal(true);
+        } else {
+          handleSuccessNavigate();
+        }
       }
     } catch (err) {
       console.error("Google signup error:", err);
