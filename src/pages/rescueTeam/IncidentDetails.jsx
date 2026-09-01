@@ -31,7 +31,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const [showLoadingModal, setShowLoadingModal] = useState(false);
     const [loadingVolunteers, setLoadingVolunteers] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [activeTab, setActiveTab] = useState('volunteers');
     const navigate = useNavigate();
 
     // Success Data
@@ -47,6 +46,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     // Add local status to update immediately after actions
     const [localStatus, setLocalStatus] = useState(data?.status || "Pending");
 
+    // ✅ NEW: To store the Team name if a team was dispatched
+    const [dispatchedTeamName, setDispatchedTeamName] = useState("");
+
     // ✅ 1. Generate a unique Session Key for this specific Incident ID
     const getSessionLockKey = () => {
         const id = getIncidentId();
@@ -61,19 +63,15 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             const savedLock = sessionKey ? sessionStorage.getItem(sessionKey) : null;
             const apiStatus = data.status || "Pending";
 
-            // ✅ PRIORITY CHECK: Server says Resolved? 
-            // Ignore the lock and clear it permanently!
             if (apiStatus === "Resolved" || apiStatus === "Solved") {
                 if (sessionKey) sessionStorage.removeItem(sessionKey);
                 persistentStatusRef.current = null;
                 setLocalStatus(apiStatus);
             }
-            // Otherwise, use the saved session lock if it exists
             else if (savedLock && savedLock === "Dispatched") {
                 persistentStatusRef.current = "Dispatched";
                 setLocalStatus("Dispatched");
             } else {
-                // Fallback to API data
                 persistentStatusRef.current = null;
                 setLocalStatus(apiStatus);
             }
@@ -94,7 +92,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         loadAvailableVolunteers();
     }, []);
 
-    // ✅ 3. Prefer the permanent lock, then localStatus, then API data
     const finalStatus = persistentStatusRef.current || localStatus || data?.status || "Pending";
     const isResolved = finalStatus === "Resolved" || finalStatus === "Solved" || finalStatus === "resolved" || finalStatus === "solved";
     const isDispatched = finalStatus === "Dispatched" || finalStatus === "dispatched";
@@ -207,7 +204,8 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         setSelectedIds(prev => prev.filter(id => id !== volunteerId));
     };
 
-    const handleDispatch = async () => {
+    // ✅ UPDATED: Accept dispatchInfo and pass isTeam
+    const handleDispatch = async (dispatchInfo) => {
         const incident = incidentDataRef.current || data;
 
         if (isActionLocked) {
@@ -220,24 +218,21 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             return;
         }
 
+        // ✅ 1. FORCE CLOSE THE DISPATCH MODAL FIRST AND CLEAR SELECTED IDS
         setShowDispatchModal(false);
+        setSelectedIds([]);
+
+        // ✅ 2. SHOW LOADING
         setShowLoadingModal(true);
         setIsDispatching(true);
 
         try {
-            // ✅ Get API URL dynamically
-            const getApiUrl = () => {
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    return 'http://localhost:5000/api';
-                }
-                return '/api';
-            };
-
             const token = localStorage.getItem('token');
-            const apiUrl = getApiUrl();
+            const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:5000/api'
+                : 'https://sta-rosa-rescue-system-backend.onrender.com/api';
 
-            console.log('📡 Dispatching to:', `${apiUrl}/incidents/${incident._id || incident.id}/dispatch`);
-            console.log('📡 Selected IDs:', selectedIds);
+            const idsToDispatch = [...selectedIds]; // ✅ Capture IDs BEFORE clearing!
 
             const response = await fetch(`${apiUrl}/incidents/${incident._id || incident.id}/dispatch`, {
                 method: 'POST',
@@ -246,19 +241,18 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    volunteerIds: selectedIds,
+                    volunteerIds: idsToDispatch, // ✅ FIXED: Use the captured IDs!
                     dispatchNotes: dispatchNotes || `Dispatch for ${getTitle()} at ${getAddress()}`
                 })
             });
 
             const result = await response.json();
-            console.log('📡 Dispatch result:', result);
 
+            // ✅ 3. HIDE LOADING
             setShowLoadingModal(false);
             setIsDispatching(false);
 
             if (result.success) {
-                // ✅ Save the lock to Session Storage
                 const sessionKey = getSessionLockKey();
                 if (sessionKey) {
                     sessionStorage.setItem(sessionKey, "Dispatched");
@@ -267,18 +261,31 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 persistentStatusRef.current = "Dispatched";
                 setLocalStatus("Dispatched");
 
+                // ✅ NEW: Save team name if it was a team dispatch!
+                if (dispatchInfo?.type === 'team') {
+                    setDispatchedTeamName(dispatchInfo.teamName || 'Team');
+                } else {
+                    setDispatchedTeamName("");
+                }
+
                 const dispatchedVolunteers = volunteers.filter(v => selectedIds.includes(v._id));
+
+                // ✅ 4. SHOW SUCCESS MODAL (This is the only modal now!)
                 setSuccessData({
                     incidentId: getIncidentId(),
                     title: getTitle(),
                     address: getAddress(),
+                    count: dispatchInfo?.count || result.data.volunteersDispatched || selectedIds.length,
+                    isTeam: dispatchInfo?.type === 'team', // ✅ IMPORTANT
+                    teamName: dispatchInfo?.teamName || '', // ✅ IMPORTANT
                     volunteersDispatched: result.data.volunteersDispatched || selectedIds.length,
                     volunteers: dispatchedVolunteers,
-                    message: result.message || `Incident successfully dispatched to ${selectedIds.length} volunteer(s)!`,
+                    message: result.message || `Incident successfully dispatched to ${selectedIds.length} responder(s)!`,
                     isError: false
                 });
                 setShowSuccessModal(true);
-                setSelectedIds([]);
+
+                // ✅ 5. CLEAN UP
                 setDispatchNotes("");
                 if (onDispatch) onDispatch(result.data);
             } else {
@@ -363,7 +370,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const handleResolve = async () => {
         const incident = incidentDataRef.current || data;
 
-        // ✅ Check if dispatched - if not, show warning
         if (!isDispatched) {
             alert('⚠️ This incident must be dispatched before it can be resolved.');
             return;
@@ -387,7 +393,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 });
                 const result = await response.json();
                 if (result.success) {
-                    // ✅ Clear the session lock
                     const sessionKey = getSessionLockKey();
                     if (sessionKey) {
                         sessionStorage.removeItem(sessionKey);
@@ -398,7 +403,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
                     if (onResolve) onResolve(result.data);
 
-                    // ✅ Wait a tiny bit before closing to let the UI breathe
                     setTimeout(() => {
                         if (onClose) onClose();
                     }, 300);
@@ -412,19 +416,11 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
-    // ✅ FIXED: handleViewReport with better error handling and debugging
     const handleViewReport = () => {
         const incident = incidentDataRef.current || data;
         const incidentId = incident._id || incident.id || incident.incidentId;
 
-        console.log('🔍 View Report clicked');
-        console.log('📋 Incident data:', incident);
-        console.log('📋 Incident ID:', incidentId);
-
-        // ✅ Check if user is authenticated
         const token = localStorage.getItem('token');
-        console.log('🔑 Token exists:', !!token);
-
         if (!token) {
             alert('Please log in to view the report.');
             navigate('/login');
@@ -432,20 +428,15 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
 
         if (incidentId && incidentId !== "N/A") {
-            // Close the details panel first
             if (onClose) onClose();
 
-            // ✅ Navigate to the incidents page with view parameter
             const targetPath = `/incidents?view=${incidentId}`;
-            console.log('🚀 Navigating to:', targetPath);
             navigate(targetPath);
         } else {
-            console.error("No incident ID found");
             alert("Cannot view report: Incident ID not found");
         }
     };
 
-    // ✅ Just closes the modal
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
         setSuccessData(null);
@@ -494,8 +485,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 isResolved={isResolved}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
                 handleVolunteerToggle={handleVolunteerToggle}
                 handleRemoveSelected={handleRemoveSelected}
             />
@@ -563,7 +552,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 <LocationSection address={getAddress()} coordinates={getCoordinates()} />
                 <ReporterSection name={getReporterName()} contact={getReporterContact()} />
 
-                {/* ✅ IMAGE - CLICKABLE TO OPEN FULLSCREEN (ORIGINAL SIZE) */}
                 <div
                     className="cursor-pointer relative group"
                     onClick={() => setIsFullscreen(true)}
@@ -574,7 +562,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                         hasImage={hasImage}
                         onImageError={() => setImageError(true)}
                     />
-                    {/* ✅ Overlay icon to indicate it's clickable */}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <div className="bg-white/90 rounded-full p-2">
                             <Icon icon="material-symbols:zoom-in" className="w-6 h-6 text-gray-800" />
@@ -598,14 +585,20 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                             ) : (
                                 <>
                                     <Icon icon="material-symbols:sync" className="w-5 h-5 text-blue-600 animate-spin" />
-                                    <span className="text-blue-700 font-semibold">Incident is currently dispatched to volunteers</span>
+                                    {/* ✅ UPDATED: Check if a team was dispatched */}
+                                    <span className="text-blue-700 font-semibold">
+                                        {dispatchedTeamName
+                                            ? `Incident is currently dispatched to ${dispatchedTeamName}`
+                                            : "Incident is currently dispatched to volunteers"
+                                        }
+                                    </span>
                                 </>
                             )}
                         </div>
                         <p className="text-xs mt-1 text-gray-600">
                             {isResolved
                                 ? "No further actions are available."
-                                : "Actions are disabled while volunteers are en route."
+                                : "Actions are disabled while the team is en route."
                             }
                         </p>
                     </div>
@@ -639,7 +632,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                         <div className="flex gap-2">
                             <button
                                 onClick={handleResolve}
-                                disabled={!isDispatched}  // ✅ Disabled until dispatched
+                                disabled={!isDispatched}
                                 className={`flex-1 py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors duration-200 ${isDispatched
                                     ? 'bg-green-600 text-white hover:bg-green-700'
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'

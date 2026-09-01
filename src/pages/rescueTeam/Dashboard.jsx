@@ -7,8 +7,8 @@ import { incidentService, notificationService } from "../../services/api";
 import io from 'socket.io-client';
 import { Icon } from "@iconify/react";
 import IncidentDetails from "./IncidentDetails";
+import DispatchModal from "./DispatchModal";
 
-// Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -16,14 +16,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom marker icons based on severity
 const getMarkerIcon = (severity) => {
-  const colors = {
-    Critical: '#EF4444',
-    High: '#F97316',
-    Medium: '#EAB308',
-    Low: '#3B82F6'
-  };
+  const colors = { Critical: '#EF4444', High: '#F97316', Medium: '#EAB308', Low: '#3B82F6' };
   const color = colors[severity] || '#3B82F6';
   return L.divIcon({
     className: 'custom-marker',
@@ -33,21 +27,16 @@ const getMarkerIcon = (severity) => {
   });
 };
 
-// Component to center map on marker
 function MapCenter({ position }) {
   const map = useMap();
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 15, {
-        duration: 1.5,
-        easeLinearity: 0.25
-      });
+      map.flyTo(position, 15, { duration: 1.5, easeLinearity: 0.25 });
     }
   }, [position, map]);
   return null;
 }
 
-// Status Badge Component
 function StatusBadge({ status }) {
   const configs = {
     'Resolved': { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -57,9 +46,7 @@ function StatusBadge({ status }) {
     'Active': { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
     'Pending': { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' }
   };
-
   const config = configs[status] || configs['Pending'];
-
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${config.bg} ${config.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${config.dot} animate-pulse`}></span>
@@ -68,7 +55,6 @@ function StatusBadge({ status }) {
   );
 }
 
-// Severity Badge Component
 function SeverityBadge({ severity }) {
   const configs = {
     'Critical': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
@@ -76,9 +62,7 @@ function SeverityBadge({ severity }) {
     'Medium': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
     'Low': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' }
   };
-
   const config = configs[severity] || configs['Medium'];
-
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${config.bg} ${config.text} ${config.border}`}>
       {severity}
@@ -86,14 +70,8 @@ function SeverityBadge({ severity }) {
   );
 }
 
-// Stat Card Component (Professional Version)
 function StatCard({ title, value, icon, color, trend }) {
-  // Determine bg color class based on the text color
-  const bgColorClass = color
-    .replace('text-', 'bg-')
-    .replace('-600', '-100')
-    .replace('-700', '-100');
-
+  const bgColorClass = color.replace('text-', 'bg-').replace('-600', '-100').replace('-700', '-100');
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between">
@@ -101,16 +79,13 @@ function StatCard({ title, value, icon, color, trend }) {
           <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
           <p className={`text-3xl font-bold ${color}`}>{value}</p>
         </div>
-        {/* ✅ Professional Icon container with exact color matching */}
         <div className={`p-3 rounded-lg ${bgColorClass}`}>
           <Icon icon={icon} className={`text-xl ${color}`} />
         </div>
       </div>
       {trend && (
         <div className="mt-3 flex items-center gap-1 text-xs">
-          <span className={trend.positive ? 'text-emerald-600' : 'text-red-600'}>
-            {trend.positive ? '↑' : '↓'} {trend.value}%
-          </span>
+          <span className={trend.positive ? 'text-emerald-600' : 'text-red-600'}>{trend.positive ? '↑' : '↓'} {trend.value}%</span>
           <span className="text-gray-400">vs last week</span>
         </div>
       )}
@@ -118,8 +93,7 @@ function StatCard({ title, value, icon, color, trend }) {
   );
 }
 
-// Incident Card Component
-function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, timeAgo, severity }) {
+function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, severity }) {
   const getStatusBorderColor = (status) => {
     const colors = {
       'Resolved': 'border-emerald-500',
@@ -134,18 +108,21 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, t
 
   const borderColor = getStatusBorderColor(incident.status);
   const statusText = volunteerStatus?.status === 'en-route' ? 'En Route' :
-    volunteerStatus?.status === 'arrived' ? 'On Scene' :
-      incident.status || 'Pending';
+    volunteerStatus?.status === 'arrived' ? 'On Scene' : incident.status || 'Pending';
+
+  // ✅ Timestamp for all cards
+  const formatTimestamp = (dateString) => {
+    if (!dateString) return 'Just now';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   return (
     <div
       onClick={() => onClick(incident)}
-      className={`
-        relative bg-white rounded-xl border-l-[6px] p-4 cursor-pointer transition-all duration-200
-        hover:shadow-md hover:-translate-y-0.5 ${borderColor}
-        ${isSelected ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm border-y-0 border-r-0 border-t-0 border-b-0'}
-      `}
+      className={`relative bg-white rounded-xl border-l-[6px] p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${borderColor} ${isSelected ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm'}`}
     >
+      {/* ✅ ONLY SHOW "NEW" IF isNew is TRUE */}
       {isNew && (
         <div className="absolute -top-2 -left-2 z-10">
           <span className="bg-red-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-md animate-pulse">
@@ -159,14 +136,10 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, t
           <SeverityBadge severity={severity} />
           <StatusBadge status={statusText} />
         </div>
-        <span className="text-[11px] font-mono text-gray-400">
-          {incident.incidentId || 'RES-2026'}
-        </span>
+        <span className="text-[11px] font-mono text-gray-400">{incident.incidentId || 'RES-2026'}</span>
       </div>
 
-      <h4 className="text-[15px] font-semibold text-gray-800 mb-1 truncate">
-        {incident.type || 'Incident'}
-      </h4>
+      <h4 className="text-[15px] font-semibold text-gray-800 mb-1 truncate">{incident.type || 'Incident'}</h4>
 
       <div className="flex items-center gap-2 text-[12px] text-gray-500 overflow-hidden">
         <span className="flex items-center gap-1 shrink-0">
@@ -176,13 +149,16 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, t
           </svg>
           <span className="truncate">{incident.location?.address || 'Unknown location'}</span>
         </span>
-        <span className="text-gray-300 shrink-0">•</span>
-        <span className="flex items-center gap-1 shrink-0">
+      </div>
+
+      {/* ✅ TIMESTAMP ALL */}
+      <div className="mt-2 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          {timeAgo}
-        </span>
+          <span className="font-medium">{formatTimestamp(incident.reportedAt)}</span>
+        </div>
       </div>
 
       {volunteerStatus && (
@@ -218,12 +194,13 @@ export default function Dashboard({ onIncidentClick }) {
   const [latestIncidentAlert, setLatestIncidentAlert] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [selectedIncident, setSelectedIncident] = useState(null); // ✅ KEEP THIS
+  const [selectedIncident, setSelectedIncident] = useState(null);
   const [mapCenter, setMapCenter] = useState([15.3613, 120.9365]);
   const socketRef = useRef(null);
   const audioRef = useRef(null);
 
-  const [newIncidentIds, setNewIncidentIds] = useState([]);
+  // ✅ SINGLE ID for the latest new incident (only ONE "NEW" badge)
+  const [latestNewIncidentId, setLatestNewIncidentId] = useState(null);
   const [volunteerStatuses, setVolunteerStatuses] = useState({});
 
   const isLoadingRef = useRef(false);
@@ -231,19 +208,47 @@ export default function Dashboard({ onIncidentClick }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshStartTimeRef = useRef(0);
 
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [selectedVolunteers, setSelectedVolunteers] = useState([]);
+  const [dispatchNotes, setDispatchNotes] = useState("");
+
   const loadData = useCallback(async () => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
       const incidentResponse = await incidentService.getAllIncidents();
       if (incidentResponse.success) {
-        setIncidents(incidentResponse.data);
-        const total = incidentResponse.data.length;
-        const active = incidentResponse.data.filter(i =>
-          i.status === 'Active' || i.status === 'Pending' || i.status === 'Acknowledged' || i.status === 'Dispatched'
-        ).length;
-        const pending = incidentResponse.data.filter(i => i.status === 'Pending').length;
-        const resolved = incidentResponse.data.filter(i => i.status === 'Resolved').length;
+        // ✅ SORT BY DATE DESCENDING (newest first)
+        const sortedIncidents = [...incidentResponse.data].sort((a, b) => {
+          return new Date(b.reportedAt) - new Date(a.reportedAt);
+        });
+
+        setIncidents(sortedIncidents);
+
+        // ✅ ALWAYS update the badge to the newest incident, unless it was clicked
+        setLatestNewIncidentId(prev => {
+          if (sortedIncidents.length === 0) return null;
+
+          // If we have a current badge, check if the sorted newest is newer
+          if (prev) {
+            const currentIncident = sortedIncidents.find(i => i._id === prev);
+            if (currentIncident) {
+              // If the current badge is NOT the first (newest), move it to first
+              if (currentIncident._id !== sortedIncidents[0]._id) {
+                return sortedIncidents[0]._id;
+              }
+              return prev; // Keep it
+            }
+          }
+
+          // No current badge or not found, set to newest
+          return sortedIncidents[0]._id;
+        });
+
+        const total = sortedIncidents.length;
+        const active = sortedIncidents.filter(i => i.status === 'Active' || i.status === 'Pending' || i.status === 'Acknowledged' || i.status === 'Dispatched').length;
+        const pending = sortedIncidents.filter(i => i.status === 'Pending').length;
+        const resolved = sortedIncidents.filter(i => i.status === 'Resolved').length;
         setStats({ total, active, pending, resolved });
       }
     } catch (error) {
@@ -253,13 +258,9 @@ export default function Dashboard({ onIncidentClick }) {
       const elapsed = Date.now() - refreshStartTimeRef.current;
       const minimumLoadingTime = 1500;
       if (elapsed < minimumLoadingTime) {
-        setTimeout(() => {
-          setLoading(false);
-          setIsRefreshing(false);
-        }, minimumLoadingTime - elapsed);
+        setTimeout(() => { setLoading(false); setIsRefreshing(false); }, minimumLoadingTime - elapsed);
       } else {
-        setLoading(false);
-        setIsRefreshing(false);
+        setLoading(false); setIsRefreshing(false);
       }
     }
   }, []);
@@ -280,27 +281,10 @@ export default function Dashboard({ onIncidentClick }) {
     }
   };
 
-  const markAsNew = (incidentId) => {
-    setNewIncidentIds(prev => {
-      if (!prev.includes(incidentId)) {
-        return [...prev, incidentId];
-      }
-      return prev;
-    });
-    setTimeout(() => {
-      setNewIncidentIds(prev => prev.filter(id => id !== incidentId));
-    }, 15000);
-  };
-
   const handleVolunteerStatusUpdate = (data) => {
     setVolunteerStatuses(prev => ({
       ...prev,
-      [data.volunteerId || data.id]: {
-        status: data.status,
-        location: data.location,
-        timestamp: new Date().toISOString(),
-        incidentId: data.incidentId
-      }
+      [data.volunteerId || data.id]: { status: data.status, location: data.location, timestamp: new Date().toISOString(), incidentId: data.incidentId }
     }));
     if (loadDataRef.current) loadDataRef.current();
   };
@@ -312,13 +296,9 @@ export default function Dashboard({ onIncidentClick }) {
 
       if (token && user._id) {
         const socketUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:5000'
-          : 'https://sta-rosa-rescue-system-backend.onrender.com';
+          ? 'http://localhost:5000' : 'https://sta-rosa-rescue-system-backend.onrender.com';
 
-        socketRef.current = io(socketUrl, {
-          auth: { token },
-          transports: ['websocket', 'polling']
-        });
+        socketRef.current = io(socketUrl, { auth: { token }, transports: ['websocket', 'polling'] });
 
         socketRef.current.on('connect', () => {
           console.log('Rescue Team socket connected');
@@ -328,10 +308,29 @@ export default function Dashboard({ onIncidentClick }) {
 
         socketRef.current.on('new_incident', (notification) => {
           const incidentId = notification._id || notification.id || notification.incidentId;
-          if (incidentId) markAsNew(incidentId);
+
+          // ✅ Move NEW badge to the incoming incident IMMEDIATELY
+          if (incidentId) setLatestNewIncidentId(incidentId);
+
+          // ✅ Add to top instantly
+          if (incidentId) {
+            const newIncidentData = {
+              _id: incidentId,
+              type: notification.type || notification.title || 'New Incident',
+              status: 'Pending',
+              severity: notification.severity || 'Medium',
+              reportedAt: new Date().toISOString(),
+              location: { address: notification.message || 'Unknown location' }
+            };
+            setIncidents(prev => [newIncidentData, ...prev.filter(i => i._id !== incidentId)]);
+          }
+
+          // ✅ Trigger popup and audio
           showIncidentAlert(notification);
-          if (loadDataRef.current) loadDataRef.current();
           loadNotifications();
+
+          // ✅ Load full data (will sort properly and move badge to newest)
+          if (loadDataRef.current) loadDataRef.current();
         });
 
         socketRef.current.on('incident_updated', (data) => {
@@ -405,24 +404,20 @@ export default function Dashboard({ onIncidentClick }) {
   };
 
   const handleIncidentClick = (incident) => {
-    if (incident._id) {
-      setNewIncidentIds(prev => prev.filter(id => id !== incident._id));
-    }
-
-    // ✅ SET THE SELECTED INCIDENT HERE (so the panel opens)
     setSelectedIncident(incident);
 
-    // ✅ Update the map center
+    // ✅ CLICKING THE LATEST INCIDENT REMOVES THE BADGE
+    if (incident._id === latestNewIncidentId) {
+      setLatestNewIncidentId(null);
+    }
+
     const lat = incident.location?.coordinates?.latitude || incident.location?.coordinates?.lat;
     const lng = incident.location?.coordinates?.longitude || incident.location?.coordinates?.lng;
-    if (lat && lng) {
-      setMapCenter([parseFloat(lat), parseFloat(lng)]);
-    }
+    if (lat && lng) setMapCenter([parseFloat(lat), parseFloat(lng)]);
   };
 
   const getFilteredIncidents = () => {
     let filtered = incidents;
-
     if (searchTerm) {
       filtered = filtered.filter(incident =>
         incident.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -430,13 +425,9 @@ export default function Dashboard({ onIncidentClick }) {
         incident.incidentId?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     if (selectedFilter !== 'all') {
-      filtered = filtered.filter(incident =>
-        incident.status?.toLowerCase() === selectedFilter.toLowerCase()
-      );
+      filtered = filtered.filter(incident => incident.status?.toLowerCase() === selectedFilter.toLowerCase());
     }
-
     return filtered;
   };
 
@@ -446,28 +437,24 @@ export default function Dashboard({ onIncidentClick }) {
     return statuses[statuses.length - 1];
   };
 
-  const getTimeAgo = (date) => {
-    if (!date) return 'N/A';
-    const now = new Date();
-    const past = new Date(date);
-    const diffMs = now - past;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    return `${diffDays}d`;
-  };
-
   const handleRefresh = () => {
     refreshStartTimeRef.current = Date.now();
     setIsRefreshing(true);
-    if (loadDataRef.current) {
-      loadDataRef.current();
-    }
+    if (loadDataRef.current) loadDataRef.current();
     loadNotifications();
+  };
+
+  const handleDispatchSuccess = async (dispatchInfo) => {
+    try {
+      const response = await incidentService.assignResponders(selectedIncident._id, selectedVolunteers, dispatchNotes);
+      if (response && response.success) {
+        setShowDispatchModal(false);
+        loadData();
+        alert(`Success! ${dispatchInfo.count} responder(s) dispatched.`);
+      }
+    } catch (error) {
+      alert("Failed to dispatch: " + error.message);
+    }
   };
 
   useEffect(() => {
@@ -478,9 +465,7 @@ export default function Dashboard({ onIncidentClick }) {
     audioRef.current = new Audio('/notification-sound.mp3');
 
     const pollInterval = setInterval(() => {
-      if (!document.hidden && loadDataRef.current) {
-        loadDataRef.current();
-      }
+      if (!document.hidden && loadDataRef.current) loadDataRef.current();
     }, 10000);
 
     return () => {
@@ -492,6 +477,16 @@ export default function Dashboard({ onIncidentClick }) {
       }
     };
   }, []);
+
+  // ✅ Auto-center on newest incident
+  useEffect(() => {
+    if (incidents.length > 0) {
+      const latest = incidents[0];
+      const lat = latest.location?.coordinates?.latitude || latest.location?.coordinates?.lat;
+      const lng = latest.location?.coordinates?.longitude || latest.location?.coordinates?.lng;
+      if (lat && lng) setMapCenter([parseFloat(lat), parseFloat(lng)]);
+    }
+  }, [incidents.length]);
 
   const filteredIncidents = getFilteredIncidents();
 
@@ -507,44 +502,14 @@ export default function Dashboard({ onIncidentClick }) {
   return (
     <div className={`h-screen bg-gray-50 p-6 flex gap-6 overflow-hidden transition-all duration-300 ${selectedIncident ? 'pr-[420px]' : 'pr-6'}`}>
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #c1c7cd;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #a0a7ad;
-        }
-        .animate-slide-in {
-          animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        @keyframes pulse-marker {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-          }
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c7cd; border-radius: 10px; }
+        .animate-slide-in { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse-marker { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
       `}</style>
 
-      {/* FULL-SCREEN LOADING SPINNER */}
       {isRefreshing && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
@@ -554,7 +519,6 @@ export default function Dashboard({ onIncidentClick }) {
         </div>
       )}
 
-      {/* INCIDENT POPUP */}
       {showIncidentPopup && latestIncidentAlert && (
         <div className="fixed top-20 right-4 z-[999] animate-slide-in">
           <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-2xl p-5 max-w-sm">
@@ -565,20 +529,13 @@ export default function Dashboard({ onIncidentClick }) {
                 <p className="text-xs opacity-90 mb-1">{latestIncidentAlert.message}</p>
                 <p className="text-xs opacity-75">Just now</p>
               </div>
-              <button
-                onClick={() => setShowIncidentPopup(false)}
-                className="text-white/70 hover:text-white transition-colors"
-              >
-                ×
-              </button>
+              <button onClick={() => setShowIncidentPopup(false)} className="text-white/70 hover:text-white transition-colors">×</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MAIN CONTENT AREA (LEFT SIDE) */}
       <div className="flex-1 min-w-0">
-        {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div className="min-w-0 flex-1 pr-4">
             <h1 className="text-2xl font-bold text-gray-800 truncate">Incident Dashboard</h1>
@@ -602,7 +559,6 @@ export default function Dashboard({ onIncidentClick }) {
           </div>
         </div>
 
-        {/* MAIN CONTENT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* INCIDENTS LIST */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -635,12 +591,13 @@ export default function Dashboard({ onIncidentClick }) {
               </div>
             </div>
 
-            <div className="p-4 max-h-[600px] overflow-y-auto custom-scrollbar space-y-3">
+            <div className="p-4 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar space-y-3">
               {filteredIncidents.slice(0, 20).map((incident) => {
-                const isNew = newIncidentIds.includes(incident._id);
                 const volunteerStatus = getVolunteerStatusForIncident(incident._id);
-                const timeAgo = getTimeAgo(incident.reportedAt);
                 const severity = incident.severity || 'Medium';
+
+                // ✅ ONLY THE LATEST INCIDENT GETS "NEW"
+                const isNew = (incident._id === latestNewIncidentId);
 
                 return (
                   <IncidentCard
@@ -650,7 +607,6 @@ export default function Dashboard({ onIncidentClick }) {
                     onClick={handleIncidentClick}
                     isNew={isNew}
                     volunteerStatus={volunteerStatus}
-                    timeAgo={timeAgo}
                     severity={severity}
                   />
                 );
@@ -709,13 +665,37 @@ export default function Dashboard({ onIncidentClick }) {
           </div>
         </div>
       </div>
+
       {selectedIncident && (
         <IncidentDetails
           data={selectedIncident}
           onClose={() => setSelectedIncident(null)}
-          onDispatch={() => { }}
+          onDispatch={() => setShowDispatchModal(true)}
           onResolve={() => { }}
           onViewReport={() => { }}
+        />
+      )}
+
+      {showDispatchModal && selectedIncident && (
+        <DispatchModal
+          isOpen={showDispatchModal}
+          onClose={() => setShowDispatchModal(false)}
+          onDispatch={handleDispatchSuccess}
+          title={selectedIncident.type || 'Incident'}
+          incidentId={selectedIncident.incidentId || selectedIncident._id}
+          volunteers={selectedVolunteers}
+          selectedIds={selectedVolunteers}
+          setSelectedIds={setSelectedVolunteers}
+          isDispatching={false}
+          isResolved={selectedIncident.status === 'Resolved'}
+          searchTerm={""}
+          setSearchTerm={() => { }}
+          handleVolunteerToggle={(id) => {
+            setSelectedVolunteers(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]);
+          }}
+          handleRemoveSelected={(id) => {
+            setSelectedVolunteers(prev => prev.filter(v => v !== id));
+          }}
         />
       )}
     </div>

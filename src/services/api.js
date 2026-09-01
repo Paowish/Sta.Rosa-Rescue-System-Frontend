@@ -505,6 +505,8 @@ export const incidentService = {
         console.log("📸 API - Has photo:", !!incidentData.photo);
         console.log("📸 API - API URL:", API_URL);
 
+
+
         const sanitizedIncidentData = sanitizeData(incidentData);
 
         if (sanitizedIncidentData.photo && sanitizedIncidentData.photo.startsWith('data:image')) {
@@ -534,6 +536,11 @@ export const incidentService = {
             console.log("📸 API - No photo, sending JSON");
             return await apiRequest('/incidents', 'POST', sanitizedIncidentData, true);
         }
+    },
+
+    // ✅ NEW: Get all teams from the database
+    getTeams: async () => {
+        return await apiRequest('/teams', 'GET', null, true);
     },
 
     // ✅ Get all incidents (Admin/Dispatcher only)

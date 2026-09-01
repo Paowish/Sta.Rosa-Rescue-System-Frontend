@@ -4,6 +4,11 @@ import { createPortal } from "react-dom";
 export default function SuccessModal({ isOpen, data, onClose }) {
     if (!isOpen || !data) return null;
 
+    // ✅ Helper variables for correct text
+    const isTeam = data.isTeam === true;
+    const count = data.count || data.volunteersDispatched || 0;
+    const teamName = data.teamName || '';
+
     return createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto mx-4 animate-in zoom-in-95 duration-200">
@@ -20,8 +25,9 @@ export default function SuccessModal({ isOpen, data, onClose }) {
                     <h2 className="text-2xl font-bold text-white">
                         {data.isError ? 'Dispatch Failed' : 'Dispatch Successful!'}
                     </h2>
+                    {/* ✅ Only show "Volunteers have been notified" if it's NOT a team */}
                     <p className={`text-sm mt-1 ${data.isError ? 'text-red-100' : 'text-green-100'}`}>
-                        {data.isError ? 'Unable to dispatch volunteers' : 'Volunteers have been notified'}
+                        {data.isError ? 'Unable to dispatch volunteers' : (isTeam ? '' : 'Volunteers have been notified')}
                     </p>
                 </div>
 
@@ -48,20 +54,27 @@ export default function SuccessModal({ isOpen, data, onClose }) {
                         <div className="mb-4">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium text-gray-700">
-                                    <Icon icon="material-symbols:groups" className="w-4 h-4 inline mr-1" />
-                                    {data.volunteersDispatched} Volunteer(s) Dispatched
+                                    {/* ✅ Correct Text for Team or Volunteers */}
+                                    <Icon icon={isTeam ? "mdi:account-group" : "material-symbols:groups"} className="w-4 h-4 inline mr-1" />
+                                    {isTeam
+                                        ? `${count} Member(s) from ${teamName} Dispatched`
+                                        : `${count} Volunteer(s) Dispatched`
+                                    }
                                 </span>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {data.volunteers?.map((v, index) => (
-                                    <div key={index} className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1 flex items-center gap-1.5 hover:bg-blue-100">
-                                        <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center">
-                                            {v.firstName?.charAt(0)}{v.lastName?.charAt(0)}
+                            {/* ✅ Only show list if it's volunteers and list exists */}
+                            {!isTeam && data.volunteers?.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {data.volunteers?.map((v, index) => (
+                                        <div key={index} className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1 flex items-center gap-1.5 hover:bg-blue-100">
+                                            <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                                {v.firstName?.charAt(0)}{v.lastName?.charAt(0)}
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-700">{v.firstName} {v.lastName}</span>
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700">{v.firstName} {v.lastName}</span>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
