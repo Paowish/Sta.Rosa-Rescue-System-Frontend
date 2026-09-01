@@ -19,7 +19,7 @@ import FileReport from './pages/landing/FileReport';
 // ✅ AUTH PAGES
 // =============================================================
 import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
+import Signup from "./pages/auth/signup";
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
 
 // =============================================================
