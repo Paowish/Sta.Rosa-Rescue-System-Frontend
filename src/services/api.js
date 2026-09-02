@@ -150,12 +150,18 @@ const apiRequest = async (endpoint, method = 'GET', data = null, requiresAuth = 
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Sanitize data before sending
+    // ✅ NEW CODE (KEEPS teamName!):
     let sanitizedData = data;
     if (data && typeof data === 'object') {
-        sanitizedData = sanitizeData(data);
+        sanitizedData = {};
+        for (const [key, value] of Object.entries(data)) {
+            if (key === 'teamName') {
+                sanitizedData[key] = value; // ✅ KEEP teamName AS IS!
+            } else {
+                sanitizedData[key] = sanitizeData(value);
+            }
+        }
     }
-
     const config = {
         method,
         headers,
@@ -685,12 +691,14 @@ export const incidentService = {
      * Assign responders to an incident
      */
     assignResponders: async (incidentId, responderIds, teamName, dispatchNotes) => {
+        console.log('🎯 [API] RECEIVED teamName:', teamName);
+
         return await apiRequest(
-            `/incidents/${incidentId}/assign`,
-            'PUT',
+            `/incidents/${incidentId}/dispatch`,
+            'POST',
             {
-                responderIds: sanitizeData(responderIds),
-                teamName: sanitizeString(teamName),
+                volunteerIds: sanitizeData(responderIds),
+                teamName: teamName,
                 dispatchNotes: sanitizeString(dispatchNotes)
             },
             true

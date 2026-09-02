@@ -215,6 +215,11 @@ export default function DispatchModal({
      * Handle dispatch action
      */
     const handleDispatchWrapper = () => {
+        // ✅ ADD THIS!
+        console.log('🎯 [MODAL] handleDispatchWrapper called!');
+        console.log('🎯 [MODAL] selectedIds:', selectedIds);
+        console.log('🎯 [MODAL] getSelectedTeams():', getSelectedTeams());
+
         const hasTeams = hasTeamSelected();
         const hasVolunteers = hasIndividualVolunteersSelected();
 
@@ -224,21 +229,24 @@ export default function DispatchModal({
         }
 
         if (hasTeams) {
-            const selectedTeamName = getSelectedTeams()[0]?.name || 'Rescue Team';
+            const selectedTeam = getSelectedTeams()[0];
+            console.log('🎯 [MODAL] SELECTED TEAM:', selectedTeam); // ✅ THIS!
+            console.log('🎯 [MODAL] TEAM NAME:', selectedTeam?.name); // ✅ THIS!
+
             onDispatch({
                 type: 'team',
-                teamName: selectedTeamName,
+                teamName: selectedTeam?.name || 'Rescue Team',
+                selectedIds: selectedIds,
                 count: selectedIds.length
             });
         } else {
             onDispatch({
                 type: 'volunteers',
                 teamName: null,
+                selectedIds: selectedIds,
                 count: selectedIds.length
             });
         }
-
-        onClose();
     };
 
     /**

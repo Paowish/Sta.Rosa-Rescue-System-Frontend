@@ -251,9 +251,14 @@ export default function IncidentManagement() {
    */
   const handleDispatchSuccess = async (dispatchInfo) => {
     try {
+      console.log('🎯 [MANAGEMENT] handleDispatchSuccess CALLED!'); // ✅ ADD THIS!
+      console.log('🎯 [MANAGEMENT] RECEIVED dispatchInfo:', dispatchInfo); // ✅ ADD THIS!
+      console.log('🎯 [MANAGEMENT] teamName:', dispatchInfo?.teamName); // ✅ ADD THIS!
+
       const response = await incidentService.assignResponders(
         selectedIncident._id,
-        dispatchSelectedIds,
+        dispatchInfo?.selectedIds || [],
+        dispatchInfo?.teamName || null,
         dispatchNotes
       );
 
@@ -714,8 +719,8 @@ export default function IncidentManagement() {
                           onClick={() => handleResolveIncident(incident)}
                           disabled={resolveDisabled || isResolved}
                           className={`px-3 py-1.5 text-sm rounded border whitespace-nowrap transition-colors ${resolveDisabled || isResolved
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              : 'text-green-600 border-green-300 bg-white hover:bg-green-50'
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'text-green-600 border-green-300 bg-white hover:bg-green-50'
                             }`}
                         >
                           {isResolved ? 'Resolved' : 'Resolve'}
