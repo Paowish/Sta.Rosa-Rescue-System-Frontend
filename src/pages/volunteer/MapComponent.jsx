@@ -14,6 +14,10 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * Map Component
+ * Interactive map for incident visualization with volunteer tracking and routing
+ */
 const MapComponent = forwardRef(({
     incidents,
     selectedIncident,
@@ -25,6 +29,7 @@ const MapComponent = forwardRef(({
     onStopTracking,
     setMapView
 }, ref) => {
+    // Refs for map management
     const mapRef = useRef(null);
     const mapContainerRef = useRef(null);
     const markersRef = useRef([]);
@@ -35,7 +40,9 @@ const MapComponent = forwardRef(({
     const lastLocationRef = useRef(null);
     const lastIncidentRef = useRef(null);
 
-    // Expose methods to parent component via ref
+    /**
+     * Expose methods to parent component via ref
+     */
     useImperativeHandle(ref, () => ({
         getMap: () => mapRef.current,
         flyTo: (lat, lng, zoom, options) => {
@@ -56,7 +63,6 @@ const MapComponent = forwardRef(({
         updateVolunteerMarker: (location) => {
             updateVolunteerMarker(location);
         },
-        // ✅ NEW: Clear volunteer marker (car icon)
         clearVolunteerMarker: () => {
             clearVolunteerMarker();
         },
@@ -76,7 +82,9 @@ const MapComponent = forwardRef(({
         }
     }));
 
-    // Clear routing control
+    /**
+     * Clear routing control
+     */
     const clearRoutingControl = useCallback(() => {
         if (routingControlRef.current) {
             try {
@@ -86,7 +94,9 @@ const MapComponent = forwardRef(({
         }
     }, []);
 
-    // ✅ NEW: Clear volunteer marker
+    /**
+     * Clear volunteer marker
+     */
     const clearVolunteerMarker = useCallback(() => {
         if (volunteerMarkerRef.current) {
             try {
@@ -99,7 +109,9 @@ const MapComponent = forwardRef(({
         }
     }, []);
 
-    // Calculate distance
+    /**
+     * Calculate distance between two coordinates
+     */
     const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -111,7 +123,9 @@ const MapComponent = forwardRef(({
         return R * c;
     }, []);
 
-    // Update directions - FIXED to prevent glitching
+    /**
+     * Update directions on map
+     */
     const updateDirections = useCallback((currentLat, currentLng, incidentLat, incidentLng) => {
         if (!mapRef.current || isUpdatingRef.current) return;
 
@@ -168,7 +182,9 @@ const MapComponent = forwardRef(({
         }
     }, [clearRoutingControl, calculateDistance]);
 
-    // Update volunteer marker
+    /**
+     * Update volunteer marker on map
+     */
     const updateVolunteerMarker = useCallback((location) => {
         if (!mapRef.current || isUpdatingRef.current) {
             console.warn('⚠️ Map not ready for volunteer marker');
@@ -191,9 +207,9 @@ const MapComponent = forwardRef(({
         const carIcon = L.divIcon({
             className: 'volunteer-car-marker',
             html: `<div style="position: relative; width: 50px; height: 50px;">
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3b82f6; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 30px rgba(59,130,246,0.8); display: flex; align-items: center; justify-content: center; font-size: 20px; animation: pulse 1.5s ease-in-out infinite;">🚗</div>
-                <div style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #3b82f6; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(59,130,246,0.5);"></div>
-            </div>`,
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3b82f6; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 30px rgba(59,130,246,0.8); display: flex; items-center; justify-content: center; font-size: 20px; animation: pulse 1.5s ease-in-out infinite;">🚗</div>
+        <div style="position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; background: #3b82f6; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(59,130,246,0.5);"></div>
+      </div>`,
             iconSize: [50, 50],
             iconAnchor: [25, 25],
         });
@@ -222,12 +238,15 @@ const MapComponent = forwardRef(({
         }, 100);
     }, [calculateDistance]);
 
-    // Update markers for incidents
+    /**
+     * Update markers for incidents
+     */
     const updateMarkers = useCallback((map) => {
         if (isUpdatingRef.current) return;
         isUpdatingRef.current = true;
 
         try {
+            // Clear existing markers
             markersRef.current.forEach(marker => {
                 try { map.removeLayer(marker); } catch (e) { }
             });
@@ -267,7 +286,9 @@ const MapComponent = forwardRef(({
         }
     }, [incidents, selectedIncident, onIncidentClick]);
 
-    // Initialize map - only once
+    /**
+     * Initialize map - only once
+     */
     useEffect(() => {
         if (!mapContainerRef.current || isMapInitialized.current) return;
         const container = mapContainerRef.current;
@@ -314,9 +335,11 @@ const MapComponent = forwardRef(({
                 isMapInitialized.current = false;
             }
         };
-    }, []); // Empty dependency array - only runs once
+    }, []);
 
-    // Update markers when incidents change - debounced
+    /**
+     * Update markers when incidents change
+     */
     useEffect(() => {
         if (!mapRef.current || !isMapInitialized.current) return;
 
@@ -329,7 +352,9 @@ const MapComponent = forwardRef(({
         return () => clearTimeout(timeoutId);
     }, [incidents, selectedIncident, updateMarkers]);
 
-    // Update tile layer when map view changes
+    /**
+     * Update tile layer when map view changes
+     */
     useEffect(() => {
         if (!mapRef.current || !isMapInitialized.current || isUpdatingRef.current) return;
 
@@ -347,7 +372,11 @@ const MapComponent = forwardRef(({
                 attribution = '&copy; <a href="https://www.google.com/maps">Google</a>';
             }
 
-            L.tileLayer(tileUrl, { attribution: attribution, maxZoom: 19, subdomains: ['a', 'b', 'c'] }).addTo(mapRef.current);
+            L.tileLayer(tileUrl, {
+                attribution: attribution,
+                maxZoom: 19,
+                subdomains: ['a', 'b', 'c']
+            }).addTo(mapRef.current);
 
             if (!isUpdatingRef.current) {
                 updateMarkers(mapRef.current);
@@ -357,7 +386,9 @@ const MapComponent = forwardRef(({
         }
     }, [mapView]);
 
-    // Directions Panel component
+    /**
+     * Directions Panel Component
+     */
     const DirectionsPanel = useMemo(() => {
         if (!isEnRoute || !selectedIncident) return null;
         const distanceStr = distanceToIncident > 0 ? `${(distanceToIncident * 1000).toFixed(0)}m` : '--';
@@ -382,7 +413,9 @@ const MapComponent = forwardRef(({
                             </div>
                         </div>
                     </div>
-                    <button onClick={onStopTracking} className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors">Stop</button>
+                    <button onClick={onStopTracking} className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors">
+                        Stop
+                    </button>
                 </div>
             </div>
         );
@@ -390,6 +423,7 @@ const MapComponent = forwardRef(({
 
     return (
         <div className="flex-1 bg-white rounded-lg shadow-sm p-2 relative min-h-[200px]">
+            {/* Map Controls */}
             <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-gray-800 text-sm">Map</h3>
                 <div className="flex gap-1">
@@ -397,7 +431,8 @@ const MapComponent = forwardRef(({
                         onClick={() => {
                             if (setMapView) setMapView('map');
                         }}
-                        className={`px-2 py-0.5 rounded text-[10px] ${mapView === 'map' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        className={`px-2 py-0.5 rounded text-[10px] ${mapView === 'map' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                            }`}
                     >
                         Map
                     </button>
@@ -405,14 +440,26 @@ const MapComponent = forwardRef(({
                         onClick={() => {
                             if (setMapView) setMapView('satellite');
                         }}
-                        className={`px-2 py-0.5 rounded text-[10px] ${mapView === 'satellite' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        className={`px-2 py-0.5 rounded text-[10px] ${mapView === 'satellite' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                            }`}
                     >
                         Sat
                     </button>
                 </div>
             </div>
+
+            {/* Map Container */}
             <div className="relative" style={{ height: 'calc(100% - 30px)' }}>
-                <div ref={mapContainerRef} className="w-full rounded-lg bg-gray-200 overflow-hidden" style={{ height: '100%', minHeight: '150px', position: 'relative', zIndex: 1 }} />
+                <div
+                    ref={mapContainerRef}
+                    className="w-full rounded-lg bg-gray-200 overflow-hidden"
+                    style={{
+                        height: '100%',
+                        minHeight: '150px',
+                        position: 'relative',
+                        zIndex: 1
+                    }}
+                />
                 {DirectionsPanel}
             </div>
         </div>

@@ -3,10 +3,10 @@ import AdminLayout from "./AdminLayout";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 
-// ============================================================
-// ✅ UI HELPER COMPONENTS
-// ============================================================
-
+/**
+ * Status Badge Component
+ * Displays status with appropriate color coding and icon
+ */
 const StatusBadge = ({ status }) => {
     let colorClass = "bg-gray-100 text-gray-700 border-gray-200";
     let icon = "mdi:circle-outline";
@@ -43,6 +43,10 @@ const StatusBadge = ({ status }) => {
     );
 };
 
+/**
+ * Role Badge Component
+ * Displays user role with appropriate color coding
+ */
 const RoleBadge = ({ role }) => {
     let colorClass = "bg-gray-100 text-gray-700 border-gray-200";
     switch (role) {
@@ -58,28 +62,29 @@ const RoleBadge = ({ role }) => {
     );
 };
 
-// ============================================================
-// ✅ MAIN COMPONENT
-// ============================================================
-
+/**
+ * Admin Overview Dashboard Component
+ * Displays system statistics, pending registrations, and recent incidents
+ */
 export default function AdminOverview() {
+    // State for dashboard statistics
     const [stats, setStats] = useState({ total: 0, active: 0, pending: 0 });
     const [recentRequests, setRecentRequests] = useState([]);
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ✅ Modal visibility states
+    // Modal visibility states
     const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false);
     const [isIncidentsModalOpen, setIsIncidentsModalOpen] = useState(false);
     const [allRequests, setAllRequests] = useState([]);
     const [allIncidents, setAllIncidents] = useState([]);
 
-    // ✅ Modal Search & Filter States
+    // Modal search and filter states
     const [requestSearch, setRequestSearch] = useState("");
     const [incidentSearch, setIncidentSearch] = useState("");
 
-    // ✅ Alert Modals
+    // Alert modal states
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
@@ -89,17 +94,23 @@ export default function AdminOverview() {
     });
     const [modalMessage, setModalMessage] = useState('');
 
+    /**
+     * Load dashboard data on component mount
+     */
     useEffect(() => {
         loadData();
     }, []);
 
+    /**
+     * Fetch all dashboard data from API endpoints
+     */
     const loadData = async () => {
         try {
             setLoading(true);
             setError(null);
             const token = localStorage.getItem('token');
 
-            // ✅ FIX: Load Incidents (Use existing /api/incidents)
+            // Fetch incidents
             const incidentResponse = await fetch('/api/incidents', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -114,7 +125,7 @@ export default function AdminOverview() {
                 setStats({ total, active, pending });
             }
 
-            // ✅ FIX: Load pending volunteer requests (Use existing /api/admin/pending-volunteers)
+            // Fetch pending volunteer requests
             const requestsResponse = await fetch('/api/admin/pending-volunteers', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -131,7 +142,9 @@ export default function AdminOverview() {
         }
     };
 
-    // --- Request Handlers ---
+    /**
+     * Handle accepting a volunteer request
+     */
     const handleAcceptRequest = (userId, userName) => {
         setConfirmModalData({
             title: `Accept ${userName || 'Volunteer'}?`,
@@ -143,6 +156,9 @@ export default function AdminOverview() {
         setShowConfirmModal(true);
     };
 
+    /**
+     * Handle declining a volunteer request
+     */
     const handleDeclineRequest = (userId, userName) => {
         setConfirmModalData({
             title: `Decline ${userName || 'Volunteer'}?`,
@@ -154,6 +170,9 @@ export default function AdminOverview() {
         setShowConfirmModal(true);
     };
 
+    /**
+     * Confirm and execute volunteer acceptance
+     */
     const confirmAcceptRequest = async (userId) => {
         try {
             const token = localStorage.getItem('token');
@@ -177,6 +196,9 @@ export default function AdminOverview() {
         }
     };
 
+    /**
+     * Confirm and execute volunteer decline
+     */
     const confirmDeclineRequest = async (userId) => {
         try {
             const token = localStorage.getItem('token');
@@ -200,7 +222,9 @@ export default function AdminOverview() {
         }
     };
 
-    // --- Filtered Lists for Modals ---
+    /**
+     * Filter requests based on search input
+     */
     const filteredRequests = useMemo(() => {
         if (!requestSearch) return allRequests;
         return allRequests.filter(r =>
@@ -209,6 +233,9 @@ export default function AdminOverview() {
         );
     }, [allRequests, requestSearch]);
 
+    /**
+     * Filter incidents based on search input
+     */
     const filteredIncidents = useMemo(() => {
         if (!incidentSearch) return allIncidents;
         return allIncidents.filter(i =>
@@ -218,9 +245,7 @@ export default function AdminOverview() {
         );
     }, [allIncidents, incidentSearch]);
 
-    // ============================================================
-    // ✅ RENDER: SKELETON LOADING
-    // ============================================================
+    // Render loading skeleton
     if (loading) {
         return (
             <AdminLayout>
@@ -255,14 +280,11 @@ export default function AdminOverview() {
         );
     }
 
-    // ============================================================
-    // ✅ RENDER: MAIN DASHBOARD
-    // ============================================================
+    // Render main dashboard
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-
-                {/* Header */}
+                {/* Page Header */}
                 <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-[#262D31]">Admin Overview</h1>
@@ -288,7 +310,7 @@ export default function AdminOverview() {
                     </div>
                 )}
 
-                {/* Stats Cards */}
+                {/* Statistics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                     <div className="bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.04)] p-6 border border-gray-100">
                         <div className="flex items-start justify-between">
@@ -479,11 +501,8 @@ export default function AdminOverview() {
                 </div>
             </div>
 
-            {/* ================================================================ */}
-            {/* ✅ PROFESSIONAL "VIEW ALL" MODALS */}
-            {/* ================================================================ */}
-
-            {/* REQUESTS MODAL */}
+            {/* View All Modals */}
+            {/* Requests Modal */}
             {isRequestsModalOpen && createPortal(
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -500,7 +519,7 @@ export default function AdminOverview() {
                             </button>
                         </div>
 
-                        {/* Search Bar inside Modal */}
+                        {/* Search Bar */}
                         <div className="px-6 py-4 border-b bg-gray-50/50 flex gap-3">
                             <div className="relative flex-1">
                                 <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -586,7 +605,7 @@ export default function AdminOverview() {
                 document.body
             )}
 
-            {/* INCIDENTS MODAL */}
+            {/* Incidents Modal */}
             {isIncidentsModalOpen && createPortal(
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
@@ -603,7 +622,7 @@ export default function AdminOverview() {
                             </button>
                         </div>
 
-                        {/* Search Bar inside Modal */}
+                        {/* Search Bar */}
                         <div className="px-6 py-4 border-b bg-gray-50/50 flex gap-3">
                             <div className="relative flex-1">
                                 <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -666,11 +685,8 @@ export default function AdminOverview() {
                 document.body
             )}
 
-            {/* ================================================================ */}
-            {/* ✅ ALERT MODALS (Portal to body) */}
-            {/* ================================================================ */}
-
-            {/* CONFIRM MODAL */}
+            {/* Alert Modals */}
+            {/* Confirm Modal */}
             {showConfirmModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -701,7 +717,7 @@ export default function AdminOverview() {
                 document.body
             )}
 
-            {/* SUCCESS MODAL */}
+            {/* Success Modal */}
             {showSuccessModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -729,7 +745,7 @@ export default function AdminOverview() {
                 document.body
             )}
 
-            {/* ERROR MODAL */}
+            {/* Error Modal */}
             {showErrorModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">

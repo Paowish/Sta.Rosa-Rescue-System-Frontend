@@ -5,23 +5,35 @@ import { useNavigate } from "react-router-dom";
 import { incidentService, notificationService } from "../../services/api";
 import io from 'socket.io-client';
 
+/**
+ * Civilian Overview Dashboard Component
+ * Displays dashboard with statistics, recent incidents, and quick actions
+ */
 export default function Overview() {
     const navigate = useNavigate();
+
+    // State for dashboard data
     const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
     const [recentIncidents, setRecentIncidents] = useState([]);
     const [userName, setUserName] = useState("");
     const [greeting, setGreeting] = useState("Good Morning");
     const [loading, setLoading] = useState(true);
+
+    // State for notifications
     const [notification, setNotification] = useState(null);
     const [showNotification, setShowNotification] = useState(false);
     const socketRef = useRef(null);
 
+    /**
+     * Initialize dashboard on component mount
+     */
     useEffect(() => {
         loadUserData();
         loadData();
         setGreetingByTime();
         setupSocketConnection();
 
+        // Cleanup socket on unmount
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
@@ -29,6 +41,9 @@ export default function Overview() {
         };
     }, []);
 
+    /**
+     * Setup Socket.IO connection for real-time notifications
+     */
     const setupSocketConnection = () => {
         try {
             const token = localStorage.getItem('token');
@@ -70,6 +85,9 @@ export default function Overview() {
         }
     };
 
+    /**
+     * Load user data from localStorage
+     */
     const loadUserData = () => {
         try {
             const user = localStorage.getItem('user');
@@ -85,6 +103,9 @@ export default function Overview() {
         }
     };
 
+    /**
+     * Set greeting based on time of day
+     */
     const setGreetingByTime = () => {
         const hour = new Date().getHours();
         if (hour < 12) setGreeting("Good Morning");
@@ -92,6 +113,9 @@ export default function Overview() {
         else setGreeting("Good Evening");
     };
 
+    /**
+     * Load dashboard data from API
+     */
     const loadData = async () => {
         try {
             const response = await incidentService.getAllIncidents();
@@ -112,6 +136,9 @@ export default function Overview() {
         }
     };
 
+    /**
+     * Get status color classes for incident badges
+     */
     const getStatusColor = (status) => {
         switch (status) {
             case 'Resolved': return 'bg-green-100 text-green-600';
@@ -123,12 +150,16 @@ export default function Overview() {
         }
     };
 
+    /**
+     * Format date and time for display
+     */
     const formatDateTime = (dateString) => {
         if (!dateString) return "Unknown date";
         const date = new Date(dateString);
         return date.toLocaleString();
     };
 
+    // Render loading state
     if (loading) {
         return (
             <div className="p-6 flex justify-center items-center h-64">
@@ -158,7 +189,7 @@ export default function Overview() {
                 </div>
             )}
 
-            {/* ✅ ORIGINAL GREETING - NO IMAGE */}
+            {/* Greeting Section */}
             <div className="bg-[#DFF1FF] w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg mb-4">
                 <h1 className="text-xl sm:text-2xl md:text-4xl font-semibold text-[#474C53]">
                     {greeting}, {userName?.split(' ')[0] || "Civilian User"}!
@@ -177,7 +208,9 @@ export default function Overview() {
                     <Icon icon="solar:siren-bold" width={40} className="sm:w-12 md:w-16 text-white flex-shrink-0" />
                     <div>
                         <h2 className="text-lg sm:text-xl md:text-4xl font-semibold text-[#FAFAFF]">Report an Incident</h2>
-                        <p className="text-xs sm:text-sm md:text-base text-[#FAFAFF] font-light hidden sm:block">File a new emergency report with your location, photo evidence, and incident details. Responders are notified immediately.</p>
+                        <p className="text-xs sm:text-sm md:text-base text-[#FAFAFF] font-light hidden sm:block">
+                            File a new emergency report with your location, photo evidence, and incident details. Responders are notified immediately.
+                        </p>
                         <p className="text-xs text-[#FAFAFF] font-light sm:hidden">File a new emergency report now.</p>
                     </div>
                 </div>
@@ -195,7 +228,9 @@ export default function Overview() {
                     <Icon icon="mdi:magnify" width={36} className="sm:w-12 md:w-16 text-[#DC2626] flex-shrink-0" />
                     <div>
                         <h3 className="text-base sm:text-xl md:text-[26px] font-semibold text-[#262D31]">Track Reports</h3>
-                        <p className="text-xs sm:text-sm md:text-base text-[#5D7285] font-normal">Check the real-time status of your filed reports</p>
+                        <p className="text-xs sm:text-sm md:text-base text-[#5D7285] font-normal">
+                            Check the real-time status of your filed reports
+                        </p>
                     </div>
                 </div>
             </div>
@@ -222,11 +257,15 @@ export default function Overview() {
                             <div className="w-[3px] self-stretch bg-red-500 rounded-full"></div>
                             <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                                 <div>
-                                    <h3 className="text-base sm:text-xl font-semibold text-[#262D31] mb-0.5 sm:mb-1">{incident.type || "Unknown Incident"}</h3>
+                                    <h3 className="text-base sm:text-xl font-semibold text-[#262D31] mb-0.5 sm:mb-1">
+                                        {incident.type || "Unknown Incident"}
+                                    </h3>
                                     <div className="flex flex-col gap-0.5 sm:gap-1 text-[#5D7285] text-xs sm:text-sm font-normal">
                                         <div className="flex items-center gap-1">
                                             <Icon icon="mdi:map-marker" width="14" />
-                                            <span className="truncate max-w-[150px] sm:max-w-none">{incident.location?.address || "Unknown location"}</span>
+                                            <span className="truncate max-w-[150px] sm:max-w-none">
+                                                {incident.location?.address || "Unknown location"}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Icon icon="mdi:calendar" width="14" />
@@ -235,7 +274,9 @@ export default function Overview() {
                                     </div>
                                 </div>
                                 <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
-                                    <span className="text-xs sm:text-sm text-[#8B8A8A] font-normal">{incident.incidentId || "N/A"}</span>
+                                    <span className="text-xs sm:text-sm text-[#8B8A8A] font-normal">
+                                        {incident.incidentId || "N/A"}
+                                    </span>
                                     <span className={`text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-[2px] rounded-lg ${getStatusColor(incident.status)}`}>
                                         {incident.status || "Pending"}
                                     </span>
@@ -256,22 +297,22 @@ export default function Overview() {
                 )}
             </div>
 
-            {/* Add CSS animation */}
+            {/* CSS Animation */}
             <style>{`
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                .animate-slide-in {
-                    animation: slideIn 0.3s ease-out;
-                }
-            `}</style>
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out;
+        }
+      `}</style>
         </div>
     );
 }

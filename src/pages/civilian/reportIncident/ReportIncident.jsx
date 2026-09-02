@@ -1,18 +1,53 @@
-import React, { useState, useEffect } from 'react'; // ✅ ADDED useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import IncidentReportLayout from './IncidentReportLayout';
 import { reportService } from '../../../services/reportService';
-import { incidentService, authService } from '../../../services/api'; // ✅ ADDED authService
+import { incidentService, authService } from '../../../services/api';
 
+/**
+ * Report Incident Component
+ * Two-step incident reporting flow with location, photo, and details
+ */
 export default function ReportIncident() {
     const navigate = useNavigate();
+
+    // Step management
     const [currentStep, setCurrentStep] = useState(1);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isLocationReady, setIsLocationReady] = useState(false);
     const [slideDirection, setSlideDirection] = useState('right');
 
-    // ✅ Helper to clean phone number to 11 digits (e.g., 09123456789)
+    // Step 1: Location and Photo
+    const [hasPermission, setHasPermission] = useState(false);
+    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+    const [locationData, setLocationData] = useState({
+        address: "",
+        coordinates: { lat: null, lng: null },
+        barangay: ""
+    });
+    const [specificDetails, setSpecificDetails] = useState("");
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [showModal, setShowModal] = useState(true);
+
+    // Step 2: Incident Details
+    const [incidentDetails, setIncidentDetails] = useState({
+        incidentType: "",
+        victimsAffected: 0,
+        description: ""
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState('');
+
+    // User data
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userFirstName = user.firstName || "";
+    const userPhoneRaw = user.phoneNumber || "";
+    const [phoneNumber, setPhoneNumber] = useState("");
+
+    /**
+     * Clean phone number to 11 digits format (e.g., 09123456789)
+     */
     const getCleanPhone = (phone) => {
         if (!phone) return "";
         let digits = phone.replace(/\D/g, '');
@@ -22,41 +57,17 @@ export default function ReportIncident() {
         return digits;
     };
 
-    // ✅ Get user data
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userFirstName = user.firstName || "";
-    const userPhoneRaw = user.phoneNumber || "";
-    const cleanPhoneNumber = getCleanPhone(userPhoneRaw);
-
-    // Step 1 State
-    const [hasPermission, setHasPermission] = useState(false);
-    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-    const [locationData, setLocationData] = useState({ address: "", coordinates: { lat: null, lng: null }, barangay: "" });
-    const [specificDetails, setSpecificDetails] = useState("");
-
-    // ✅ ALWAYS starts as true so the modal appears immediately upon page load
-    const [showModal, setShowModal] = useState(true);
-
-    // Step 2 State
-    const [selectedImage, setSelectedImage] = useState(null);
-    const [incidentDetails, setIncidentDetails] = useState({
-        incidentType: "",
-        victimsAffected: 0,
-        description: ""
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitStatus, setSubmitStatus] = useState('');
-
-    // ✅ FETCH FRESH USER DATA ON MOUNT
+    /**
+     * Fetch fresh user data on component mount
+     */
     useEffect(() => {
         const fetchUser = async () => {
             try {
                 const res = await authService.getCurrentUser();
                 if (res && res.data) {
                     const cleanPhone = getCleanPhone(res.data.phoneNumber);
-                    setIncidentDetails(prev => ({ ...prev, reporterNumber: cleanPhone }));
-                    // Update state for the UI display
                     setPhoneNumber(cleanPhone);
+                    setIncidentDetails(prev => ({ ...prev, reporterNumber: cleanPhone }));
                 }
             } catch (error) {
                 console.error("Failed to fetch user:", error);
@@ -65,13 +76,14 @@ export default function ReportIncident() {
         fetchUser();
     }, []);
 
-    // ✅ STATE FOR THE DISPLAYED PHONE NUMBER
-    const [phoneNumber, setPhoneNumber] = useState(cleanPhoneNumber);
-
-    // --- LOGIC FOR STEP 1: LOCATION ---
+    /**
+     * Get address from coordinates using OpenStreetMap API
+     */
     const getAddressFromCoordinates = async (lat, lng) => {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+            );
             const data = await res.json();
             if (data?.display_name) {
                 const address = data.address;
@@ -79,15 +91,22 @@ export default function ReportIncident() {
                 return { fullAddress: data.display_name, barangay };
             }
             return null;
-        } catch { return null; }
+        } catch {
+            return null;
+        }
     };
 
+    /**
+     * Handle location permission and fetch current position
+     */
     const handleAllowLocation = () => {
         setIsLoadingLocation(true);
+
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 const info = await getAddressFromCoordinates(latitude, longitude);
+
                 setLocationData({
                     coordinates: { lat: latitude, lng: longitude },
                     address: info?.fullAddress || `${latitude}, ${longitude}`,
@@ -95,7 +114,7 @@ export default function ReportIncident() {
                 });
                 setHasPermission(true);
 
-                // ✅ Trigger slide transition for location
+                // Trigger slide transition
                 setSlideDirection('left');
                 setIsTransitioning(true);
 
@@ -117,10 +136,16 @@ export default function ReportIncident() {
         );
     };
 
+    /**
+     * Handle navigation back or cancel
+     */
     const handleCancel = () => {
         navigate('/overview');
     };
 
+    /**
+     * Handle file selection for incident photo
+     */
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -130,16 +155,26 @@ export default function ReportIncident() {
         }
     };
 
+    /**
+     * Proceed from Step 1 to Step 2
+     */
     const handleNextStep1 = () => {
         if (!hasPermission && !locationData.coordinates.lat && !specificDetails) {
             setShowModal(true);
             return;
         }
 
-        if (!specificDetails.trim()) return alert("Please provide specific location details");
-        if (!selectedImage) return alert("Please add a photo of the incident");
+        if (!specificDetails.trim()) {
+            alert("Please provide specific location details");
+            return;
+        }
 
-        // ✅ Trigger slide transition to step 2
+        if (!selectedImage) {
+            alert("Please add a photo of the incident");
+            return;
+        }
+
+        // Trigger slide transition to step 2
         setSlideDirection('left');
         setIsTransitioning(true);
 
@@ -154,32 +189,55 @@ export default function ReportIncident() {
         }, 400);
     };
 
-    // --- LOGIC FOR STEP 2: DETAILS ---
-    const handleChange = (e) => setIncidentDetails({ ...incidentDetails, [e.target.name]: e.target.value });
+    /**
+     * Handle form input changes
+     */
+    const handleChange = (e) => {
+        setIncidentDetails({ ...incidentDetails, [e.target.name]: e.target.value });
+    };
 
-    const incrementVictims = () => setIncidentDetails(prev => ({ ...prev, victimsAffected: prev.victimsAffected + 1 }));
-    const decrementVictims = () => setIncidentDetails(prev => ({ ...prev, victimsAffected: Math.max(0, prev.victimsAffected - 1) }));
+    /**
+     * Increment victims count
+     */
+    const incrementVictims = () => {
+        setIncidentDetails(prev => ({ ...prev, victimsAffected: prev.victimsAffected + 1 }));
+    };
 
+    /**
+     * Decrement victims count
+     */
+    const decrementVictims = () => {
+        setIncidentDetails(prev => ({
+            ...prev,
+            victimsAffected: Math.max(0, prev.victimsAffected - 1)
+        }));
+    };
+
+    /**
+     * Submit final incident report
+     */
     const handleSubmitFinal = async () => {
         if (!incidentDetails.incidentType || !incidentDetails.description.trim()) {
-            return alert("Please fill in Incident Type and Description");
+            alert("Please fill in Incident Type and Description");
+            return;
         }
+
         if (isSubmitting) return;
 
         setIsSubmitting(true);
         setSubmitStatus('Submitting report...');
 
+        // Save incident details
         reportService.saveIncidentDetails({
             type: incidentDetails.incidentType,
             victimsAffected: incidentDetails.victimsAffected,
             description: incidentDetails.description,
             reporterName: userFirstName || "Anonymous",
-            reporterNumber: phoneNumber || "N/A" // ✅ Uses fetched phone number
+            reporterNumber: phoneNumber || "N/A"
         });
 
         try {
             const response = await reportService.submitReport(incidentService);
-
             setSubmitStatus('Report submitted!');
 
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -203,10 +261,14 @@ export default function ReportIncident() {
         }
     };
 
+    /**
+     * Handle back navigation between steps
+     */
     const handleBack = () => {
-        if (currentStep === 1) navigate('/overview');
-        else {
-            // ✅ Slide back to step 1
+        if (currentStep === 1) {
+            navigate('/overview');
+        } else {
+            // Slide back to step 1
             setSlideDirection('right');
             setIsTransitioning(true);
             setTimeout(() => {
@@ -218,7 +280,9 @@ export default function ReportIncident() {
         }
     };
 
-    // ✅ Get slide classes based on direction
+    /**
+     * Get slide animation classes based on direction
+     */
     const getSlideClasses = () => {
         if (!isTransitioning) return 'opacity-100 translate-x-0';
         return slideDirection === 'left'
@@ -228,27 +292,36 @@ export default function ReportIncident() {
 
     return (
         <>
-            {/* ✅ Main Layout */}
+            {/* Main Layout */}
             <IncidentReportLayout
                 title={currentStep === 1 ? "Set Location & Photo" : "Incident Details"}
                 currentStep={currentStep}
                 onBack={handleBack}
             >
-                {/* ✅ Container with slide transition */}
+                {/* Container with slide transition */}
                 <div className={`transition-all duration-500 ease-in-out ${getSlideClasses()}`}>
                     {currentStep === 1 ? (
+                        // Step 1: Location and Photo
                         <div className="space-y-6">
-                            {/* ✅ Location Section with slide in */}
-                            <div className={`transition-all duration-500 ${isLocationReady ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
+                            {/* Location Section */}
+                            <div className={`transition-all duration-500 ${isLocationReady ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
+                                }`}>
                                 <div className="flex items-center gap-2 mb-3">
                                     <Icon icon="mdi:crosshairs-gps" width="22" className="text-[#0C7FDA]" />
                                     <h3 className="text-[15px] font-medium text-gray-800">Set Incident Location</h3>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-3">We'll use your device location to pinpoint the incident. You can also drag the map pin to adjust the exact position.</p>
+                                <p className="text-sm text-gray-500 mb-3">
+                                    We'll use your device location to pinpoint the incident. You can also drag the map pin to adjust the exact position.
+                                </p>
 
+                                {/* Map Display */}
                                 <div className="h-48 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative">
                                     {locationData.coordinates.lat ? (
-                                        <iframe src={`https://maps.google.com/maps?q=${locationData.coordinates.lat},${locationData.coordinates.lng}&z=16&output=embed`} className="w-full h-full" />
+                                        <iframe
+                                            src={`https://maps.google.com/maps?q=${locationData.coordinates.lat},${locationData.coordinates.lng}&z=16&output=embed`}
+                                            className="w-full h-full"
+                                            title="Incident Location Map"
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-50 flex-col gap-2">
                                             <Icon icon="mdi:map-marker-off" width="32" className="text-gray-400" />
@@ -257,16 +330,22 @@ export default function ReportIncident() {
                                     )}
                                 </div>
 
+                                {/* Location Details */}
                                 {hasPermission && (
                                     <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100 animate-in slide-in-from-left duration-500">
                                         <p className="text-xs text-gray-400 font-medium">Detected location</p>
                                         <p className="text-sm font-medium text-gray-800 mt-0.5">{locationData.address}</p>
-                                        <p className="text-[10px] text-gray-400 mt-0.5">{locationData.coordinates.lat}°N, {locationData.coordinates.lng}°E</p>
+                                        <p className="text-[10px] text-gray-400 mt-0.5">
+                                            {locationData.coordinates.lat}°N, {locationData.coordinates.lng}°E
+                                        </p>
                                     </div>
                                 )}
 
+                                {/* Specific Details Input */}
                                 <div className="mt-4">
-                                    <label className="block text-sm text-gray-700 mb-1.5">Confirm or Add Specific Details <span className="text-red-500">*</span></label>
+                                    <label className="block text-sm text-gray-700 mb-1.5">
+                                        Confirm or Add Specific Details <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={specificDetails}
@@ -283,19 +362,34 @@ export default function ReportIncident() {
                                     <Icon icon="mdi:camera" width="22" className="text-[#0C7FDA]" />
                                     <h3 className="text-[15px] font-medium text-gray-800">Capture the incident</h3>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-3">Attach a photo or video to help responders assess the situation before arrival.</p>
+                                <p className="text-sm text-gray-500 mb-3">
+                                    Attach a photo or video to help responders assess the situation before arrival.
+                                </p>
 
-                                <label className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer ${selectedImage ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}>
+                                <label className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer ${selectedImage ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                                    }`}>
                                     {selectedImage ? (
                                         <div className="relative w-full max-w-xs mx-auto">
                                             <img src={selectedImage} alt="Preview" className="w-full rounded-lg shadow-sm" />
-                                            <button onClick={(e) => { e.preventDefault(); setSelectedImage(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">✕</button>
+                                            <button
+                                                onClick={(e) => { e.preventDefault(); setSelectedImage(null); }}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                            >
+                                                ✕
+                                            </button>
                                         </div>
                                     ) : (
                                         <>
                                             <Icon icon="mdi:camera" width="32" className="text-[#0C7FDA]" />
                                             <span className="text-sm text-[#0C7FDA] font-medium">Add Photo</span>
-                                            <input id="cameraInput" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+                                            <input
+                                                id="cameraInput"
+                                                type="file"
+                                                accept="image/*"
+                                                capture="environment"
+                                                className="hidden"
+                                                onChange={handleFileSelect}
+                                            />
                                         </>
                                     )}
                                 </label>
@@ -322,18 +416,29 @@ export default function ReportIncident() {
                             </div>
                         </div>
                     ) : (
+                        // Step 2: Incident Details
                         <div className="space-y-6">
                             <div>
                                 <div className="flex items-center gap-2 mb-3">
                                     <Icon icon="mdi:clipboard-list" width="22" className="text-[#0C7FDA]" />
                                     <h3 className="text-[15px] font-medium text-gray-800">Incident Details</h3>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-4">Provide accurate information so the right resources can be deployed.</p>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Provide accurate information so the right resources can be deployed.
+                                </p>
 
+                                {/* Incident Type and Victims */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm text-gray-600 font-medium mb-1.5">Incident type <span className="text-red-500">*</span></label>
-                                        <select name="incidentType" value={incidentDetails.incidentType} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#0C7FDA]">
+                                        <label className="block text-sm text-gray-600 font-medium mb-1.5">
+                                            Incident type <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            name="incidentType"
+                                            value={incidentDetails.incidentType}
+                                            onChange={handleChange}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#0C7FDA]"
+                                        >
                                             <option value="">Select incident type</option>
                                             <option>Medical Emergency</option>
                                             <option>Fire Incident</option>
@@ -347,18 +452,33 @@ export default function ReportIncident() {
                                     <div>
                                         <label className="block text-sm text-gray-600 font-medium mb-1.5">Victims affected</label>
                                         <div className="flex items-center gap-2">
-                                            <button onClick={decrementVictims} className="w-8 h-8 rounded bg-[#0C7FDA] text-white flex items-center justify-center text-lg hover:bg-blue-700">-</button>
+                                            <button onClick={decrementVictims} className="w-8 h-8 rounded bg-[#0C7FDA] text-white flex items-center justify-center text-lg hover:bg-blue-700">
+                                                -
+                                            </button>
                                             <span className="w-8 text-center font-medium text-gray-800">{incidentDetails.victimsAffected}</span>
-                                            <button onClick={incrementVictims} className="w-8 h-8 rounded bg-[#0C7FDA] text-white flex items-center justify-center text-lg hover:bg-blue-700">+</button>
+                                            <button onClick={incrementVictims} className="w-8 h-8 rounded bg-[#0C7FDA] text-white flex items-center justify-center text-lg hover:bg-blue-700">
+                                                +
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* Description */}
                                 <div className="mt-4">
-                                    <label className="block text-sm text-gray-600 font-medium mb-1.5">Description <span className="text-red-500">*</span></label>
-                                    <textarea name="description" value={incidentDetails.description} onChange={handleChange} rows="4" placeholder="Describe what is happening. Include important details." className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0C7FDA] resize-none" />
+                                    <label className="block text-sm text-gray-600 font-medium mb-1.5">
+                                        Description <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        name="description"
+                                        value={incidentDetails.description}
+                                        onChange={handleChange}
+                                        rows="4"
+                                        placeholder="Describe what is happening. Include important details."
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0C7FDA] resize-none"
+                                    />
                                 </div>
 
+                                {/* Reporter Information */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                     <div>
                                         <label className="block text-sm text-gray-600 mb-1.5">Your Name</label>
@@ -383,12 +503,13 @@ export default function ReportIncident() {
                                 </div>
                             </div>
 
-                            {/* Step 2 Footer (Submit) */}
+                            {/* Step 2 Footer */}
                             <div className="border-t pt-4 border-gray-100 flex justify-end">
                                 <button
                                     onClick={handleSubmitFinal}
                                     disabled={isSubmitting}
-                                    className={`bg-[#0C7FDA] hover:bg-blue-700 text-white text-sm font-medium py-2 px-6 rounded-lg shadow-sm transition-all duration-300 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'}`}
+                                    className={`bg-[#0C7FDA] hover:bg-blue-700 text-white text-sm font-medium py-2 px-6 rounded-lg shadow-sm transition-all duration-300 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
+                                        }`}
                                 >
                                     {isSubmitting ? "Submitting..." : "Submit Report"}
                                 </button>
@@ -398,7 +519,7 @@ export default function ReportIncident() {
                 </div>
             </IncidentReportLayout>
 
-            {/* ✅ SUBMISSION SPINNER */}
+            {/* Submission Spinner */}
             {isSubmitting && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
                     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center">
@@ -413,12 +534,12 @@ export default function ReportIncident() {
                 </div>
             )}
 
-            {/* ✅ LOCATION PERMISSION MODAL WITH SLIDE TRANSITION */}
+            {/* Location Permission Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                     <div className={`bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center text-center transition-all duration-500 ease-in-out ${isTransitioning && slideDirection === 'left'
-                        ? 'opacity-0 -translate-x-8'
-                        : 'opacity-100 translate-x-0'
+                            ? 'opacity-0 -translate-x-8'
+                            : 'opacity-100 translate-x-0'
                         }`}>
                         <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
                             <Icon icon="mdi:crosshairs-gps" width="32" className="text-[#0C7FDA]" />

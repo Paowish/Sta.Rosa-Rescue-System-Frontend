@@ -5,7 +5,6 @@ import { incidentService } from "../../services/api";
 import { Icon } from "@iconify/react";
 import DispatchModal from "./DispatchModal";
 import SuccessModal from "./SuccessModal";
-
 import IncidentDetailModal from "./IncidentDetailModal";
 import {
   StatCard,
@@ -17,34 +16,50 @@ import {
   CheckboxAll
 } from "./IncidentComponents";
 
+/**
+ * Incident Management Component
+ * Main dashboard for managing and tracking all incidents
+ */
 export default function IncidentManagement() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // State for incidents
   const [incidents, setIncidents] = useState([]);
   const [filteredIncidents, setFilteredIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Statuses");
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedIncident, setSelectedIncident] = useState(null);
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
 
+  // State for filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // State for selection
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  // State for modals
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState(null);
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
   const [dispatchVolunteers, setDispatchVolunteers] = useState([]);
   const [dispatchNotes, setDispatchNotes] = useState("");
   const [dispatchSelectedIds, setDispatchSelectedIds] = useState([]);
   const [dispatchSuccess, setDispatchSuccess] = useState(null);
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
+  /**
+   * Load data on component mount
+   */
   useEffect(() => {
     loadIncidents();
     loadVolunteers();
   }, []);
 
+  /**
+   * Load available volunteers
+   */
   const loadVolunteers = async () => {
     try {
       const response = await incidentService.getAvailableVolunteers();
@@ -59,6 +74,9 @@ export default function IncidentManagement() {
     }
   };
 
+  /**
+   * Handle view parameter from URL
+   */
   useEffect(() => {
     const viewId = searchParams.get('view');
     if (viewId && incidents.length > 0) {
@@ -77,23 +95,36 @@ export default function IncidentManagement() {
     }
   }, [incidents, searchParams, setSearchParams]);
 
+  /**
+   * Apply filters whenever dependencies change
+   */
   useEffect(() => {
     applyFilters();
   }, [incidents, searchTerm, statusFilter, startDate, endDate]);
 
+  /**
+   * Load incidents from API
+   */
   const loadIncidents = async () => {
     try {
       setLoading(true);
       const response = await incidentService.getAllIncidents();
       let dataArray = [];
-      if (response && response.success && Array.isArray(response.data)) dataArray = response.data;
-      else if (Array.isArray(response)) dataArray = response;
-      else if (response && Array.isArray(response.data)) dataArray = response.data;
+      if (response && response.success && Array.isArray(response.data)) {
+        dataArray = response.data;
+      } else if (Array.isArray(response)) {
+        dataArray = response;
+      } else if (response && Array.isArray(response.data)) {
+        dataArray = response.data;
+      }
       setIncidents(dataArray);
       setSelectedIds([]);
+
+      // Calculate statistics
       const total = dataArray.length;
       const active = dataArray.filter(i =>
-        i.status === 'Active' || i.status === 'Pending' || i.status === 'Acknowledged' || i.status === 'Dispatched'
+        i.status === 'Active' || i.status === 'Pending' ||
+        i.status === 'Acknowledged' || i.status === 'Dispatched'
       ).length;
       const pending = dataArray.filter(i => i.status === 'Pending').length;
       const resolved = dataArray.filter(i => i.status === 'Resolved').length;
@@ -101,16 +132,23 @@ export default function IncidentManagement() {
     } catch (error) {
       console.error("Failed to load incidents:", error);
       setIncidents([]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /**
+   * Apply filters to incidents
+   */
   const applyFilters = () => {
     let filtered = [...incidents];
 
+    // Status filter
     if (statusFilter !== "All Statuses") {
       filtered = filtered.filter(i => i.status === statusFilter);
     }
 
+    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(i =>
@@ -121,6 +159,7 @@ export default function IncidentManagement() {
       );
     }
 
+    // Date range filter - start date
     if (startDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -130,6 +169,7 @@ export default function IncidentManagement() {
       });
     }
 
+    // Date range filter - end date
     if (endDate) {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
@@ -142,27 +182,43 @@ export default function IncidentManagement() {
     setFilteredIncidents(filtered);
   };
 
+  /**
+   * Clear date filter
+   */
   const clearDateFilter = () => {
     setStartDate("");
     setEndDate("");
     setShowDatePicker(false);
   };
 
+  /**
+   * Format date for display
+   */
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
     } catch {
       return "N/A";
     }
   };
 
+  /**
+   * Handle view incident
+   */
   const handleViewIncident = (incident) => {
     setSelectedIncident(incident);
     setIsModalOpen(true);
   };
 
+  /**
+   * Handle resolve incident
+   */
   const handleResolveIncident = async (incident) => {
     if (incident.status !== 'Dispatched' && incident.status !== 'Active') {
       alert('⚠️ This incident must be dispatched before it can be resolved.');
@@ -183,19 +239,28 @@ export default function IncidentManagement() {
     }
   };
 
+  /**
+   * Check if resolve is disabled
+   */
   const isResolveDisabled = (incident) => {
     return incident.status !== 'Dispatched' && incident.status !== 'Active';
   };
 
-  // ✅ KEY FIX: Save team name to incident when dispatching
+  /**
+   * Handle dispatch success
+   */
   const handleDispatchSuccess = async (dispatchInfo) => {
     try {
-      const response = await incidentService.assignResponders(selectedIncident._id, dispatchSelectedIds, dispatchNotes);
+      const response = await incidentService.assignResponders(
+        selectedIncident._id,
+        dispatchSelectedIds,
+        dispatchNotes
+      );
 
       if (response && response.success) {
         setIsDispatchModalOpen(false);
 
-        // ✅ SAVE TEAM INFO TO THE INCIDENT
+        // Save team info to incident
         const updatedIncident = {
           ...selectedIncident,
           assignedTeam: dispatchInfo?.teamName || dispatchInfo?.name || 'Rescue Team',
@@ -203,12 +268,12 @@ export default function IncidentManagement() {
           dispatchType: dispatchInfo?.type || (dispatchInfo?.isTeam ? 'team' : 'volunteer')
         };
 
-        // Update the incidents state immediately
+        // Update incidents state
         setIncidents(prev => prev.map(i =>
           i._id === selectedIncident._id ? updatedIncident : i
         ));
 
-        // ✅ Update the success state
+        // Set success state
         setDispatchSuccess({
           incidentId: selectedIncident.incidentId,
           title: selectedIncident.type,
@@ -225,16 +290,25 @@ export default function IncidentManagement() {
     }
   };
 
+  /**
+   * Open dispatch modal
+   */
   const openDispatchModal = () => {
     setIsDispatchModalOpen(true);
   };
 
+  /**
+   * Clear all filters
+   */
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("All Statuses");
     clearDateFilter();
   };
 
+  /**
+   * Toggle row selection
+   */
   const toggleRowSelection = (id) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(i => i !== id));
@@ -243,11 +317,13 @@ export default function IncidentManagement() {
     }
   };
 
-  // ✅ FIXED: Show team name when it's a team dispatch
+  /**
+   * Format assigned to display
+   */
   const formatAssignedTo = (incident) => {
     if (!incident) return "Unassigned";
 
-    // ✅ CHECK DIRECT TEAM PROPERTIES FIRST
+    // Check direct team properties
     if (incident.assignedTeam || incident.teamName || incident.team) {
       const teamName = incident.assignedTeam || incident.teamName || incident.team;
       return (
@@ -290,7 +366,7 @@ export default function IncidentManagement() {
       );
     }
 
-    // If multiple assignees, show as "Rescue Team"
+    // Multiple assignees - show as Rescue Team
     if (assignees.length > 1) {
       return (
         <div className="flex items-center gap-1.5">
@@ -321,17 +397,26 @@ export default function IncidentManagement() {
     );
   };
 
+  /**
+   * Get status badge component
+   */
   const getStatusBadge = (status) => {
     const commonPill = "bg-gray-200/60 text-gray-700 px-3 py-1 rounded-full text-xs font-medium";
     switch (status) {
-      case 'Resolved': return <div className={`${commonPill} bg-green-100/60 text-green-700`}>Resolved</div>;
-      case 'Active': return <div className={`${commonPill} bg-red-100/60 text-red-700`}>Active</div>;
-      case 'Pending': return <div className={`${commonPill} bg-yellow-100/60 text-yellow-700`}>Pending</div>;
-      case 'Dispatched': return <div className={`${commonPill} bg-blue-100/60 text-blue-700`}>Dispatched</div>;
-      default: return <div className={commonPill}>{status}</div>;
+      case 'Resolved':
+        return <div className={`${commonPill} bg-green-100/60 text-green-700`}>Resolved</div>;
+      case 'Active':
+        return <div className={`${commonPill} bg-red-100/60 text-red-700`}>Active</div>;
+      case 'Pending':
+        return <div className={`${commonPill} bg-yellow-100/60 text-yellow-700`}>Pending</div>;
+      case 'Dispatched':
+        return <div className={`${commonPill} bg-blue-100/60 text-blue-700`}>Dispatched</div>;
+      default:
+        return <div className={commonPill}>{status}</div>;
     }
   };
 
+  // Render loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -342,6 +427,7 @@ export default function IncidentManagement() {
 
   return (
     <div className="p-6 bg-white min-h-screen font-sans text-slate-700">
+      {/* Incident Detail Modal */}
       <IncidentDetailModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -353,6 +439,7 @@ export default function IncidentManagement() {
         onResolve={() => handleResolveIncident(selectedIncident)}
       />
 
+      {/* Dispatch Modal */}
       {isDispatchModalOpen && selectedIncident && (
         <DispatchModal
           isOpen={isDispatchModalOpen}
@@ -379,27 +466,58 @@ export default function IncidentManagement() {
         />
       )}
 
+      {/* Success Modal */}
       <SuccessModal
         isOpen={!!dispatchSuccess}
         data={dispatchSuccess}
         onClose={() => setDispatchSuccess(null)}
       />
 
+      {/* Page Header */}
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold text-gray-700">INCIDENT MANAGEMENT</h1>
-          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">Santa Rosa, Nueva Ecija</span>
+          <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            Santa Rosa, Nueva Ecija
+          </span>
         </div>
 
+        {/* Statistics Cards */}
         <div className="grid grid-cols-4 gap-4 mt-4">
-          <StatCard title="Total Incidents" value={stats.total} icon="mdi:chart-bar" color="text-gray-700" trend={{ value: 5, positive: false }} />
-          <StatCard title="Active" value={stats.active} icon="mdi:lightning-bolt" color="text-red-600" trend={{ value: 12, positive: true }} />
-          <StatCard title="Pending" value={stats.pending} icon="mdi:hourglass-outline" color="text-amber-600" trend={{ value: 3, positive: false }} />
-          <StatCard title="Resolved" value={stats.resolved} icon="mdi:check-circle-outline" color="text-emerald-600" trend={{ value: 8, positive: true }} />
+          <StatCard
+            title="Total Incidents"
+            value={stats.total}
+            icon="mdi:chart-bar"
+            color="text-gray-700"
+            trend={{ value: 5, positive: false }}
+          />
+          <StatCard
+            title="Active"
+            value={stats.active}
+            icon="mdi:lightning-bolt"
+            color="text-red-600"
+            trend={{ value: 12, positive: true }}
+          />
+          <StatCard
+            title="Pending"
+            value={stats.pending}
+            icon="mdi:hourglass-outline"
+            color="text-amber-600"
+            trend={{ value: 3, positive: false }}
+          />
+          <StatCard
+            title="Resolved"
+            value={stats.resolved}
+            icon="mdi:check-circle-outline"
+            color="text-emerald-600"
+            trend={{ value: 8, positive: true }}
+          />
         </div>
       </div>
 
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 mt-6 mb-6">
+        {/* Search Input */}
         <div className="relative w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon />
@@ -413,6 +531,7 @@ export default function IncidentManagement() {
           />
         </div>
 
+        {/* Status Filter */}
         <div className="relative w-40">
           <select
             value={statusFilter}
@@ -430,6 +549,7 @@ export default function IncidentManagement() {
           </div>
         </div>
 
+        {/* Date Range Picker */}
         <div className="relative w-48">
           <button
             onClick={() => setShowDatePicker(!showDatePicker)}
@@ -443,7 +563,10 @@ export default function IncidentManagement() {
               }
             </span>
             {startDate || endDate ? (
-              <button onClick={(e) => { e.stopPropagation(); clearDateFilter(); }} className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0">
+              <button
+                onClick={(e) => { e.stopPropagation(); clearDateFilter(); }}
+                className="ml-auto text-red-400 hover:text-red-600 flex-shrink-0"
+              >
                 <XIcon />
               </button>
             ) : null}
@@ -471,26 +594,60 @@ export default function IncidentManagement() {
                   />
                 </div>
                 <div className="flex gap-2 pt-2 border-t border-slate-200">
-                  <button onClick={() => { const today = new Date(); const sevenDaysAgo = new Date(today); sevenDaysAgo.setDate(today.getDate() - 7); setStartDate(sevenDaysAgo.toISOString().split('T')[0]); setEndDate(today.toISOString().split('T')[0]); }} className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">Last 7 Days</button>
-                  <button onClick={() => { const today = new Date(); const thirtyDaysAgo = new Date(today); thirtyDaysAgo.setDate(today.getDate() - 30); setStartDate(thirtyDaysAgo.toISOString().split('T')[0]); setEndDate(today.toISOString().split('T')[0]); }} className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">Last 30 Days</button>
-                  <button onClick={clearDateFilter} className="px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded transition-colors">Clear</button>
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      const sevenDaysAgo = new Date(today);
+                      sevenDaysAgo.setDate(today.getDate() - 7);
+                      setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+                      setEndDate(today.toISOString().split('T')[0]);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      const thirtyDaysAgo = new Date(today);
+                      thirtyDaysAgo.setDate(today.getDate() - 30);
+                      setStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+                      setEndDate(today.toISOString().split('T')[0]);
+                    }}
+                    className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    Last 30 Days
+                  </button>
+                  <button
+                    onClick={clearDateFilter}
+                    className="px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Clear
+                  </button>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <button onClick={clearFilters} className="flex items-center gap-2 border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 text-slate-600">
+        {/* Clear All Button */}
+        <button
+          onClick={clearFilters}
+          className="flex items-center gap-2 border border-slate-200 rounded-md px-4 py-2.5 bg-white text-sm hover:bg-slate-50 text-slate-600"
+        >
           <XIcon />
           <span>Clear All</span>
         </button>
       </div>
 
+      {/* Incidents Table */}
       <div className="border border-slate-200 rounded-sm overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="border-b border-slate-200 bg-white">
-              <th className="p-4 w-10 text-center border-r border-slate-200"><CheckboxAll /></th>
+              <th className="p-4 w-10 text-center border-r border-slate-200">
+                <CheckboxAll />
+              </th>
               <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[12%]">ID</th>
               <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[12%]">Status</th>
               <th className="p-4 text-sm font-medium text-slate-600 border-r border-slate-200 w-[20%]">Location</th>
@@ -509,15 +666,27 @@ export default function IncidentManagement() {
                 return (
                   <tr key={incident._id} className="hover:bg-slate-50/50 transition-colors h-16">
                     <td className="p-4 text-center border-r border-slate-200">
-                      <div onClick={() => toggleRowSelection(incident._id)} className={`w-5 h-5 rounded-[4px] border mx-auto cursor-pointer flex items-center justify-center transition-colors ${isSelected ? 'bg-[#4081EE] border-[#4081EE]' : 'border-slate-300'}`}>
+                      <div
+                        onClick={() => toggleRowSelection(incident._id)}
+                        className={`w-5 h-5 rounded-[4px] border mx-auto cursor-pointer flex items-center justify-center transition-colors ${isSelected ? 'bg-[#4081EE] border-[#4081EE]' : 'border-slate-300'
+                          }`}
+                      >
                         {isSelected && <CheckboxCheck />}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">{incident.incidentId || "N/A"}</td>
-                    <td className="p-4 border-r border-slate-200">{getStatusBadge(incident.status)}</td>
+                    <td className="p-4 text-sm text-slate-700 border-r border-slate-200 truncate">
+                      {incident.incidentId || "N/A"}
+                    </td>
+                    <td className="p-4 border-r border-slate-200">
+                      {getStatusBadge(incident.status)}
+                    </td>
                     <td className="p-4 text-sm text-slate-700 border-r border-slate-200">
-                      <div className="truncate max-w-[200px]">{incident.location?.address || "N/A"}</div>
-                      <div className="text-xs text-gray-400">{incident.location?.barangay}</div>
+                      <div className="truncate max-w-[200px]">
+                        {incident.location?.address || "N/A"}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {incident.location?.barangay}
+                      </div>
                     </td>
                     <td className="p-4 text-sm text-slate-700 border-r border-slate-200">
                       {formatAssignedTo(incident)}
@@ -528,13 +697,29 @@ export default function IncidentManagement() {
                           <Icon icon="mdi:clock-outline" className="w-4 h-4 text-slate-400" />
                           <span className="text-sm">{formatDate(incident.reportedAt || incident.createdAt)}</span>
                         </div>
-                        <span className="text-xs text-gray-400">{incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : ''}</span>
+                        <span className="text-xs text-gray-400">
+                          {incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : ''}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleViewIncident(incident)} className="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded bg-white hover:bg-blue-50 transition-colors whitespace-nowrap">View</button>
-                        <button onClick={() => handleResolveIncident(incident)} disabled={resolveDisabled || isResolved} className={`px-3 py-1.5 text-sm rounded border whitespace-nowrap transition-colors ${resolveDisabled || isResolved ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'text-green-600 border-green-300 bg-white hover:bg-green-50'}`}>{isResolved ? 'Resolved' : 'Resolve'}</button>
+                        <button
+                          onClick={() => handleViewIncident(incident)}
+                          className="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded bg-white hover:bg-blue-50 transition-colors whitespace-nowrap"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleResolveIncident(incident)}
+                          disabled={resolveDisabled || isResolved}
+                          className={`px-3 py-1.5 text-sm rounded border whitespace-nowrap transition-colors ${resolveDisabled || isResolved
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'text-green-600 border-green-300 bg-white hover:bg-green-50'
+                            }`}
+                        >
+                          {isResolved ? 'Resolved' : 'Resolve'}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -543,7 +728,10 @@ export default function IncidentManagement() {
             ) : (
               <tr>
                 <td colSpan="7" className="p-8 text-center text-gray-500">
-                  {searchTerm || statusFilter !== "All Statuses" || startDate || endDate ? "No incidents match your filters" : "No incidents found in the system."}
+                  {searchTerm || statusFilter !== "All Statuses" || startDate || endDate
+                    ? "No incidents match your filters"
+                    : "No incidents found in the system."
+                  }
                 </td>
               </tr>
             )}
@@ -551,10 +739,13 @@ export default function IncidentManagement() {
         </table>
       </div>
 
+      {/* Filter Summary */}
       {(searchTerm || statusFilter !== "All Statuses" || startDate || endDate) && (
         <div className="mt-4 text-sm text-gray-500 flex items-center justify-between">
           <span>Showing {filteredIncidents.length} of {incidents.length} incidents</span>
-          <button onClick={clearFilters} className="text-blue-500 hover:text-blue-700 underline">Clear all filters</button>
+          <button onClick={clearFilters} className="text-blue-500 hover:text-blue-700 underline">
+            Clear all filters
+          </button>
         </div>
       )}
     </div>

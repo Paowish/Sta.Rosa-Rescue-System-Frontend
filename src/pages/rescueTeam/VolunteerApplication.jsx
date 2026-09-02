@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { volunteerService, authService } from "../../services/api";
 
+/**
+ * Certifications Component
+ * Allows users to select certifications with "Others" option
+ */
 function Certifications({ selected, setSelected, others, setOthers }) {
   const [othersChecked, setOthersChecked] = useState(false);
 
@@ -15,7 +19,13 @@ function Certifications({ selected, setSelected, others, setOthers }) {
 
   return (
     <div className="grid grid-cols-2 gap-2 text-sm">
-      {["CPR(Cardiopulmonary Resuscitation)", "ACLS (Advanced Cardiac Life Support)", "BLS (Basic Life Support)", "First Aid Support"].map((cert) => (
+      {/* Predefined Certifications */}
+      {[
+        "CPR(Cardiopulmonary Resuscitation)",
+        "ACLS (Advanced Cardiac Life Support)",
+        "BLS (Basic Life Support)",
+        "First Aid Support"
+      ].map((cert) => (
         <label key={cert} className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -26,6 +36,7 @@ function Certifications({ selected, setSelected, others, setOthers }) {
         </label>
       ))}
 
+      {/* Others Option */}
       <label className="col-span-2 flex items-center gap-2">
         <input
           type="checkbox"
@@ -38,6 +49,7 @@ function Certifications({ selected, setSelected, others, setOthers }) {
         Others
       </label>
 
+      {/* Custom Certification Input */}
       {othersChecked && (
         <input
           type="text"
@@ -51,32 +63,41 @@ function Certifications({ selected, setSelected, others, setOthers }) {
   );
 }
 
+/**
+ * Volunteer Application Component
+ * Allows users to submit volunteer applications with certifications and documents
+ */
 export default function VolunteerApplication() {
+  const navigate = useNavigate();
+
+  // State for certifications
   const [selectedCerts, setSelectedCerts] = useState([]);
   const [othersCert, setOthersCert] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // State for file uploads
   const [filePreviews, setFilePreviews] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  // Birthday and validation
+  // State for birthday and validation
   const [birthday, setBirthday] = useState("");
   const [ageError, setAgeError] = useState("");
 
-  // User data from registration
+  // State for user data
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Additional volunteer info
+  // State for additional volunteer info
   const [experience, setExperience] = useState("");
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
 
-  const navigate = useNavigate();
-
-  // Calculate age from birthday
+  /**
+   * Calculate age from birthday
+   */
   const calculateAge = (birthdayDate) => {
     const today = new Date();
     const birthDate = new Date(birthdayDate);
@@ -88,7 +109,9 @@ export default function VolunteerApplication() {
     return age;
   };
 
-  // Validate age (18-50)
+  /**
+   * Validate age (18-50)
+   */
   const validateAge = (birthdayDate) => {
     if (!birthdayDate) return false;
     const age = calculateAge(birthdayDate);
@@ -104,13 +127,18 @@ export default function VolunteerApplication() {
     return true;
   };
 
+  /**
+   * Handle birthday change
+   */
   const handleBirthdayChange = (e) => {
     const value = e.target.value;
     setBirthday(value);
     validateAge(value);
   };
 
-  // File preview functions
+  /**
+   * Handle file selection
+   */
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles(files);
@@ -122,6 +150,9 @@ export default function VolunteerApplication() {
     setFilePreviews(previews);
   };
 
+  /**
+   * Remove file from selection
+   */
   const removeFile = (index) => {
     const newFiles = [...selectedFiles];
     const newPreviews = [...filePreviews];
@@ -131,11 +162,13 @@ export default function VolunteerApplication() {
     setFilePreviews(newPreviews);
   };
 
-  // Load user data from localStorage and pre-fill from signup
+  /**
+   * Load user data from localStorage and pre-fill from signup
+   */
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // First, check if there's pre-filled data from signup
+        // Check for pre-filled data from signup
         const savedVolunteerData = localStorage.getItem('volunteerApplicationData');
         if (savedVolunteerData) {
           const volunteerData = JSON.parse(savedVolunteerData);
@@ -194,6 +227,9 @@ export default function VolunteerApplication() {
     loadUserData();
   }, []);
 
+  /**
+   * Handle form submission
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -249,10 +285,14 @@ export default function VolunteerApplication() {
     }
   };
 
+  /**
+   * Handle logo click navigation
+   */
   const handleLogoClick = () => {
     navigate("/");
   };
 
+  // Render loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-[#eef2f6] flex items-center justify-center">
@@ -264,6 +304,7 @@ export default function VolunteerApplication() {
   return (
     <div className="min-h-screen bg-[#eef2f6] px-4 sm:px-6 md:px-10 py-6">
       <div className="max-w-6xl mx-auto">
+        {/* Logo */}
         <div
           onClick={handleLogoClick}
           className="flex items-center gap-3 mb-8 cursor-pointer hover:opacity-80 transition-opacity"
@@ -275,6 +316,7 @@ export default function VolunteerApplication() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+          {/* Left Column - Application Form */}
           <div className="w-full max-w-xl mx-auto md:mx-0">
             <h2 className="text-2xl md:text-3xl font-bold text-[#1E252B] mb-2 -mt-[34px]">
               Complete Your Application
@@ -284,7 +326,7 @@ export default function VolunteerApplication() {
             </p>
 
             <form className="space-y-2" onSubmit={handleSubmit}>
-              {/* Read-only user info section */}
+              {/* Read-only User Info */}
               <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                 <p className="text-sm font-semibold text-gray-700 mb-3">Your Information</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -327,9 +369,12 @@ export default function VolunteerApplication() {
                 </div>
               </div>
 
+              {/* Volunteer Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Birthday */}
                 <div className="w-full">
-                  <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${ageError ? 'border-red-500' : 'border-gray-400'}`}>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${ageError ? 'border-red-500' : 'border-gray-400'
+                    }`}>
                     <legend className="text-sm px-2 text-gray-700">Birthday</legend>
                     <input
                       type="date"
@@ -343,6 +388,7 @@ export default function VolunteerApplication() {
                   <p className="text-gray-400 text-xs mt-1">Age must be between 18 and 50 years old</p>
                 </div>
 
+                {/* Years of Experience */}
                 <div className="w-full">
                   <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500">
                     <legend className="text-sm px-2 text-gray-700">Years of Experience</legend>
@@ -357,6 +403,7 @@ export default function VolunteerApplication() {
                   </fieldset>
                 </div>
 
+                {/* Address 1 */}
                 <div className="w-full">
                   <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500">
                     <legend className="text-sm px-2 text-gray-700">Address 1</legend>
@@ -371,6 +418,7 @@ export default function VolunteerApplication() {
                   </fieldset>
                 </div>
 
+                {/* Address 2 */}
                 <div className="w-full">
                   <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500">
                     <legend className="text-sm px-2 text-gray-700">Address 2</legend>
@@ -385,6 +433,7 @@ export default function VolunteerApplication() {
                 </div>
               </div>
 
+              {/* Certifications */}
               <div className="w-full">
                 <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-3 pb-4 bg-[#F3F6FA] focus-within:border-blue-500">
                   <legend className="text-sm px-2 text-gray-700">
@@ -399,7 +448,7 @@ export default function VolunteerApplication() {
                 </fieldset>
               </div>
 
-              {/* File Upload with Preview */}
+              {/* File Upload */}
               <div className="border-dashed border-2 rounded-md p-6 text-center text-sm border-gray-400">
                 <input
                   type="file"
@@ -420,7 +469,9 @@ export default function VolunteerApplication() {
                         <img src={preview.url} alt="Preview" className="w-full h-24 object-cover rounded" />
                       ) : (
                         <div className="w-full h-24 bg-gray-100 flex items-center justify-center rounded">
-                          <span className="text-xs text-gray-500">📄 {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}</span>
+                          <span className="text-xs text-gray-500">
+                            📄 {preview.name.length > 15 ? preview.name.substring(0, 15) + '...' : preview.name}
+                          </span>
                         </div>
                       )}
                       <button
@@ -435,6 +486,7 @@ export default function VolunteerApplication() {
                 </div>
               )}
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={submitting}
@@ -445,6 +497,7 @@ export default function VolunteerApplication() {
             </form>
           </div>
 
+          {/* Right Column - Image */}
           <div className="hidden md:block">
             <div className="rounded-xl overflow-hidden shadow-lg">
               <img src="src/assets/aso.jpg" alt="building" className="w-full h-full object-cover" />

@@ -1,7 +1,13 @@
 // src/pages/rescueTeam/IncidentHeader.jsx
+
+/**
+ * Incident Header Component
+ * Displays incident title, status badge, and ID
+ */
 export default function IncidentHeader({ title, statusDisplay, statusColor, isResolved, incidentId }) {
     return (
         <div className="px-4 py-3 border-b bg-[#F5F4FF]">
+            {/* Title and Status */}
             <div className="flex items-center flex-wrap gap-2">
                 <h1 className="text-xl font-bold text-[#262D31]">{title}</h1>
                 <span className={`text-xs px-2 py-1 rounded ${statusColor}`}>{statusDisplay}</span>
@@ -11,6 +17,8 @@ export default function IncidentHeader({ title, statusDisplay, statusColor, isRe
                     </span>
                 )}
             </div>
+
+            {/* Incident ID */}
             <p className="text-xs text-gray-500 mt-1">ID: {incidentId}</p>
         </div>
     );

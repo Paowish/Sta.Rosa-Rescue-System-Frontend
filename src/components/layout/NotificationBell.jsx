@@ -4,15 +4,21 @@ import io from 'socket.io-client';
 import { Icon } from "@iconify/react";
 
 export default function NotificationBell() {
+    // State for notifications management
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [newNotification, setNewNotification] = useState(null);
+
+    // Refs for DOM elements and connections
     const dropdownRef = useRef(null);
     const socketRef = useRef(null);
     const notificationTimeoutRef = useRef(null);
     const bellButtonRef = useRef(null);
 
+    /**
+     * Initialize notification system - load data, setup socket, and start polling
+     */
     useEffect(() => {
         loadNotifications();
 
@@ -20,17 +26,17 @@ export default function NotificationBell() {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
 
         if (token && user._id) {
-            // ✅ DYNAMIC SOCKET URL: Works locally AND on Render
+            // Dynamic socket URL configuration - works locally and on production
             const hostname = window.location.hostname;
             let socketUrl;
 
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 socketUrl = 'http://localhost:5000';
             } else {
-                // Use the production URL (Ensures SSL works on Render)
                 socketUrl = 'https://api.rescuesantarosagov.live';
             }
 
+            // Establish Socket.IO connection
             socketRef.current = io(socketUrl, {
                 auth: { token }
             });
@@ -60,8 +66,10 @@ export default function NotificationBell() {
             });
         }
 
+        // Poll for notifications every 30 seconds as fallback
         const interval = setInterval(loadNotifications, 30000);
 
+        // Cleanup on unmount
         return () => {
             clearInterval(interval);
             if (socketRef.current) {
@@ -73,12 +81,18 @@ export default function NotificationBell() {
         };
     }, []);
 
+    /**
+     * Display a slide-in notification for new alerts
+     */
     const showSlideNotification = (notification) => {
         setNewNotification(notification);
 
+        // Clear any existing timeout
         if (notificationTimeoutRef.current) {
             clearTimeout(notificationTimeoutRef.current);
         }
+
+        // Auto-dismiss after 5 seconds
         notificationTimeoutRef.current = setTimeout(() => {
             const notifElement = document.getElementById('slide-notification');
             if (notifElement) {
@@ -93,6 +107,9 @@ export default function NotificationBell() {
         }, 5000);
     };
 
+    /**
+     * Dismiss the slide notification manually
+     */
     const dismissNotification = () => {
         const notifElement = document.getElementById('slide-notification');
         if (notifElement) {
@@ -109,15 +126,25 @@ export default function NotificationBell() {
         }
     };
 
+    /**
+     * Add a new notification to the list and play sound
+     */
     const addNotification = (notification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
+
+        // Update localStorage for cross-tab synchronization
         const currentCount = parseInt(localStorage.getItem('unreadCount') || '0');
         localStorage.setItem('unreadCount', (currentCount + 1).toString());
+
+        // Play notification sound
         const audio = new Audio('/notificationsound.mp3');
         audio.play().catch(e => console.log('Audio play failed:', e));
     };
 
+    /**
+     * Handle click outside to close dropdown
+     */
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -128,6 +155,9 @@ export default function NotificationBell() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen]);
 
+    /**
+     * Load notifications from API
+     */
     const loadNotifications = async () => {
         try {
             const response = await notificationService.getNotifications();
@@ -141,6 +171,9 @@ export default function NotificationBell() {
         }
     };
 
+    /**
+     * Mark a single notification as read
+     */
     const handleMarkAsRead = async (id) => {
         try {
             await notificationService.markAsRead(id);
@@ -150,6 +183,9 @@ export default function NotificationBell() {
         }
     };
 
+    /**
+     * Mark all notifications as read
+     */
     const handleMarkAllAsRead = async () => {
         try {
             await notificationService.markAllAsRead();
@@ -159,6 +195,9 @@ export default function NotificationBell() {
         }
     };
 
+    /**
+     * Get appropriate emoji icon for notification type
+     */
     const getIcon = (type) => {
         switch (type) {
             case 'new_incident': return '🚨';
@@ -172,6 +211,9 @@ export default function NotificationBell() {
         }
     };
 
+    /**
+     * Format timestamp to human-readable relative time
+     */
     const formatTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -186,6 +228,9 @@ export default function NotificationBell() {
         return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     };
 
+    /**
+     * Get color scheme based on notification type
+     */
     const getNotificationColor = (type) => {
         switch (type) {
             case 'new_incident': return 'border-red-500 bg-red-50';
@@ -199,6 +244,7 @@ export default function NotificationBell() {
 
     return (
         <div className="relative" ref={dropdownRef}>
+            {/* Slide-in Notification */}
             {newNotification && (
                 <div id="slide-notification" className="absolute top-full left-0 mt-2 z-[200] w-80 sm:w-96 animate-slide-in-left">
                     <div className={`rounded-lg shadow-2xl border-l-4 p-4 ${getNotificationColor(newNotification.type)} bg-white`}>
@@ -217,6 +263,7 @@ export default function NotificationBell() {
                 </div>
             )}
 
+            {/* Notification Bell Button */}
             <button
                 ref={bellButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
@@ -230,8 +277,10 @@ export default function NotificationBell() {
                 )}
             </button>
 
+            {/* Notifications Dropdown */}
             <div className={`absolute mt-2 z-50 right-0 w-80 sm:w-96 transform transition-all duration-300 ease-in-out origin-top-right ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
                 <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
+                    {/* Header */}
                     <div className="p-3 sm:p-4 border-b sticky top-0 bg-white">
                         <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-gray-800 text-sm sm:text-base">Notifications</h3>
@@ -242,6 +291,8 @@ export default function NotificationBell() {
                             )}
                         </div>
                     </div>
+
+                    {/* Notifications List */}
                     <div className="max-h-96 overflow-y-auto">
                         {notifications.length === 0 ? (
                             <div className="p-8 text-center text-gray-500">
@@ -250,7 +301,11 @@ export default function NotificationBell() {
                             </div>
                         ) : (
                             notifications.map((notif) => (
-                                <div key={notif._id} className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${!notif.isRead ? 'bg-blue-50' : ''}`} onClick={() => handleMarkAsRead(notif._id)}>
+                                <div
+                                    key={notif._id}
+                                    className={`p-3 sm:p-4 border-b hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${!notif.isRead ? 'bg-blue-50' : ''}`}
+                                    onClick={() => handleMarkAsRead(notif._id)}
+                                >
                                     <div className="flex items-start gap-2 sm:gap-3">
                                         <div className="text-xl sm:text-2xl flex-shrink-0">{getIcon(notif.type)}</div>
                                         <div className="flex-1 min-w-0">

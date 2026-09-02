@@ -1,7 +1,11 @@
 import React from "react";
 
+/**
+ * Incident Filters Component
+ * Provides filter buttons for incident list with counts
+ */
 const IncidentFilters = ({ filterType, setFilterType, incidents }) => {
-    // ✅ 1. Count for "Requests" (New / Active Incoming)
+    // Count for "Requests" (Active incoming incidents)
     const requestCount = incidents
         ? incidents.filter(i =>
             i.status === 'Pending' ||
@@ -11,12 +15,12 @@ const IncidentFilters = ({ filterType, setFilterType, incidents }) => {
         ).length
         : 0;
 
-    // ✅ 2. Count for "All" (Total History: Solved + Closed)
+    // Count for "All" (Total incidents)
     const totalCount = incidents ? incidents.length : 0;
 
     return (
         <div className="flex items-center justify-center w-full gap-2 mb-4 px-2">
-            {/* ALL BUTTON (Total History) */}
+            {/* All Button */}
             <button
                 onClick={() => setFilterType('all')}
                 className={`flex-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition text-center flex items-center justify-center gap-1.5 ${filterType === 'all'
@@ -32,7 +36,7 @@ const IncidentFilters = ({ filterType, setFilterType, incidents }) => {
                 )}
             </button>
 
-            {/* REQUESTS BUTTON (New Incoming) */}
+            {/* Requests Button */}
             <button
                 onClick={() => setFilterType('requests')}
                 className={`flex-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition flex items-center justify-center gap-1.5 ${filterType === 'requests'

@@ -3,20 +3,33 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import NotificationBell from "../../components/layout/NotificationBell";
-import { authService } from "../../services/api"; // ✅ IMPORT THIS
+import { authService } from "../../services/api";
 
+/**
+ * Civilian Dashboard Layout Component
+ * Provides responsive layout with navigation sidebar for civilian users
+ */
 export default function CivilianDashboard({ children }) {
+  // State for mobile sidebar
   const [open, setOpen] = useState(false);
+
+  // State for user data
   const [userName, setUserName] = useState("");
   const [profileImage, setProfileImage] = useState("");
+
+  // State for logout
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const navigate = useNavigate();
 
+  /**
+   * Load user data from localStorage or provided data
+   */
   const loadUserData = (data = null) => {
     const user = data || JSON.parse(localStorage.getItem('user') || 'null');
     if (user) {
+      // Set user display name
       if (user.firstName && user.lastName) {
         setUserName(`${user.firstName} ${user.lastName}`);
       } else if (user.firstName) {
@@ -27,12 +40,12 @@ export default function CivilianDashboard({ children }) {
         setUserName("Civilian User");
       }
 
+      // Set profile image
       if (user.profileImage && user.profileImage !== "") {
-        // ✅ CHECK IF IT'S A FULL URL (GOOGLE IMAGES) OR A LOCAL UPLOAD
         if (user.profileImage.startsWith('http') || user.profileImage.startsWith('data:')) {
-          setProfileImage(user.profileImage); // Use directly (Google URL)
+          setProfileImage(user.profileImage);
         } else {
-          setProfileImage(`http://localhost:5000/${user.profileImage}`); // Local upload
+          setProfileImage(`http://localhost:5000/${user.profileImage}`);
         }
       } else {
         setProfileImage("");
@@ -43,17 +56,21 @@ export default function CivilianDashboard({ children }) {
     }
   };
 
+  /**
+   * Initialize dashboard - load user data and fetch fresh from backend
+   */
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
 
     loadUserData();
 
+    // Redirect if not authenticated
     if (!token || !user) {
       navigate('/login');
     }
 
-    // ✅ FETCH FRESH USER DATA FROM BACKEND (Updates Google Info)
+    // Fetch fresh user data from backend
     const fetchUser = async () => {
       try {
         const res = await authService.getCurrentUser();
@@ -62,9 +79,7 @@ export default function CivilianDashboard({ children }) {
             ...res.data,
             id: res.data._id || res.data.id,
           };
-          // Save to localStorage so it persists
           localStorage.setItem('user', JSON.stringify(freshUser));
-          // Update the UI state immediately
           loadUserData(freshUser);
         }
       } catch (error) {
@@ -75,10 +90,23 @@ export default function CivilianDashboard({ children }) {
     fetchUser();
   }, [navigate]);
 
+  /**
+   * Handle logout button click
+   */
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
 
+  /**
+   * Cancel logout action
+   */
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
+  };
+
+  /**
+   * Confirm and execute logout
+   */
   const handleConfirmLogout = async () => {
     setShowLogoutModal(false);
     setIsLoggingOut(true);
@@ -97,15 +125,15 @@ export default function CivilianDashboard({ children }) {
     }
   };
 
-  const handleCancelLogout = () => {
-    setShowLogoutModal(false);
-  };
-
+  /**
+   * Handle logo click navigation
+   */
   const handleLogoClick = () => {
     navigate('/overview');
     setOpen(false);
   };
 
+  // Render loading state during logout
   if (isLoggingOut) {
     return (
       <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
@@ -123,8 +151,7 @@ export default function CivilianDashboard({ children }) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-
-      {/* LOGOUT CONFIRMATION MODAL */}
+      {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40">
           <div className="bg-white rounded-lg shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col">
@@ -155,10 +182,10 @@ export default function CivilianDashboard({ children }) {
         </div>
       )}
 
-      {/* NAVBAR - Responsive */}
+      {/* Top Navigation Bar */}
       <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white">
         <div className="flex items-center gap-3">
-          {/* ✅ Mobile Hamburger Menu */}
+          {/* Mobile Hamburger Menu */}
           <button
             onClick={() => setOpen(true)}
             className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -167,6 +194,7 @@ export default function CivilianDashboard({ children }) {
             <Icon icon="mdi:menu" className="w-6 h-6" />
           </button>
 
+          {/* Logo and Brand */}
           <button
             onClick={handleLogoClick}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
@@ -181,10 +209,9 @@ export default function CivilianDashboard({ children }) {
         <NotificationBell />
       </div>
 
-      {/* BODY */}
+      {/* Main Layout Body */}
       <div className="flex flex-1 overflow-hidden relative bg-[#EEF2F6]">
-
-        {/* ✅ Mobile Overlay */}
+        {/* Mobile Overlay */}
         {open && (
           <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
@@ -192,7 +219,7 @@ export default function CivilianDashboard({ children }) {
           />
         )}
 
-        {/* ✅ PROFESSIONAL RESPONSIVE SIDEBAR */}
+        {/* Responsive Sidebar */}
         <div
           className={`
             fixed md:static z-50 top-0 left-0 h-full w-72 sm:w-64 bg-white border-r border-gray-200 shadow-md
@@ -203,7 +230,7 @@ export default function CivilianDashboard({ children }) {
           `}
         >
           <div>
-            {/* ✅ Mobile Close Button */}
+            {/* Mobile Close Button */}
             <div className="flex justify-between items-center mb-6 md:hidden">
               <span className="font-bold text-gray-800 text-lg">Menu</span>
               <button
@@ -215,10 +242,10 @@ export default function CivilianDashboard({ children }) {
               </button>
             </div>
 
-            {/* PROFILE SECTION - With Gradient Background */}
+            {/* Profile Section */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-6 border border-blue-200">
-              {/* Profile Section */}
               <div className="flex items-center gap-3 w-full overflow-hidden">
+                {/* Avatar */}
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white shadow-md overflow-hidden flex items-center justify-center flex-shrink-0">
                   {profileImage ? (
                     <img
@@ -232,7 +259,7 @@ export default function CivilianDashboard({ children }) {
                   )}
                 </div>
 
-                {/* ✅ FIXED: min-w-0 allows the container to shrink, w-full forces it inside */}
+                {/* User Info */}
                 <div className="min-w-0 flex-1 w-full">
                   <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider truncate">Civilian</p>
                   <p
@@ -245,7 +272,7 @@ export default function CivilianDashboard({ children }) {
               </div>
             </div>
 
-            {/* MENU - Responsive */}
+            {/* Navigation Menu */}
             <div className="space-y-1.5">
               <NavLink
                 to="/overview"
@@ -305,7 +332,7 @@ export default function CivilianDashboard({ children }) {
             </div>
           </div>
 
-          {/* LOGOUT - Responsive */}
+          {/* Logout Button */}
           <div
             onClick={handleLogoutClick}
             className="group flex items-center gap-3 p-3 rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50/80 transition-all duration-300 cursor-pointer"
@@ -318,11 +345,10 @@ export default function CivilianDashboard({ children }) {
           </div>
         </div>
 
-        {/* MAIN CONTENT AREA - Responsive */}
+        {/* Main Content Area */}
         <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-3 sm:p-4 md:p-6 z-0">
           {children}
         </div>
-
       </div>
     </div>
   );

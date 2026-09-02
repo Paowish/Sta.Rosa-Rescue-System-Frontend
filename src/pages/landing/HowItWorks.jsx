@@ -1,15 +1,21 @@
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 
+/**
+ * How It Works Component
+ * Explains the two-step incident reporting process with visual mockups
+ */
 export default function HowItWorks() {
     return (
         <div className="min-h-screen bg-[#F5F7FA] py-20 px-6">
             <div className="max-w-6xl mx-auto">
-                {/* Header */}
+                {/* Section Header */}
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-1 bg-[#E63946] rounded-full"></div>
                     <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">How it works</span>
                 </div>
+
+                {/* Main Headline */}
                 <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                     Report an incident in <span className="text-[#E63946]">two easy steps</span>
                 </h2>
@@ -19,15 +25,14 @@ export default function HowItWorks() {
 
                 {/* Steps Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto relative">
-
-                    {/* Central Arrow (Visible on Desktop) */}
+                    {/* Central Arrow (Desktop Only) */}
                     <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-4xl text-gray-300">
                         <Icon icon="mdi:arrow-right" className="w-12 h-12" />
                     </div>
 
                     {/* Step 1 Card */}
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        {/* Mockup Header */}
+                        {/* Mockup Browser Header */}
                         <div className="bg-[#0F5C73] p-4 text-white flex items-center gap-2">
                             <div className="flex gap-1.5">
                                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -42,10 +47,14 @@ export default function HowItWorks() {
                             <p className="text-gray-600 text-sm leading-relaxed">
                                 Set your exact location using automatic GPS detection. Attach a clear photo of the scene to help dispatchers assess the situation immediately.
                             </p>
+
+                            {/* Location Display */}
                             <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200 text-xs text-gray-500 flex items-center gap-2">
                                 <Icon icon="mdi:map-marker" className="w-4 h-4 text-red-500" />
                                 Detected location: <span className="font-medium text-gray-700">Rizal, Santa Rosa, Nueva Ecija</span>
                             </div>
+
+                            {/* Photo Upload Area */}
                             <div className="mt-4 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-400 text-xs">
                                 <Icon icon="mdi:image-plus" className="w-8 h-8 mx-auto mb-1" />
                                 Add Photo
@@ -55,7 +64,7 @@ export default function HowItWorks() {
 
                     {/* Step 2 Card */}
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                        {/* Mockup Header */}
+                        {/* Mockup Browser Header */}
                         <div className="bg-[#0F5C73] p-4 text-white flex items-center gap-2">
                             <div className="flex gap-1.5">
                                 <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -71,7 +80,9 @@ export default function HowItWorks() {
                                 Reporters pick the incident type, add a quick description, and submit. The dispatch team receives it instantly and begins coordination.
                             </p>
 
+                            {/* Form Mockup */}
                             <div className="mt-4 space-y-3">
+                                {/* Incident Type Dropdown */}
                                 <div className="border border-gray-200 rounded p-2 bg-white">
                                     <p className="text-[10px] text-gray-400 mb-1">Incident type</p>
                                     <select className="w-full text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700">
@@ -80,10 +91,14 @@ export default function HowItWorks() {
                                         <option>Traffic Accident</option>
                                     </select>
                                 </div>
+
+                                {/* Description Textarea */}
                                 <textarea
                                     className="w-full border border-gray-200 rounded p-2 text-sm focus:ring-1 focus:ring-[#0F5C73] h-20 resize-none"
                                     placeholder="Describe what is happening. Include important details."
                                 ></textarea>
+
+                                {/* Submit Button */}
                                 <button className="w-full bg-[#0F5C73] text-white py-2 rounded font-medium hover:bg-[#0d4a5e] transition">
                                     Submit Report
                                 </button>

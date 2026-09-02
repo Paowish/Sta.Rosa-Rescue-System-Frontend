@@ -1,6 +1,11 @@
 import { Icon } from "@iconify/react";
 
+/**
+ * Services Component
+ * Displays the range of emergency response services offered
+ */
 export default function Services() {
+    // Services data
     const services = [
         {
             icon: "mdi:heart-pulse",
@@ -37,10 +42,13 @@ export default function Services() {
     return (
         <div className="min-h-screen bg-[#F5F7FA] py-20 px-6">
             <div className="max-w-7xl mx-auto">
+                {/* Section Header */}
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-1 bg-[#E63946] rounded-full"></div>
                     <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Services</span>
                 </div>
+
+                {/* Main Headline */}
                 <h2 className="text-4xl md:text-5xl font-bold text-[#0F5C73] mb-4">
                     Built for <span className="text-gray-900">every emergency.</span>
                 </h2>
@@ -48,12 +56,19 @@ export default function Services() {
                     From sudden illnesses to structure fires, we dispatch fast when seconds count.
                 </p>
 
+                {/* Services Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {services.map((service, idx) => (
-                        <div key={idx} className="bg-white p-8 rounded-lg border border-blue-100 shadow-sm hover:shadow-md transition">
+                        <div
+                            key={idx}
+                            className="bg-white p-8 rounded-lg border border-blue-100 shadow-sm hover:shadow-md transition"
+                        >
+                            {/* Service Icon */}
                             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-[#0F5C73] mb-4">
                                 <Icon icon={service.icon} className="w-6 h-6" />
                             </div>
+
+                            {/* Service Content */}
                             <h3 className="text-xl font-bold text-[#0F5C73] mb-2">{service.title}</h3>
                             <p className="text-gray-600 text-sm leading-relaxed">{service.description}</p>
                         </div>

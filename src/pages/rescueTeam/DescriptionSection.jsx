@@ -1,12 +1,22 @@
 // src/pages/rescueTeam/DescriptionSection.jsx
 import { Icon } from "@iconify/react";
 
+/**
+ * Description Section Component
+ * Displays incident description and optional image
+ */
 export default function DescriptionSection({ description, imageSrc, hasImage, onImageError }) {
     return (
         <div className="border-t border-[#DFDFF0]">
+            {/* Section Header */}
             <div className="bg-[#EBEDFA] px-3 py-2 font-medium text-[#656363] text-sm">Description</div>
-            <p className="p-3 text-gray-600 text-sm leading-relaxed">{description || "No description provided"}</p>
 
+            {/* Description Text */}
+            <p className="p-3 text-gray-600 text-sm leading-relaxed">
+                {description || "No description provided"}
+            </p>
+
+            {/* Image Display */}
             <div className="px-3 pb-3">
                 {hasImage ? (
                     <img

@@ -8,18 +8,18 @@ export default function IncidentDetails() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showInjectionWarning, setShowInjectionWarning] = useState(false);
 
-    // ✅ Get logged-in user data from localStorage
+    // Get logged-in user data from localStorage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userRole = localStorage.getItem('userRole');
     const fullName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : "";
 
-    // ✅ Role-Based Access Control Check
+    // Role-Based Access Control Check
     if (!userRole || (userRole !== 'civilian' && userRole !== 'responder' && userRole !== 'volunteer')) {
         alert("You are not authorized to file incident reports.");
         navigate("/login");
     }
 
-    // ✅ Detect injection patterns
+    // Detect injection patterns
     const hasInjectionPattern = (input) => {
         if (!input) return false;
 
@@ -58,7 +58,7 @@ export default function IncidentDetails() {
         return false;
     };
 
-    // ✅ Sanitize input (remove dangerous characters)
+    // Sanitize input (remove dangerous characters)
     const sanitizeInput = (input) => {
         if (!input) return '';
 
@@ -216,7 +216,7 @@ export default function IncidentDetails() {
         }
     };
 
-    // ✅ Updated validateForm with injection detection
+    // Updated validateForm with injection detection
     const validateForm = () => {
         const newErrors = {};
 
@@ -224,7 +224,7 @@ export default function IncidentDetails() {
             newErrors.incidentType = "Please select an incident type";
         }
 
-        // ✅ Check description for injection patterns
+        // Check description for injection patterns
         if (!formData.description.trim()) {
             newErrors.description = "Please provide a description";
         } else if (formData.description.length > 500) {
@@ -233,7 +233,7 @@ export default function IncidentDetails() {
             newErrors.description = "⚠️ Security: Description contains invalid patterns. Please remove special characters like ' , \" , -- , ;";
         }
 
-        // ✅ Check name for injection patterns
+        // Check name for injection patterns
         if (formData.name && formData.name.trim() && hasInjectionPattern(formData.name)) {
             newErrors.name = "Name contains invalid characters";
         }
@@ -252,7 +252,7 @@ export default function IncidentDetails() {
         return Object.keys(newErrors).length === 0;
     };
 
-    // ✅ Updated handleNextStep with sanitization
+    // Updated handleNextStep with sanitization
     const handleNextStep = async () => {
         if (isSubmitting) return;
 
@@ -264,7 +264,7 @@ export default function IncidentDetails() {
         setIsSubmitting(true);
 
         try {
-            // ✅ Sanitize description and name before saving
+            // Sanitize description and name before saving
             const sanitizedDescription = sanitizeInput(formData.description.trim());
             const sanitizedName = formData.name && formData.name.trim() !== ""
                 ? sanitizeInput(formData.name.trim())
@@ -289,7 +289,7 @@ export default function IncidentDetails() {
                 cleanNumber = digits;
             }
 
-            // ✅ Only log in development
+            // Only log in development
             if (process.env.NODE_ENV === 'development') {
                 console.log("Saving incident report...");
             }
@@ -297,8 +297,8 @@ export default function IncidentDetails() {
             reportService.saveIncidentDetails({
                 type: formData.incidentType,
                 victimsAffected: formData.victimsAffected,
-                description: sanitizedDescription,  // ✅ Sanitized!
-                reporterName: sanitizedName,         // ✅ Sanitized!
+                description: sanitizedDescription,
+                reporterName: sanitizedName,
                 reporterContact: formData.contact,
                 reporterNumber: cleanNumber
             });
@@ -312,7 +312,7 @@ export default function IncidentDetails() {
         }
     };
 
-    // ✅ Handle description change with real-time injection warning
+    // Handle description change with real-time injection warning
     const handleDescriptionChange = (e) => {
         const value = e.target.value;
         setFormData(prev => ({ ...prev, description: value }));

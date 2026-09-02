@@ -4,15 +4,21 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from 'react';
 
-
-
+/**
+ * Landing Home Component
+ * The main landing page featuring hero section, how it works, mission, services, and CTA
+ */
 export default function LandingHome() {
+    // State for live incident feed simulation
     const [fakeIncidents, setFakeIncidents] = useState([
         { id: '01:11:11', type: 'Medical Emergency', loc: 'Brgy. San Mariano', time: 'Just Now', status: 'PENDING', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
         { id: '01:22:22', type: 'Crime Incident', loc: 'Brgy. Gomez', time: '1 Minute Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
         { id: '01:33:33', type: 'Landslide', loc: 'Brgy. San Pedro', time: '2 Minutes Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
     ]);
 
+    /**
+     * Simulate live incident feed with random data
+     */
     useEffect(() => {
         const types = ['Medical Emergency', 'Fire Incident', 'Traffic Accident', 'Crime Incident', 'Landslide', 'Flood Warning'];
         const barangays = ['Brgy. San Mariano', 'Brgy. Gomez', 'Brgy. San Pedro', 'Brgy. Rizal', 'Brgy. Del Pilar', 'Brgy. Maligaya'];
@@ -23,7 +29,7 @@ export default function LandingHome() {
         ];
 
         const interval = setInterval(() => {
-            // Generate random data
+            // Generate random incident data
             const randomType = types[Math.floor(Math.random() * types.length)];
             const randomBrgy = barangays[Math.floor(Math.random() * barangays.length)];
             const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
@@ -38,21 +44,54 @@ export default function LandingHome() {
                 color: randomStatus.color,
             };
 
-            // ✅ CRITICAL FIX: Keep max 4 items, always!
+            // Keep maximum of 4 items in the feed
             setFakeIncidents(prev => {
-                // Add new to front, remove from back if over 4
                 const updated = [newIncident, ...prev];
                 return updated.slice(0, 4);
             });
-        }, 2000); // New alert every 4 seconds
+        }, 2000);
 
-        // ✅ Cleanup: Stop interval when component is removed from screen
+        // Cleanup interval on unmount
         return () => clearInterval(interval);
     }, []);
+
+    // Services data
+    const services = [
+        {
+            img: "/medical.jpeg",
+            title: "Medical Response",
+            desc: "Advanced life support dispatch, field triage coordination, and hospital liaison for critical cases."
+        },
+        {
+            img: "/fire.jpeg",
+            title: "Fire Incident",
+            desc: "Structural fire, vehicular fire, and wildfire response coordinated with BFP units."
+        },
+        {
+            img: "/vehicle.jpeg",
+            title: "Vehicle Incident",
+            desc: "Emergency extrication, traffic collision response, and site stabilization coordinated with local traffic management."
+        },
+        {
+            img: "/road.jpeg",
+            title: "Road Obstruction",
+            desc: "Rapid removal of fallen trees, debris, landslides, and stalled heavy vehicles disrupting primary roads."
+        },
+        {
+            img: "/flood.jpeg",
+            title: "Flood & Disaster",
+            desc: "Rapid deployment water rescue teams, evacuation coordination, and shelter management during typhoon events."
+        },
+        {
+            img: "/crime.jpeg",
+            title: "Crime Incident",
+            desc: "Immediate dispatch and site containment coordinated with PNP (Philippine National Police) units."
+        }
+    ];
+
     return (
         <div className="flex flex-col bg-[#F5F7FA] overflow-x-hidden">
-
-            {/* ===================== SECTION 1: HERO ===================== */}
+            {/* Section 1: Hero */}
             <section className="container mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <motion.div
                     initial={{ opacity: 0, x: -50 }}
@@ -60,18 +99,23 @@ export default function LandingHome() {
                     viewport={{ once: false, amount: 0.3 }}
                     transition={{ duration: 0.8 }}
                 >
+                    {/* Subtitle */}
                     <div className="flex items-center gap-2 mb-4">
                         <div className="w-6 h-1 bg-[#E63946] rounded-full"></div>
                         <span className="text-sm font-semibold text-gray-700">Santa Rosa Municipal Rescue Team</span>
                     </div>
+
+                    {/* Main Headline */}
                     <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
                         Mabilis pa sa <br />
                         <span className="text-[#E63946]">Alas Kwatro</span>
                     </h1>
+
                     <p className="text-gray-600 text-lg mb-8 leading-relaxed max-w-lg">
                         iRespond is Santa Rosa, Nueva Ecija's Emergency Command Center, connecting citizen alerts directly to rapid dispatch and real-time incident response.
                     </p>
 
+                    {/* Call to Action Buttons */}
                     <div className="flex flex-wrap gap-4">
                         <Link to="/login">
                             <motion.button
@@ -93,7 +137,7 @@ export default function LandingHome() {
                         </a>
                     </div>
 
-                    {/* Stats */}
+                    {/* Statistics */}
                     <div className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-300">
                         <div>
                             <p className="text-4xl font-bold text-gray-900">50<span className="text-lg font-normal text-gray-500">+</span></p>
@@ -112,8 +156,7 @@ export default function LandingHome() {
                     </div>
                 </motion.div>
 
-                {/* Right Side - Live Incident Feed */}
-                {/* Right Side - Live Incident Feed (Animated) */}
+                {/* Live Incident Feed */}
                 <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -154,7 +197,7 @@ export default function LandingHome() {
                 </motion.div>
             </section>
 
-            {/* ===================== SECTION 2: HOW IT WORKS ===================== */}
+            {/* Section 2: How It Works */}
             <section id="how-it-works" className="bg-[#F5F7FA] py-20 px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
@@ -177,38 +220,37 @@ export default function LandingHome() {
 
                     {/* Steps Container */}
                     <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
-                        {/* Arrow */}
+                        {/* Arrow Divider */}
                         <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 z-10 text-3xl text-[#4A5568]">
                             <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </div>
 
-                        {/* Step 1 Card */}
+                        {/* Step 1 */}
                         <div className="flex flex-col gap-3">
                             <img
                                 src="/step1.png"
                                 alt="Step 1 - Location and Photo"
-                                className="w-full h-auto -mt-6 rounded-xl border-2 border-[#4A5568] shadow-sm" // ✅ Added -mt-4
+                                className="w-full h-auto -mt-6 rounded-xl border-2 border-[#4A5568] shadow-sm"
                             />
                         </div>
 
-                        {/* Step 2 Card */}
+                        {/* Step 2 */}
                         <div className="flex flex-col gap-3">
                             <img
                                 src="/step2.png"
                                 alt="Step 2 - Incident Details"
-                                className="w-full h-auto -mt-6 rounded-xl border-2 border-[#4A5568] shadow-sm" // ✅ Added -mt-4
+                                className="w-full h-auto -mt-6 rounded-xl border-2 border-[#4A5568] shadow-sm"
                             />
                         </div>
                     </div>
                 </motion.div>
             </section>
 
-            {/* ===================== SECTION 3: MISSION ===================== */}
+            {/* Section 3: Mission */}
             <section id="mission" className="bg-[#F5F7FA] py-20 px-6">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
                     {/* Left Column: Text */}
                     <motion.div
                         initial={{ opacity: 0, x: -40 }}
@@ -220,35 +262,46 @@ export default function LandingHome() {
                             <div className="w-8 h-1 bg-[#E63946] rounded-full"></div>
                             <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Our Mission</span>
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">Seconds save lives. We <span className="text-[#0F5C73]">make every one count.</span></h2>
-                        <p className="text-gray-600 text-lg mb-8 leading-relaxed max-w-lg">Fast, accurate, community-driven emergency response at your fingertips.</p>
+                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
+                            Seconds save lives. We <span className="text-[#0F5C73]">make every one count.</span>
+                        </h2>
+                        <p className="text-gray-600 text-lg mb-8 leading-relaxed max-w-lg">
+                            Fast, accurate, community-driven emergency response at your fingertips.
+                        </p>
 
+                        {/* Mission Points */}
                         <div className="space-y-6">
                             <div className="flex gap-4">
                                 <span className="text-xl font-bold text-[#E63946] mt-1">1</span>
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-lg">Rapid First Response</h4>
-                                    <p className="text-gray-600 text-sm">Report medical, environmental, or public safety emergencies in seconds. Capture photos, attach details, and notify dispatchers immediately.</p>
+                                    <p className="text-gray-600 text-sm">
+                                        Report medical, environmental, or public safety emergencies in seconds. Capture photos, attach details, and notify dispatchers immediately.
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
                                 <span className="text-xl font-bold text-[#E63946] mt-1">2</span>
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-lg">Pinpoint Geolocation</h4>
-                                    <p className="text-gray-600 text-sm">No need to describe your location during a crisis. Automated GPS tracking pinpoints your exact coordinates to ensure rescue teams reach you without delay.</p>
+                                    <p className="text-gray-600 text-sm">
+                                        No need to describe your location during a crisis. Automated GPS tracking pinpoints your exact coordinates to ensure rescue teams reach you without delay.
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
                                 <span className="text-xl font-bold text-[#E63946] mt-1">3</span>
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-lg">Mobilizing Community Volunteers</h4>
-                                    <p className="text-gray-600 text-sm">Trained community members can register, set their availability, and receive coordinated deployment alerts to support local response efforts when needed most.</p>
+                                    <p className="text-gray-600 text-sm">
+                                        Trained community members can register, set their availability, and receive coordinated deployment alerts to support local response efforts when needed most.
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </motion.div>
 
-                    {/* ✅ 3x3 GRID - PAGDIKITIN (NO GAP) */}
+                    {/* Right Column: 3x3 Grid of Incident Types */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -256,7 +309,7 @@ export default function LandingHome() {
                         transition={{ duration: 0.6 }}
                         className="grid grid-cols-3 border border-gray-200 rounded-xl overflow-hidden shadow-sm"
                     >
-                        {/* 1. FIRE - Red */}
+                        {/* Fire */}
                         <div className="bg-[#FFF5F5] p-6 flex flex-col items-center justify-center aspect-square border-b border-r border-gray-200 hover:bg-[#FFE8E8] transition">
                             <svg className="w-12 h-12 text-[#E53E3E] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M12 2C9 6 6 10 6 14c0 3.31 2.69 6 6 6s6-2.69 6-6c0-4-3-8-6-12z" />
@@ -265,7 +318,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">FIRE</span>
                         </div>
 
-                        {/* 2. CRIME - Gray */}
+                        {/* Crime */}
                         <div className="bg-[#F9FAFB] p-6 flex flex-col items-center justify-center aspect-square border-b border-r border-gray-200 hover:bg-gray-100 transition">
                             <svg className="w-12 h-12 text-[#4A5568] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
@@ -274,7 +327,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">CRIME</span>
                         </div>
 
-                        {/* 3. BLOCKAGE - Blue */}
+                        {/* Blockage */}
                         <div className="bg-[#EFF6FF] p-6 flex flex-col items-center justify-center aspect-square border-b border-gray-200 hover:bg-[#DBEAFE] transition">
                             <div className="relative w-12 h-12 mb-2 flex items-center justify-center">
                                 <div className="absolute w-10 h-10 rounded-full bg-[#3B82F6]"></div>
@@ -283,7 +336,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">BLOCKAGE</span>
                         </div>
 
-                        {/* 4. SEARCH - Gray */}
+                        {/* Search */}
                         <div className="bg-[#F9FAFB] p-6 flex flex-col items-center justify-center aspect-square border-b border-r border-gray-200 hover:bg-gray-100 transition">
                             <svg className="w-12 h-12 text-[#4A5568] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <circle cx="11" cy="11" r="8" />
@@ -292,7 +345,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">SEARCH</span>
                         </div>
 
-                        {/* 5. RESCUE - Red (Selected) */}
+                        {/* Rescue (Selected) */}
                         <div className="bg-[#FFF5F5] p-6 flex flex-col items-center justify-center aspect-square border-b border-r border-gray-200 ring-2 ring-[#FEB2B2] ring-inset hover:bg-[#FFE8E8] transition">
                             <svg className="w-12 h-12 text-[#E53E3E] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
@@ -302,7 +355,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">RESCUE</span>
                         </div>
 
-                        {/* 6. EVACUATE - Gray */}
+                        {/* Evacuate */}
                         <div className="bg-[#F9FAFB] p-6 flex flex-col items-center justify-center aspect-square border-b border-gray-200 hover:bg-gray-100 transition">
                             <svg className="w-12 h-12 text-[#4A5568] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M4 6h16v2H4zM4 10h10v2H4z" />
@@ -311,7 +364,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">EVACUATE</span>
                         </div>
 
-                        {/* 7. FLOOD - Blue */}
+                        {/* Flood */}
                         <div className="bg-[#EFF6FF] p-6 flex flex-col items-center justify-center aspect-square border-r border-gray-200 hover:bg-[#DBEAFE] transition">
                             <svg className="w-12 h-12 text-[#3B82F6] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M12 2C7 8 4 12 4 16c0 4.42 3.58 8 8 8s8-3.58 8-8c0-4-3-8-8-10z" />
@@ -320,7 +373,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">FLOOD</span>
                         </div>
 
-                        {/* 8. LANDSLIDE - Gray */}
+                        {/* Landslide */}
                         <div className="bg-[#F9FAFB] p-6 flex flex-col items-center justify-center aspect-square border-r border-gray-200 hover:bg-gray-100 transition">
                             <svg className="w-12 h-12 text-[#4A5568] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M17 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
@@ -330,7 +383,7 @@ export default function LandingHome() {
                             <span className="text-[10px] md:text-xs font-bold text-gray-700 tracking-wide">LANDSLIDE</span>
                         </div>
 
-                        {/* 9. MEDICAL - Red */}
+                        {/* Medical */}
                         <div className="bg-[#FFF5F5] p-6 flex flex-col items-center justify-center aspect-square hover:bg-[#FFE8E8] transition">
                             <svg className="w-12 h-12 text-[#E53E3E] mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
@@ -343,7 +396,7 @@ export default function LandingHome() {
                 </div>
             </section>
 
-            {/* ===================== SECTION 4: SERVICES ===================== */}
+            {/* Section 4: Services */}
             <section id="services" className="bg-[#F5F7FA] py-20 px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 50 }}
@@ -352,6 +405,7 @@ export default function LandingHome() {
                     transition={{ duration: 0.7 }}
                     className="max-w-7xl mx-auto"
                 >
+                    {/* Header */}
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-8 h-1 bg-[#E63946] rounded-full"></div>
                         <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Services</span>
@@ -363,39 +417,9 @@ export default function LandingHome() {
                         From sudden illnesses to structure fires, we dispatch fast when seconds count.
                     </p>
 
+                    {/* Services Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[
-                            {
-                                img: "/medical.jpeg",
-                                title: "Medical Response",
-                                desc: "Advanced life support dispatch, field triage coordination, and hospital liaison for critical cases."
-                            },
-                            {
-                                img: "/fire.jpeg",
-                                title: "Fire Incident",
-                                desc: "Structural fire, vehicular fire, and wildfire response coordinated with BFP units."
-                            },
-                            {
-                                img: "/vehicle.jpeg",
-                                title: "Vehicle Incident",
-                                desc: "Emergency extrication, traffic collision response, and site stabilization coordinated with local traffic management."
-                            },
-                            {
-                                img: "/road.jpeg",
-                                title: "Road Obstruction",
-                                desc: "Rapid removal of fallen trees, debris, landslides, and stalled heavy vehicles disrupting primary roads."
-                            },
-                            {
-                                img: "/flood.jpeg",
-                                title: "Flood & Disaster",
-                                desc: "Rapid deployment water rescue teams, evacuation coordination, and shelter management during typhoon events."
-                            },
-                            {
-                                img: "/crime.jpeg",
-                                title: "Crime Incident",
-                                desc: "Immediate dispatch and site containment coordinated with PNP (Philippine National Police) units."
-                            },
-                        ].map((service, idx) => (
+                        {services.map((service, idx) => (
                             <motion.div
                                 key={idx}
                                 initial={{ opacity: 0, y: 30 }}
@@ -419,7 +443,7 @@ export default function LandingHome() {
                 </motion.div>
             </section>
 
-            {/* ===================== SECTION 5: FOOTER CTA ===================== */}
+            {/* Section 5: Footer CTA */}
             <section id="file-report" className="bg-[#E63946] py-24 px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -430,7 +454,6 @@ export default function LandingHome() {
                 >
                     {/* Left Text Section */}
                     <div className="max-w-xl">
-                        {/* Small white line + Subtitle */}
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-[2px] bg-white"></div>
                             <span className="text-sm font-medium tracking-widest uppercase opacity-90">
@@ -438,13 +461,11 @@ export default function LandingHome() {
                             </span>
                         </div>
 
-                        {/* Headline */}
                         <h2 className="text-[40px] leading-[1.1] font-bold mb-6">
                             Witnessed an emergency?<br />
                             Report it now.
                         </h2>
 
-                        {/* Body Text */}
                         <p className="text-white/80 text-[15px] leading-relaxed font-light max-w-md">
                             Our civilian portal lets anyone file an incident report directly from their phone or computer, with GPS location, photo upload, and instant reference tracking.
                         </p>
@@ -458,7 +479,6 @@ export default function LandingHome() {
                                 whileTap={{ scale: 0.97 }}
                                 className="group flex items-center gap-4 bg-white px-8 py-4 rounded shadow-lg transition-all duration-300 hover:shadow-xl"
                             >
-                                {/* Red Alert Icon inside button */}
                                 <div className="text-[#E63946]">
                                     <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2L1 21h22L12 2zm0 3.8l8 14.2H4l8-14.2z" />
@@ -474,7 +494,6 @@ export default function LandingHome() {
                     </div>
                 </motion.div>
             </section>
-
         </div>
     );
 }

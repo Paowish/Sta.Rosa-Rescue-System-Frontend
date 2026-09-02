@@ -1,10 +1,12 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
-// ✅ CORRECT: Import EditProfile from civilian folder
 import EditProfile from "../../pages/civilian/EditProfile";
 
-// ✅ Professional Page Transition Component - Slide from Left
+/**
+ * Professional Page Transition Component - Slide from Left
+ * Handles smooth page transitions with directional awareness
+ */
 const PageTransition = ({ children, location }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [prevLocation, setPrevLocation] = useState(location);
@@ -14,7 +16,7 @@ const PageTransition = ({ children, location }) => {
         if (location !== prevLocation) {
             setIsVisible(false);
 
-            // ✅ FIXED: Dashes match your App.jsx routes
+            // Define page order for directional transitions
             const pathOrder = [
                 '/admin/overview',
                 '/admin/user-accounts',
@@ -32,6 +34,7 @@ const PageTransition = ({ children, location }) => {
                 setDirection('right');
             }
 
+            // Trigger enter animation after a brief delay
             const timer = setTimeout(() => {
                 setPrevLocation(location);
                 setIsVisible(true);
@@ -52,16 +55,24 @@ const PageTransition = ({ children, location }) => {
 export default function AdminLayout({ children }) {
     const navigate = useNavigate();
     const location = useLocation();
+
+    // State for user profile data
     const [profileImage, setProfileImage] = useState("");
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [userName, setUserName] = useState("System Admin");
     const [userRole, setUserRole] = useState("Admin");
 
+    /**
+     * Load user data from localStorage on mount
+     */
     useEffect(() => {
         loadUserData();
     }, []);
 
+    /**
+     * Load and parse user data from localStorage
+     */
     const loadUserData = () => {
         try {
             const user = localStorage.getItem('user');
@@ -72,6 +83,7 @@ export default function AdminLayout({ children }) {
                 const firstName = userData.firstName || "";
                 const lastName = userData.lastName || "";
 
+                // Set user display name
                 if (firstName && lastName) {
                     setUserName(`${firstName} ${lastName}`);
                 } else if (firstName) {
@@ -82,6 +94,7 @@ export default function AdminLayout({ children }) {
                     setUserName("System Admin");
                 }
 
+                // Map role to display value
                 if (userData.role) {
                     const roleMap = {
                         'admin': 'Admin',
@@ -98,6 +111,7 @@ export default function AdminLayout({ children }) {
                 }
             }
 
+            // Load profile image
             if (storedImage && storedImage !== "") {
                 if (storedImage.startsWith('http') || storedImage.startsWith('data:')) {
                     setProfileImage(storedImage);
@@ -112,24 +126,35 @@ export default function AdminLayout({ children }) {
         }
     };
 
+    /**
+     * Handle logout button click
+     */
     const handleLogoutClick = () => {
         setShowLogoutModal(true);
     };
 
+    /**
+     * Cancel logout action
+     */
     const handleCancelLogout = () => {
         setShowLogoutModal(false);
     };
 
+    /**
+     * Confirm and execute logout
+     */
     const handleConfirmLogout = async () => {
         setShowLogoutModal(false);
         setIsLoggingOut(true);
 
         try {
+            // Clear localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('userRole');
             localStorage.removeItem('profileImage');
 
+            // Brief delay for cleanup
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             navigate('/login');
@@ -139,6 +164,7 @@ export default function AdminLayout({ children }) {
         }
     };
 
+    // Render loading state during logout
     if (isLoggingOut) {
         return (
             <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-[9999]">
@@ -156,8 +182,7 @@ export default function AdminLayout({ children }) {
 
     return (
         <div className="h-screen flex flex-col overflow-hidden admin-layout bg-[#F0F2F5]">
-
-            {/* LOGOUT CONFIRMATION MODAL */}
+            {/* Logout Confirmation Modal */}
             {showLogoutModal && (
                 <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-xl shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
@@ -188,11 +213,9 @@ export default function AdminLayout({ children }) {
                 </div>
             )}
 
-            {/* 🟢 KEPT ORIGINAL TEAL/DARK BLUE NAVBAR */}
+            {/* Top Navigation Bar */}
             <div className="h-16 bg-[#155e75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
-                {/* ✅ WRAP IN A CLICKABLE NavLink */}
                 <NavLink to="/admin/overview" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
-                    {/* Standalone Logo */}
                     <img src="/logo.png" className="w-10 h-10" alt="logo" />
                     <div>
                         <h1 className="font-semibold text-lg tracking-tight">System Admin</h1>
@@ -202,14 +225,12 @@ export default function AdminLayout({ children }) {
                 <Icon icon="material-symbols-light:notifications" className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" />
             </div>
 
-            {/* ✅ BODY */}
+            {/* Main Layout Body */}
             <div className="flex flex-1 min-h-0 overflow-hidden">
-
-                {/* SIDEBAR */}
+                {/* Left Sidebar */}
                 <div className="w-64 bg-white flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container overflow-y-auto">
                     <div className="flex flex-col h-full">
-
-                        {/* PROFILE SECTION */}
+                        {/* Profile Section */}
                         <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-5 border-b border-gray-200 relative">
                             <div className="flex items-center gap-3 relative z-10 profile-section">
                                 <div className="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
@@ -223,7 +244,7 @@ export default function AdminLayout({ children }) {
                                             }}
                                         />
                                     ) : (
-                                        /* ✅ BULLETPROOF DEFAULT AVATAR SVG */
+                                        /* Default Avatar SVG */
                                         <svg
                                             className="w-6 h-6 text-gray-700"
                                             fill="none"
@@ -242,7 +263,7 @@ export default function AdminLayout({ children }) {
                             </div>
                         </div>
 
-                        {/* MENU - ✅ EXACT ICONS FROM DASHBOARD.JSX */}
+                        {/* Navigation Menu */}
                         <div className="p-4 space-y-1 text-gray-600 text-sm nav-links flex-1">
                             <NavLink
                                 to="/admin/overview"
@@ -256,7 +277,6 @@ export default function AdminLayout({ children }) {
                                 to="/admin/useraccounts"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                {/* ✅ Matches Dashboard "Incidents" icon */}
                                 <Icon icon="ic:baseline-emergency" className="w-5 h-5" />
                                 User Accounts
                             </NavLink>
@@ -265,7 +285,6 @@ export default function AdminLayout({ children }) {
                                 to="/admin/incidentreports"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                {/* ✅ Matches Dashboard "Units" icon */}
                                 <Icon icon="material-symbols:group" className="w-5 h-5" />
                                 Incident Reports
                             </NavLink>
@@ -274,7 +293,6 @@ export default function AdminLayout({ children }) {
                                 to="/admin/systemmaintenance"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                {/* ✅ Matches Dashboard "Volunteers" icon */}
                                 <Icon icon="material-symbols:groups" className="w-5 h-5" />
                                 System Maintenance
                             </NavLink>
@@ -283,7 +301,6 @@ export default function AdminLayout({ children }) {
                                 to="/admin/systemsettings"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                {/* ✅ Matches Dashboard "Profile" icon */}
                                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
                                 System Settings
                             </NavLink>
@@ -292,14 +309,13 @@ export default function AdminLayout({ children }) {
                                 to="/admin/profile"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                {/* ✅ Matches Dashboard "Profile" icon */}
                                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
                                 Profile
                             </NavLink>
                         </div>
                     </div>
 
-                    {/* LOGOUT */}
+                    {/* Logout Button - Fixed at Bottom */}
                     <div
                         onClick={handleLogoutClick}
                         className="m-4 p-3 text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 rounded-lg transition-colors duration-200 hover:bg-red-50 logout-btn"
@@ -309,183 +325,166 @@ export default function AdminLayout({ children }) {
                     </div>
                 </div>
 
-                {/* ✅ MAIN CONTENT WITH PAGE TRANSITIONS */}
+                {/* Main Content with Page Transitions */}
                 <div className="flex-1 bg-[#F0F2F5] p-6 overflow-y-auto main-content">
                     <PageTransition location={location}>
                         {children}
                     </PageTransition>
                 </div>
-
             </div>
 
-            {/* ✅ PROFESSIONAL ANIMATIONS CSS */}
+            {/* Professional Animations CSS */}
             <style>{`
-                /* ============================================
-                   PAGE TRANSITIONS - SLIDE FROM LEFT
-                   ============================================ */
-                .page-transition {
-                    will-change: transform, opacity;
-                    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-                }
+        /* Page Transitions - Slide from Left */
+        .page-transition {
+          will-change: transform, opacity;
+          transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-                .page-enter {
-                    opacity: 0;
-                    transform: translateX(-30px);
-                }
+        .page-enter {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
 
-                .page-enter-active {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
+        .page-enter-active {
+          opacity: 1;
+          transform: translateX(0);
+        }
 
-                .direction-right.page-enter {
-                    transform: translateX(-30px);
-                }
+        .direction-right.page-enter {
+          transform: translateX(-30px);
+        }
 
-                .direction-left.page-enter {
-                    transform: translateX(30px);
-                }
+        .direction-left.page-enter {
+          transform: translateX(30px);
+        }
 
-                .direction-right.page-enter-active {
-                    transform: translateX(0);
-                }
+        .direction-right.page-enter-active {
+          transform: translateX(0);
+        }
 
-                .direction-left.page-enter-active {
-                    transform: translateX(0);
-                }
+        .direction-left.page-enter-active {
+          transform: translateX(0);
+        }
 
-                /* ============================================
-                   SIDEBAR NAVIGATION LINKS - PROFESSIONAL
-                   ============================================ */
-                .nav-link {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.75rem;
-                    padding: 0.7rem 1rem;
-                    border-radius: 0.75rem;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    cursor: pointer;
-                    position: relative;
-                    color: #6b7280;
-                    font-weight: 500;
-                    text-decoration: none;
-                }
+        /* Sidebar Navigation Links */
+        .nav-link {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.7rem 1rem;
+          border-radius: 0.75rem;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          position: relative;
+          color: #6b7280;
+          font-weight: 500;
+          text-decoration: none;
+        }
 
-                .nav-link:hover {
-                    background: #f3f4f6;
-                    color: #1f2937;
-                    transform: translateX(4px);
-                }
+        .nav-link:hover {
+          background: #f3f4f6;
+          color: #1f2937;
+          transform: translateX(4px);
+        }
 
-                .nav-link.active {
-                    background: #eff6ff;
-                    color: #2563eb;
-                    font-weight: 600;
-                    box-shadow: inset 3px 0 0 #2563eb;
-                }
+        .nav-link.active {
+          background: #eff6ff;
+          color: #2563eb;
+          font-weight: 600;
+          box-shadow: inset 3px 0 0 #2563eb;
+        }
 
-                /* ============================================
-                   PROFILE AVATAR - SMOOTH
-                   ============================================ */
-                .profile-avatar {
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    flex-shrink: 0;
-                }
+        /* Profile Avatar */
+        .profile-avatar {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          flex-shrink: 0;
+        }
 
-                .profile-avatar:hover {
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-                }
+        .profile-avatar:hover {
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
 
-                /* ============================================
-                   LOGOUT BUTTON - PROFESSIONAL
-                   ============================================ */
-                .logout-btn {
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                }
+        /* Logout Button */
+        .logout-btn {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-                .logout-btn:hover {
-                    transform: translateX(4px);
-                }
+        .logout-btn:hover {
+          transform: translateX(4px);
+        }
 
-                /* ============================================
-                   MAIN CONTENT - SMOOTH SCROLL
-                   ============================================ */
-                .main-content {
-                    scroll-behavior: smooth;
-                }
+        /* Main Content Scrollbar */
+        .main-content {
+          scroll-behavior: smooth;
+        }
 
-                .main-content::-webkit-scrollbar {
-                    width: 6px;
-                }
+        .main-content::-webkit-scrollbar {
+          width: 6px;
+        }
 
-                .main-content::-webkit-scrollbar-track {
-                    background: transparent;
-                }
+        .main-content::-webkit-scrollbar-track {
+          background: transparent;
+        }
 
-                .main-content::-webkit-scrollbar-thumb {
-                    background: #d1d5db;
-                    border-radius: 3px;
-                }
+        .main-content::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 3px;
+        }
 
-                .main-content::-webkit-scrollbar-thumb:hover {
-                    background: #9ca3af;
-                }
+        .main-content::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
+        }
 
-                /* ============================================
-                   ADMIN LAYOUT - GLOBAL
-                   ============================================ */
-                .admin-layout {
-                    background: #F0F2F5;
-                }
+        /* Admin Layout Background */
+        .admin-layout {
+          background: #F0F2F5;
+        }
 
-                /* ============================================
-                   ANIMATION HELPERS
-                   ============================================ */
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
+        /* Animation Helpers */
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
 
-                @keyframes zoomIn {
-                    from { 
-                        opacity: 0;
-                        transform: scale(0.95);
-                    }
-                    to { 
-                        opacity: 1;
-                        transform: scale(1);
-                    }
-                }
+        @keyframes zoomIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
 
-                .animate-in {
-                    animation-duration: 0.2s;
-                    animation-fill-mode: both;
-                }
+        .animate-in {
+          animation-duration: 0.2s;
+          animation-fill-mode: both;
+        }
 
-                .fade-in {
-                    animation-name: fadeIn;
-                }
+        .fade-in {
+          animation-name: fadeIn;
+        }
 
-                .zoom-in-95 {
-                    animation-name: zoomIn;
-                }
+        .zoom-in-95 {
+          animation-name: zoomIn;
+        }
 
-                /* ============================================
-                   RESPONSIVE
-                   ============================================ */
-                @media (max-width: 768px) {
-                    .sidebar-container {
-                        width: 64px;
-                    }
-                    .nav-link span:not(.ml-auto) {
-                        display: none;
-                    }
-                    .user-name, .user-role, .logout-btn span:last-child {
-                        display: none;
-                    }
-                }
-            `}</style>
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+          .sidebar-container {
+            width: 64px;
+          }
+          .nav-link span:not(.ml-auto) {
+            display: none;
+          }
+          .user-name, .user-role, .logout-btn span:last-child {
+            display: none;
+          }
+        }
+      `}</style>
         </div>
     );
 }

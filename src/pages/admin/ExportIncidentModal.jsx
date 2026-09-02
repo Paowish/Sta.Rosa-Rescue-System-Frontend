@@ -2,12 +2,19 @@ import { Icon } from "@iconify/react";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 
+/**
+ * Export Incident Modal Component
+ * Provides options for exporting incident reports with various filters
+ */
 export default function ExportIncidentModal({ isOpen, onClose, onExport, incidents = [] }) {
+    // State for export options
     const [selectedOption, setSelectedOption] = useState('all');
     const [selectedDate, setSelectedDate] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
 
-    // ✅ Reset states when modal opens
+    /**
+     * Reset filter states when modal opens
+     */
     useEffect(() => {
         if (isOpen) {
             setSelectedOption('all');
@@ -16,7 +23,9 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
         }
     }, [isOpen]);
 
-    // ✅ DYNAMIC BARANGAYS (For "Incidents by Barangay" option)
+    /**
+     * Get unique barangays from incidents for grouping
+     */
     const barangayList = useMemo(() => {
         if (!incidents || incidents.length === 0) return [];
         return [...new Set(
@@ -26,7 +35,9 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
         )];
     }, [incidents]);
 
-    // ✅ DYNAMIC MUNICIPALITIES (For "Incidents by Municipality" option)
+    /**
+     * Get unique municipalities from incidents for grouping
+     */
     const municipalityList = useMemo(() => {
         if (!incidents || incidents.length === 0) return [];
         return [...new Set(
@@ -36,7 +47,9 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
         )];
     }, [incidents]);
 
-    // ✅ DYNAMIC INCIDENT TYPES (For "Incidents by Type" option)
+    /**
+     * Get unique incident types for grouping
+     */
     const typeList = useMemo(() => {
         if (!incidents || incidents.length === 0) return [];
         return [...new Set(
@@ -46,23 +59,25 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
         )];
     }, [incidents]);
 
-    // ✅ SMART CHECK: Disable ONLY if the filtered selection is EMPTY
+    /**
+     * Determine if export should be disabled based on filtered results
+     */
     const isExportDisabled = useMemo(() => {
         if (incidents.length === 0) return true;
 
-        let checkList = [...incidents];
+        let filteredIncidents = [...incidents];
 
-        // 1. Apply Option filter (All, Active, Inactive)
+        // Apply option filter (All, Active, Inactive)
         if (selectedOption === 'active') {
-            checkList = checkList.filter(inc => inc.status !== 'Resolved' && inc.status !== 'Closed');
+            filteredIncidents = filteredIncidents.filter(inc => inc.status !== 'Resolved' && inc.status !== 'Closed');
         } else if (selectedOption === 'inactive') {
-            checkList = checkList.filter(inc => inc.status === 'Resolved' || inc.status === 'Closed');
+            filteredIncidents = filteredIncidents.filter(inc => inc.status === 'Resolved' || inc.status === 'Closed');
         }
 
-        // 2. Apply Date filter
+        // Apply date filter
         if (selectedDate !== 'all') {
             const now = new Date();
-            checkList = checkList.filter(inc => {
+            filteredIncidents = filteredIncidents.filter(inc => {
                 const reportedDate = new Date(inc.reportedAt || inc.createdAt);
                 switch (selectedDate) {
                     case 'today': return reportedDate.toDateString() === now.toDateString();
@@ -78,17 +93,21 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
             });
         }
 
-        // 3. Apply Status filter
+        // Apply status filter
         if (selectedStatus !== 'all') {
-            checkList = checkList.filter(inc => inc.status === selectedStatus);
+            filteredIncidents = filteredIncidents.filter(inc => inc.status === selectedStatus);
         }
 
-        // ✅ ONLY RULE: If there are 0 results, disable the button.
-        return checkList.length === 0;
+        // Disable if no results match the filters
+        return filteredIncidents.length === 0;
     }, [incidents, selectedOption, selectedDate, selectedStatus]);
 
+    // Don't render if modal is closed
     if (!isOpen) return null;
 
+    /**
+     * Handle export button click
+     */
     const handleExport = () => {
         if (isExportDisabled) return;
         onExport(selectedOption, selectedDate, selectedStatus);
@@ -98,8 +117,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-                {/* Header */}
+                {/* Modal Header */}
                 <div className="px-6 py-4 border-b flex justify-between items-center bg-white">
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:upload" className="w-6 h-6 text-gray-700" />
@@ -110,15 +128,16 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                     </button>
                 </div>
 
-                {/* Body - Export Options */}
+                {/* Modal Body */}
                 <div className="p-6">
-                    {/* 🔹 HINT TEXT: Only shows if button is disabled because of empty data */}
+                    {/* Warning Message */}
                     {isExportDisabled && (
                         <p className="mb-4 text-xs text-gray-400 text-center border border-gray-200 bg-gray-50 rounded-md py-2">
                             ⚠️ No incidents match your selected filters. Please try a different selection.
                         </p>
                     )}
 
+                    {/* Export Options Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Option 1: All Incidents */}
                         <button
@@ -152,7 +171,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:fire" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by type</h3>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by Type</h3>
                                     <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of incident</p>
                                 </div>
                             </div>
@@ -171,8 +190,8 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:map-marker" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by barangay</h3>
-                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of barangay</p>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by Barangay</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by barangay</p>
                                 </div>
                             </div>
                         </button>
@@ -191,7 +210,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-gray-800 text-sm">Incidents by Municipality</h3>
-                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of municipality</p>
+                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by municipality</p>
                                 </div>
                             </div>
                         </button>
@@ -209,7 +228,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:calendar" className="w-6 h-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by date</h3>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Incidents by Date</h3>
                                     <p className="text-[10px] text-gray-500 mt-1">Filter incidents by date range</p>
                                 </div>
                             </div>
@@ -220,8 +239,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                     <div className="mt-6 pt-6 border-t border-gray-100">
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Filter Options</h4>
                         <div className="flex flex-wrap gap-6">
-
-                            {/* ✅ DYNAMIC Date Filter (Always visible) */}
+                            {/* Date Filter */}
                             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
                                 <label className="text-xs text-gray-500 font-medium">Date</label>
                                 <div className="relative">
@@ -240,7 +258,7 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                 </div>
                             </div>
 
-                            {/* ✅ DYNAMIC Status Filter */}
+                            {/* Status Filter */}
                             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
                                 <label className="text-xs text-gray-500 font-medium">Status of Incident</label>
                                 <div className="relative">
@@ -259,12 +277,11 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                                     <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
 
-                {/* Footer - Actions */}
+                {/* Modal Footer */}
                 <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
                     <button
                         onClick={onClose}
@@ -272,8 +289,6 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                     >
                         Cancel
                     </button>
-
-                    {/* ✅ SMART BUTTON: ONLY Disabled if NO DATA matches filters */}
                     <button
                         onClick={handleExport}
                         disabled={isExportDisabled}
@@ -285,7 +300,6 @@ export default function ExportIncidentModal({ isOpen, onClose, onExport, inciden
                         Export Records
                     </button>
                 </div>
-
             </div>
         </div>,
         document.body

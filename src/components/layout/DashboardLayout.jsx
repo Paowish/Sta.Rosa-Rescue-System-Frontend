@@ -7,7 +7,10 @@ import { incidentService, notificationService as apiNotificationService } from "
 import IncidentDetails from "../../pages/rescueTeam/IncidentDetails";
 import io from 'socket.io-client';
 
-// ✅ Professional Page Transition Component - Slide from Left
+/**
+ * Professional Page Transition Component - Slide from Left
+ * Handles smooth page transitions with directional awareness
+ */
 const PageTransition = ({ children, location }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [prevLocation, setPrevLocation] = useState(location);
@@ -17,6 +20,7 @@ const PageTransition = ({ children, location }) => {
     if (location !== prevLocation) {
       setIsVisible(false);
 
+      // Define page order for directional transitions
       const pathOrder = ['/dashboard', '/incidents', '/units', '/volunteer-approval', '/profile'];
       const prevIndex = pathOrder.indexOf(prevLocation.pathname);
       const currIndex = pathOrder.indexOf(location.pathname);
@@ -27,6 +31,7 @@ const PageTransition = ({ children, location }) => {
         setDirection('right');
       }
 
+      // Trigger enter animation after a brief delay
       const timer = setTimeout(() => {
         setPrevLocation(location);
         setIsVisible(true);
@@ -47,30 +52,39 @@ const PageTransition = ({ children, location }) => {
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // State for incident details sidebar
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarClosing, setIsSidebarClosing] = useState(false);
 
+  // State for incident popup notifications
   const [showIncidentPopup, setShowIncidentPopup] = useState(false);
   const [latestIncidentAlert, setLatestIncidentAlert] = useState(null);
   const [isSlidingOut, setIsSlidingOut] = useState(false);
 
+  // State for user profile data
   const [userName, setUserName] = useState("Loading...");
   const [userRole, setUserRole] = useState("Rescuer");
   const [profileImage, setProfileImage] = useState(null);
 
+  // State for logout functionality
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // State for volunteer approval badge
   const [pendingVolunteerCount, setPendingVolunteerCount] = useState(0);
   const [showBadge, setShowBadge] = useState(false);
   const [hasNewApplication, setHasNewApplication] = useState(false);
 
+  // Refs for socket and polling
   const socketRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const lastKnownUnreadCountRef = useRef(0);
 
-  // ✅ Listen for volunteer count updates
+  /**
+   * Listen for volunteer count updates via custom event
+   */
   useEffect(() => {
     const handleVolunteerCountUpdate = (event) => {
       if (event.detail && event.detail.pendingCount !== undefined) {
@@ -94,6 +108,9 @@ export default function DashboardLayout({ children }) {
     };
   }, [location.pathname]);
 
+  /**
+   * Control badge visibility based on current route and application status
+   */
   useEffect(() => {
     if (location.pathname === '/volunteer-approval') {
       setShowBadge(false);
@@ -103,6 +120,9 @@ export default function DashboardLayout({ children }) {
     }
   }, [location.pathname, hasNewApplication, pendingVolunteerCount]);
 
+  /**
+   * Load user data from localStorage
+   */
   const loadUserData = () => {
     try {
       const user = localStorage.getItem('user');
@@ -113,6 +133,7 @@ export default function DashboardLayout({ children }) {
         const firstName = userData.firstName || "";
         const lastName = userData.lastName || "";
 
+        // Set user display name
         if (firstName && lastName) {
           setUserName(`${firstName} ${lastName}`);
         } else if (firstName) {
@@ -123,6 +144,7 @@ export default function DashboardLayout({ children }) {
           setUserName("Rescue member 01");
         }
 
+        // Map role to display value
         if (userData.role) {
           const roleMap = {
             'admin': 'Admin',
@@ -137,6 +159,7 @@ export default function DashboardLayout({ children }) {
         setUserName("Rescue member 01");
       }
 
+      // Load profile image
       if (storedImage && storedImage !== "") {
         if (storedImage.startsWith('http') || storedImage.startsWith('data:')) {
           setProfileImage(storedImage);
@@ -165,6 +188,9 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  /**
+   * Fetch pending volunteer applications count
+   */
   const loadPendingVolunteerCount = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -185,7 +211,9 @@ export default function DashboardLayout({ children }) {
     }
   };
 
-  // Subscribe to notification service events
+  /**
+   * Subscribe to notification service events
+   */
   useEffect(() => {
     const unsubscribe = notificationService.addListener((data) => {
       if (data.type === 'show') {
@@ -202,6 +230,9 @@ export default function DashboardLayout({ children }) {
     return unsubscribe;
   }, []);
 
+  /**
+   * Dismiss the incident popup with animation
+   */
   const dismissPopup = () => {
     setIsSlidingOut(true);
     setTimeout(() => {
@@ -209,6 +240,9 @@ export default function DashboardLayout({ children }) {
     }, 500);
   };
 
+  /**
+   * Check for new notifications via API
+   */
   const checkForNewNotifications = async () => {
     try {
       const response = await apiNotificationService.getNotifications();
@@ -227,6 +261,9 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  /**
+   * Establish Socket.IO connection for real-time updates
+   */
   const setupSocketConnection = () => {
     try {
       const token = localStorage.getItem('token');
@@ -242,6 +279,7 @@ export default function DashboardLayout({ children }) {
           transports: ['websocket', 'polling']
         });
 
+        // Socket event handlers
         socketRef.current.on('connect', () => {
           console.log('✅ Socket connected');
           socketRef.current.emit('join', user._id);
@@ -304,6 +342,9 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  /**
+   * Initial check for unread notifications on mount
+   */
   const initialCheck = async () => {
     try {
       const response = await apiNotificationService.getNotifications();
@@ -320,22 +361,28 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  /**
+   * Initialize dashboard - load data, setup socket, start polling
+   */
   useEffect(() => {
     loadUserData();
     setupSocketConnection();
     initialCheck();
     loadPendingVolunteerCount();
 
+    // Poll for new notifications every 5 seconds
     pollIntervalRef.current = setInterval(() => {
       checkForNewNotifications();
     }, 5000);
 
+    // Poll for volunteer count updates every 10 seconds when tab is visible
     const volunteerPollInterval = setInterval(() => {
       if (!document.hidden) {
         loadPendingVolunteerCount();
       }
     }, 10000);
 
+    // Listen for storage changes (profile updates)
     const handleStorageChange = () => {
       loadUserData();
     };
@@ -343,6 +390,7 @@ export default function DashboardLayout({ children }) {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('profileUpdated', handleStorageChange);
 
+    // Cleanup on unmount
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -356,24 +404,35 @@ export default function DashboardLayout({ children }) {
     };
   }, []);
 
+  /**
+   * Handle logout button click
+   */
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
   };
 
+  /**
+   * Cancel logout action
+   */
   const handleCancelLogout = () => {
     setShowLogoutModal(false);
   };
 
+  /**
+   * Confirm and execute logout
+   */
   const handleConfirmLogout = async () => {
     setShowLogoutModal(false);
     setIsLoggingOut(true);
 
     try {
+      // Clear localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('userRole');
       localStorage.removeItem('profileImage');
 
+      // Brief delay for cleanup
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       navigate('/login');
@@ -383,12 +442,18 @@ export default function DashboardLayout({ children }) {
     }
   };
 
+  /**
+   * Handle incident click to open details sidebar
+   */
   const handleIncidentClick = (incident) => {
     setSelectedIncident(incident);
     setIsSidebarOpen(true);
     setIsSidebarClosing(false);
   };
 
+  /**
+   * Close incident details sidebar with animation
+   */
   const handleCloseSidebar = () => {
     setIsSidebarClosing(true);
     setTimeout(() => {
@@ -398,6 +463,7 @@ export default function DashboardLayout({ children }) {
     }, 300);
   };
 
+  // Render loading state during logout
   if (isLoggingOut) {
     return (
       <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-[9999]">
@@ -415,7 +481,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* GLOBAL INCIDENT POPUP - PROFESSIONAL */}
+      {/* Global Incident Popup - Professional */}
       <div className={`fixed top-6 right-6 z-[999] transition-all duration-500 ease-in-out transform ${showIncidentPopup && latestIncidentAlert
         ? isSlidingOut
           ? 'translate-x-[calc(100%+20px)] opacity-0'
@@ -440,7 +506,7 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
 
-      {/* LOGOUT CONFIRMATION MODAL */}
+      {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-[400px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
@@ -461,9 +527,8 @@ export default function DashboardLayout({ children }) {
         </div>
       )}
 
-      {/* 🟢 RESTORED ORIGINAL TEAL NAVBAR */}
+      {/* Top Navigation Bar */}
       <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-6 text-white flex-shrink-0 z-10 shadow-md">
-        {/* ✅ WRAP IN A CLICKABLE NAVLINK */}
         <NavLink to="/dashboard" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
           <img src="/logo.png" className="w-10 h-10" alt="logo" />
           <div>
@@ -474,17 +539,15 @@ export default function DashboardLayout({ children }) {
         <NotificationBell />
       </div>
 
-      {/* BODY WITH SIDEBARS */}
+      {/* Main Layout with Sidebars */}
       <div className="flex flex-1 overflow-hidden relative bg-[#F0F2F5]">
-
-        {/* LEFT SIDEBAR - ELEVATED & PROFESSIONAL */}
+        {/* Left Sidebar - Elevated & Professional */}
         <div className="w-64 bg-[#F5F4FF] flex flex-col justify-between flex-shrink-0 border-r border-gray-200 shadow-sm sidebar-container">
           <div className="flex flex-col h-full">
-            {/* Profile Header Section - MOBILE PROOF */}
+            {/* Profile Header Section */}
             <div className="bg-gradient-to-br from-[#f8f9fc] to-[#f1f3f8] p-4 border-b border-gray-200 relative overflow-hidden">
               <div className="flex items-center gap-2 relative z-10 w-full">
-
-                {/* ✅ BULLETPROOF AVATAR CIRCLE */}
+                {/* Avatar Circle */}
                 <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm flex-shrink-0 flex items-center justify-center profile-avatar">
                   {profileImage ? (
                     <img
@@ -508,14 +571,14 @@ export default function DashboardLayout({ children }) {
                   )}
                 </div>
 
-                {/* ✅ TEXT WITH PROPER MOBILE TRUNCATION */}
+                {/* User Info */}
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider user-role line-clamp-1">
                     {userRole}
                   </p>
                   <p
                     className="text-xs font-semibold text-gray-800 user-name line-clamp-2 break-words"
-                    title={userName} // Shows full name on hover
+                    title={userName}
                   >
                     {userName}
                   </p>
@@ -523,7 +586,7 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
 
-            {/* SIDEBAR NAVIGATION LINKS */}
+            {/* Sidebar Navigation Links */}
             <div className="p-4 space-y-1 text-gray-600 text-sm nav-links flex-1">
               <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5" /> Dashboard
@@ -534,7 +597,6 @@ export default function DashboardLayout({ children }) {
               <NavLink to="/units" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:group" className="w-5 h-5" /> Units
               </NavLink>
-
               <NavLink to="/volunteer-approval" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:groups" className="w-5 h-5" /> Volunteers
                 {showBadge && pendingVolunteerCount > 0 && (
@@ -543,19 +605,19 @@ export default function DashboardLayout({ children }) {
                   </span>
                 )}
               </NavLink>
-
               <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <Icon icon="material-symbols:account-circle" className="w-5 h-5" /> Profile
               </NavLink>
             </div>
           </div>
 
+          {/* Logout Button */}
           <div onClick={handleLogoutClick} className="m-4 p-3 text-gray-500 text-sm cursor-pointer hover:text-red-600 flex items-center gap-3 rounded-lg transition-colors duration-200 hover:bg-red-50 logout-btn">
             <Icon icon="material-symbols:logout" className="w-5 h-5" /> Logout
           </div>
         </div>
 
-        {/* MAIN CONTENT WITH SLIDE FROM LEFT PAGE TRANSITIONS */}
+        {/* Main Content with Page Transitions */}
         <div className="flex-1 bg-[#F0F2F5] overflow-y-auto main-content">
           <div className="p-6 max-w-[1600px] mx-auto">
             <PageTransition location={location}>
@@ -566,7 +628,7 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR - WITH SMOOTH TRANSITIONS */}
+        {/* Right Sidebar - Incident Details with Smooth Transitions */}
         {isSidebarOpen && selectedIncident && (
           <>
             <div
@@ -594,7 +656,7 @@ export default function DashboardLayout({ children }) {
         )}
       </div>
 
-      {/* ✅ GLOBAL PROFESSIONAL ANIMATIONS CSS */}
+      {/* Global Professional Animations CSS */}
       <style>{`
         .page-transition {
           will-change: transform, opacity;
@@ -690,23 +752,23 @@ export default function DashboardLayout({ children }) {
           animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
-                @media (max-width: 768px) {
+        @media (max-width: 768px) {
           .sidebar-container {
-            width: 90px; /* ✅ Wider so the name fits better */
+            width: 90px;
           }
           .nav-link {
             justify-content: center;
-            padding: 0.7rem 0.5rem; /* ✅ Reduce padding */
-            font-size: 10px; /* ✅ Smaller font for icons/text */
+            padding: 0.7rem 0.5rem;
+            font-size: 10px;
             text-align: center;
-            flex-direction: column; /* ✅ Stack icon and text vertically */
+            flex-direction: column;
           }
           .nav-link span:not(.ml-auto) {
-            display: block; /* ✅ Show the text */
+            display: block;
             text-align: center;
           }
           .user-name, .user-role {
-            display: block; /* ✅ KEEP THE NAME VISIBLE */
+            display: block;
             text-align: left;
           }
           .logout-btn {

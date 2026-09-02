@@ -3,20 +3,32 @@ import { useNavigate } from "react-router-dom";
 import AdminLayout from "../admin/AdminLayout";
 import { authService } from "../../services/api";
 
+/**
+ * Rescue Profile Component
+ * Allows rescue team members to view and edit their profile information,
+ * change password, and update profile photo
+ */
 export default function RescueProfile() {
     const navigate = useNavigate();
+
+    // UI state
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+    // Password visibility toggles
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // Photo upload state
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const fileInputRef = useRef(null);
 
+    // User data state
     const [originalUser, setOriginalUser] = useState({
         firstName: "",
         lastName: "",
@@ -33,28 +45,37 @@ export default function RescueProfile() {
         profileImage: ""
     });
 
+    // Password change state
     const [passwordData, setPasswordData] = useState({
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
     });
+
+    // Notification and validation state
     const [passwordError, setPasswordError] = useState("");
     const [passwordSuccess, setPasswordSuccess] = useState("");
     const [photoError, setPhotoError] = useState("");
     const [photoSuccess, setPhotoSuccess] = useState("");
     const [validationErrors, setValidationErrors] = useState({});
 
+    /**
+     * Load user profile on component mount
+     */
     useEffect(() => {
         loadUserProfile();
     }, []);
 
+    /**
+     * Load user profile from localStorage and backend
+     */
     const loadUserProfile = async () => {
         try {
-            // ✅ First, check localStorage for user data
+            // First, check localStorage for user data
             const storedUser = JSON.parse(localStorage.getItem('user'));
             const storedImage = storedUser?.profileImage || localStorage.getItem('profileImage') || "";
 
-            // ✅ Set initial preview from localStorage immediately
+            // Set initial preview from localStorage immediately
             if (storedImage) {
                 const imageUrl = storedImage.startsWith('http')
                     ? storedImage
@@ -65,20 +86,19 @@ export default function RescueProfile() {
             // Then fetch from backend
             const response = await authService.getCurrentUser();
             if (response.success) {
-                // ✅ Combine backend data with localStorage image
+                // Combine backend data with localStorage image
                 const userData = {
                     firstName: response.data.firstName || storedUser?.firstName || "",
                     lastName: response.data.lastName || storedUser?.lastName || "",
                     phoneNumber: response.data.phoneNumber || storedUser?.phoneNumber || "",
                     email: response.data.email || storedUser?.email || "",
-                    // ✅ Use stored image if backend doesn't return one
                     profileImage: response.data.profileImage || storedImage || ""
                 };
 
                 setOriginalUser(userData);
                 setUser(userData);
 
-                // ✅ Update localStorage with the combined data
+                // Update localStorage with the combined data
                 const updatedStoredUser = {
                     ...storedUser,
                     firstName: userData.firstName,
@@ -92,7 +112,7 @@ export default function RescueProfile() {
                     localStorage.setItem('profileImage', userData.profileImage);
                 }
 
-                // ✅ Update preview
+                // Update preview
                 if (userData.profileImage) {
                     const imageUrl = userData.profileImage.startsWith('http')
                         ? userData.profileImage
@@ -104,7 +124,7 @@ export default function RescueProfile() {
             }
         } catch (error) {
             console.error("Failed to load profile:", error);
-            // ✅ On error, try to load from localStorage
+            // On error, try to load from localStorage
             const storedUser = JSON.parse(localStorage.getItem('user'));
             const storedImage = storedUser?.profileImage || localStorage.getItem('profileImage') || "";
 
@@ -124,6 +144,9 @@ export default function RescueProfile() {
         }
     };
 
+    /**
+     * Validate profile form fields
+     */
     const validateProfile = () => {
         const errors = {};
 
@@ -159,6 +182,9 @@ export default function RescueProfile() {
         return Object.keys(errors).length === 0;
     };
 
+    /**
+     * Enter edit mode
+     */
     const handleEdit = () => {
         setIsEditing(true);
         setPasswordError("");
@@ -168,6 +194,9 @@ export default function RescueProfile() {
         setValidationErrors({});
     };
 
+    /**
+     * Cancel editing and revert changes
+     */
     const handleCancel = () => {
         setUser({ ...originalUser });
         setIsEditing(false);
@@ -192,6 +221,9 @@ export default function RescueProfile() {
         setSelectedFile(null);
     };
 
+    /**
+     * Save profile changes
+     */
     const handleSave = async () => {
         if (!validateProfile()) {
             return;
@@ -250,6 +282,9 @@ export default function RescueProfile() {
         }
     };
 
+    /**
+     * Validate password form fields
+     */
     const validatePassword = () => {
         const errors = {};
 
@@ -296,6 +331,9 @@ export default function RescueProfile() {
         return Object.keys(errors).length === 0;
     };
 
+    /**
+     * Handle password change submission
+     */
     const handlePasswordChange = async () => {
         setPasswordError("");
         setPasswordSuccess("");
@@ -340,10 +378,16 @@ export default function RescueProfile() {
         }
     };
 
+    /**
+     * Trigger file input click for photo upload
+     */
     const handleChangePhoto = () => {
         fileInputRef.current.click();
     };
 
+    /**
+     * Handle file selection and upload
+     */
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -378,7 +422,7 @@ export default function RescueProfile() {
             if (data.success) {
                 setPhotoSuccess("Profile photo updated successfully!");
 
-                // ✅ Update user with Cloudinary URL
+                // Update user with Cloudinary URL
                 const updatedUser = {
                     ...user,
                     profileImage: data.imagePath
@@ -387,7 +431,7 @@ export default function RescueProfile() {
                 setUser(updatedUser);
                 setOriginalUser(updatedUser);
 
-                // ✅ Update localStorage with Cloudinary URL
+                // Update localStorage with Cloudinary URL
                 const storedUser = JSON.parse(localStorage.getItem('user'));
                 if (storedUser) {
                     storedUser.profileImage = data.imagePath;
@@ -395,7 +439,7 @@ export default function RescueProfile() {
                     localStorage.setItem('profileImage', data.imagePath);
                 }
 
-                // ✅ Update preview to use Cloudinary URL
+                // Update preview to use Cloudinary URL
                 setPreviewUrl(data.imagePath);
 
                 window.dispatchEvent(new Event('storage'));
@@ -413,12 +457,16 @@ export default function RescueProfile() {
         }
     };
 
+    /**
+     * Reset file input on click
+     */
     const handleFileInputClick = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
     };
 
+    // Render loading state
     if (loading) {
         return (
             <AdminLayout>
@@ -432,8 +480,7 @@ export default function RescueProfile() {
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-
-                {/* Header */}
+                {/* Page Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         <svg className="w-8 h-8 text-[#0E4B5E]" fill="currentColor" viewBox="0 0 20 20">
@@ -446,9 +493,12 @@ export default function RescueProfile() {
                     </p>
                 </div>
 
+                {/* Profile Card */}
                 <div className="bg-white rounded-lg shadow border">
+                    {/* Profile Header */}
                     <div className="flex items-center justify-between p-6 border-b">
                         <div className="flex items-center gap-4">
+                            {/* Avatar */}
                             <div className="relative">
                                 <div className="w-20 h-20 rounded-full border-2 border-blue-500 overflow-hidden bg-gray-200 flex items-center justify-center">
                                     {previewUrl ? (
@@ -461,15 +511,17 @@ export default function RescueProfile() {
                                 </div>
                                 <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-blue-500 rounded-full border-2 border-white"></div>
                             </div>
+
+                            {/* User Info */}
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-700">
                                     {originalUser.firstName} {originalUser.lastName}
                                 </h2>
-                                <p className="text-sm text-gray-500">
-                                    Admin
-                                </p>
+                                <p className="text-sm text-gray-500">Admin</p>
                             </div>
                         </div>
+
+                        {/* Change Photo Button */}
                         <button
                             onClick={handleChangePhoto}
                             disabled={uploadingPhoto}
@@ -487,6 +539,7 @@ export default function RescueProfile() {
                         />
                     </div>
 
+                    {/* Photo Messages */}
                     {photoError && (
                         <div className="mx-6 mt-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
                             {photoError}
@@ -498,14 +551,17 @@ export default function RescueProfile() {
                         </div>
                     )}
 
+                    {/* Profile Form */}
                     <div className="p-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">
                             Personal Information <span className="text-red-500 text-sm">*</span>
                         </h3>
 
+                        {/* Name Fields */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}>
+                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                                    }`}>
                                     <legend className="text-sm px-2 text-gray-600">First Name <span className="text-red-500">*</span></legend>
                                     <input
                                         type="text"
@@ -527,7 +583,8 @@ export default function RescueProfile() {
                             </div>
 
                             <div>
-                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}>
+                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                                    }`}>
                                     <legend className="text-sm px-2 text-gray-600">Last Name <span className="text-red-500">*</span></legend>
                                     <input
                                         type="text"
@@ -549,9 +606,11 @@ export default function RescueProfile() {
                             </div>
                         </div>
 
+                        {/* Contact and Email Fields */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div>
-                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'}`}>
+                                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                                    }`}>
                                     <legend className="text-sm px-2 text-gray-600">Contact Number <span className="text-red-500">*</span></legend>
                                     <input
                                         type="text"
@@ -585,6 +644,7 @@ export default function RescueProfile() {
                             </div>
                         </div>
 
+                        {/* Password Change Section */}
                         <div className="border-t pt-6 mt-2">
                             <h3 className="text-lg font-semibold text-gray-700 mb-4">Change Password</h3>
 
@@ -600,9 +660,11 @@ export default function RescueProfile() {
                                 </div>
                             )}
 
+                            {/* Password Fields */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.currentPassword ? 'border-red-500' : 'border-gray-300'}`}>
+                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.currentPassword ? 'border-red-500' : 'border-gray-300'
+                                        }`}>
                                         <legend className="text-sm px-2 text-gray-600">Current Password <span className="text-red-500">*</span></legend>
                                         <div className="flex items-center">
                                             <input
@@ -642,7 +704,8 @@ export default function RescueProfile() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.newPassword ? 'border-red-500' : 'border-gray-300'}`}>
+                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                                        }`}>
                                         <legend className="text-sm px-2 text-gray-600">New Password <span className="text-red-500">*</span></legend>
                                         <div className="flex items-center">
                                             <input
@@ -680,7 +743,8 @@ export default function RescueProfile() {
                                 </div>
 
                                 <div>
-                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}>
+                                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                                        }`}>
                                         <legend className="text-sm px-2 text-gray-600">Confirm New Password <span className="text-red-500">*</span></legend>
                                         <div className="flex items-center">
                                             <input
@@ -718,6 +782,7 @@ export default function RescueProfile() {
                                 </div>
                             </div>
 
+                            {/* Update Password Button */}
                             {isEditing && (
                                 <div className="flex justify-end mb-6">
                                     <button
@@ -731,6 +796,7 @@ export default function RescueProfile() {
                             )}
                         </div>
 
+                        {/* Action Buttons */}
                         <div className="flex justify-end gap-3 border-t pt-4">
                             {isEditing && (
                                 <button

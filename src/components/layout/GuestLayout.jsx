@@ -4,11 +4,15 @@ import { useNavigate, NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
 
 export default function GuestLayout({ children }) {
+    // State for mobile sidebar toggle
     const [open, setOpen] = useState(false);
     const [greeting, setGreeting] = useState("Good Morning");
 
     const navigate = useNavigate();
 
+    /**
+     * Set time-based greeting on component mount
+     */
     useEffect(() => {
         const hour = new Date().getHours();
         if (hour < 12) setGreeting("Good Morning");
@@ -16,6 +20,9 @@ export default function GuestLayout({ children }) {
         else setGreeting("Good Evening");
     }, []);
 
+    /**
+     * Navigate to guest dashboard and close mobile menu
+     */
     const handleLogoClick = () => {
         navigate('/Guest');
         setOpen(false);
@@ -23,11 +30,10 @@ export default function GuestLayout({ children }) {
 
     return (
         <div className="h-screen flex flex-col overflow-hidden">
-
-            {/* NAVBAR */}
+            {/* Top Navigation Bar */}
             <div className="h-16 bg-[#1f6b75] flex items-center justify-between px-4 text-white">
-
                 <div className="flex items-center gap-3">
+                    {/* Mobile Menu Toggle */}
                     <button
                         onClick={() => setOpen(true)}
                         className="block md:hidden text-2xl"
@@ -35,6 +41,7 @@ export default function GuestLayout({ children }) {
                         ☰
                     </button>
 
+                    {/* Logo and Brand */}
                     <button
                         onClick={handleLogoClick}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
@@ -47,6 +54,7 @@ export default function GuestLayout({ children }) {
                     </button>
                 </div>
 
+                {/* Desktop Authentication Links */}
                 <div className="flex items-center gap-3">
                     <NavLink
                         to="/login"
@@ -63,9 +71,9 @@ export default function GuestLayout({ children }) {
                 </div>
             </div>
 
-            {/* BODY */}
+            {/* Main Content Area */}
             <div className="flex flex-1 overflow-hidden relative">
-
+                {/* Mobile Overlay */}
                 {open && (
                     <div
                         className="fixed inset-0 bg-black/40 z-40 md:hidden"
@@ -73,22 +81,23 @@ export default function GuestLayout({ children }) {
                     />
                 )}
 
+                {/* Sidebar - Responsive with Slide Animation */}
                 <div
                     className={`
-                        fixed md:static z-50 top-0 left-0 h-full w-64 bg-[#F5F4FF] p-5 flex flex-col justify-between
-                        transform transition-transform duration-300
-                        ${open ? "translate-x-0" : "-translate-x-full"}
-                        md:translate-x-0
-                    `}
+            fixed md:static z-50 top-0 left-0 h-full w-64 bg-[#F5F4FF] p-5 flex flex-col justify-between
+            transform transition-transform duration-300
+            ${open ? "translate-x-0" : "-translate-x-full"}
+            md:translate-x-0
+          `}
                 >
                     <div>
-
+                        {/* Mobile Close Button */}
                         <div className="flex justify-between items-center mb-6 md:hidden">
                             <span className="font-semibold">Menu</span>
                             <button onClick={() => setOpen(false)}>✕</button>
                         </div>
 
-                        {/* GUEST INFO */}
+                        {/* Guest Profile Section */}
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-12 h-12 rounded-full border-2 border-blue-500 bg-blue-100 flex items-center justify-center">
                                 <Icon icon="mdi:account-outline" className="w-6 h-6 text-blue-600" />
@@ -101,14 +110,15 @@ export default function GuestLayout({ children }) {
                             </div>
                         </div>
 
-                        {/* MENU */}
+                        {/* Navigation Menu */}
                         <div className="space-y-2 text-gray-600 text-sm">
                             <NavLink
                                 to="/Guest"
                                 end
                                 onClick={() => setOpen(false)}
                                 className={({ isActive }) =>
-                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''
+                                    }`
                                 }
                             >
                                 <Icon icon="material-symbols-light:home-rounded" className="w-5 h-5" />
@@ -119,7 +129,8 @@ export default function GuestLayout({ children }) {
                                 to="/Guest/Report"
                                 onClick={() => setOpen(false)}
                                 className={({ isActive }) =>
-                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''
+                                    }`
                                 }
                             >
                                 <Icon icon="mdi:report" className="w-5 h-5" />
@@ -130,7 +141,8 @@ export default function GuestLayout({ children }) {
                                 to="/Guest/Track"
                                 onClick={() => setOpen(false)}
                                 className={({ isActive }) =>
-                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''}`
+                                    `p-2 rounded hover:bg-gray-200 cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 text-blue-600 font-medium' : ''
+                                    }`
                                 }
                             >
                                 <Icon icon="material-symbols:track-changes" className="w-5 h-5" />
@@ -139,7 +151,7 @@ export default function GuestLayout({ children }) {
                         </div>
                     </div>
 
-                    {/* ✅ MOBILE ONLY: Login & Sign Up buttons - hidden on desktop */}
+                    {/* Mobile Authentication Buttons */}
                     <div className="flex flex-col gap-2 md:hidden">
                         <NavLink
                             to="/login"
@@ -158,10 +170,10 @@ export default function GuestLayout({ children }) {
                     </div>
                 </div>
 
+                {/* Main Content Area */}
                 <div className="flex-1 bg-[#EEF2F6] overflow-y-auto p-4 md:p-6 z-0">
                     {children}
                 </div>
-
             </div>
         </div>
     );

@@ -3,6 +3,13 @@
 import DOMPurify from 'dompurify';
 import axios from 'axios';
 
+// ============================================================================
+// SANITIZATION HELPERS
+// ============================================================================
+
+/**
+ * Sanitize a string to prevent XSS attacks
+ */
 const sanitizeString = (input) => {
     if (typeof input !== 'string') return input;
 
@@ -14,7 +21,9 @@ const sanitizeString = (input) => {
     });
 };
 
-// Sanitize entire object recursively
+/**
+ * Recursively sanitize data object
+ */
 const sanitizeData = (data) => {
     if (typeof data === 'string') {
         return sanitizeString(data);
@@ -32,7 +41,9 @@ const sanitizeData = (data) => {
     return data;
 };
 
-// ✅ Export for displaying user content safely
+/**
+ * Safe display for user-generated content
+ */
 export const safeDisplay = (htmlContent) => {
     return DOMPurify.sanitize(htmlContent, {
         ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
@@ -40,29 +51,33 @@ export const safeDisplay = (htmlContent) => {
     });
 };
 
-// ============================================
-// ✅ FIXED: Dynamic API URL Configuration
-// ============================================
+// ============================================================================
+// API URL CONFIGURATION
+// ============================================================================
 
-
+/**
+ * Get the appropriate API URL based on environment
+ */
 const getApiUrl = () => {
-    // 1. If on localhost, use localhost
+    // Localhost development
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5000/api';
     }
 
-    // 2. For ANY other domain (Vercel, custom domain, etc.), use the absolute Render URL
+    // Production - use absolute Render URL
     return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
 };
 
 const API_URL = getApiUrl();
 console.log('🔵 API URL:', API_URL);
 
-// ============================================
-// ✅ ADDED: Axios instance for auth.service.js
-// ============================================
+// ============================================================================
+// AXIOS INSTANCE
+// ============================================================================
 
-// Create axios instance with the same base URL
+/**
+ * Create axios instance with base configuration
+ */
 const api = axios.create({
     baseURL: API_URL,
     headers: {
@@ -72,9 +87,7 @@ const api = axios.create({
     timeout: 30000 // 30 second timeout
 });
 
-// ✅ MOVE INTERCEPTORS HERE - AFTER api is created
-
-// Add token interceptor
+// Request interceptor - add auth token
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -90,7 +103,7 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor for debugging and 401 handling
+// Response interceptor - handle 401 and logging
 api.interceptors.response.use(
     (response) => {
         console.log('📡 API Response:', response.status, response.config.url);
@@ -99,7 +112,7 @@ api.interceptors.response.use(
     (error) => {
         console.error('❌ API Error:', error.response?.status, error.message);
 
-        // ✅ Handle 401 Unauthorized - redirect to login
+        // Handle 401 Unauthorized - redirect to login
         if (error.response && error.response.status === 401) {
             console.log('🔒 Token expired or invalid - clearing session');
             localStorage.removeItem('token');
@@ -117,12 +130,13 @@ api.interceptors.response.use(
     }
 );
 
+// ============================================================================
+// BASE API REQUEST FUNCTIONS
+// ============================================================================
 
-
-// ============================================
-// HELPER FUNCTIONS (using fetch)
-// ============================================
-
+/**
+ * Make an authenticated API request
+ */
 const apiRequest = async (endpoint, method = 'GET', data = null, requiresAuth = true) => {
     const headers = {
         'Content-Type': 'application/json',
@@ -183,6 +197,9 @@ const apiRequest = async (endpoint, method = 'GET', data = null, requiresAuth = 
     }
 };
 
+/**
+ * Make an authenticated FormData API request
+ */
 const apiRequestFormData = async (endpoint, method = 'POST', formData, requiresAuth = true) => {
     const headers = {};
 
@@ -242,13 +259,14 @@ const apiRequestFormData = async (endpoint, method = 'POST', formData, requiresA
     }
 };
 
-// ============================================
+// ============================================================================
 // AUTH SERVICES
-// ============================================
+// ============================================================================
 
 export const authService = {
-
-    // Register with JSON (for civilians)
+    /**
+     * Register with JSON (for civilians)
+     */
     register: async (userData) => {
         console.log("🔵 Register (JSON) called with:", userData);
 
@@ -261,7 +279,9 @@ export const authService = {
         }
     },
 
-    // Register with FormData (for volunteers with files)
+    /**
+     * Register with FormData (for volunteers with files)
+     */
     registerWithFormData: async (formData) => {
         console.log("🔵 registerWithFormData called");
 
@@ -314,6 +334,9 @@ export const authService = {
         }
     },
 
+    /**
+     * Login user
+     */
     login: async (email, password) => {
         console.log('🔵 Login called for:', email);
 
@@ -445,7 +468,9 @@ export const authService = {
         }
     },
 
-    // ✅ GOOGLE LOGIN
+    /**
+     * Google OAuth login
+     */
     googleLogin: async (credential) => {
         try {
             const response = await axios.post(`${API_URL}/auth/google`, { token: credential });
@@ -456,6 +481,9 @@ export const authService = {
         }
     },
 
+    /**
+     * Forgot password
+     */
     forgotPassword: async (email) => {
         try {
             const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
@@ -464,6 +492,10 @@ export const authService = {
             return error.response?.data || { success: false, message: "Network error" };
         }
     },
+
+    /**
+     * Reset password
+     */
     resetPassword: async (token, newPassword) => {
         try {
             const response = await axios.post(`${API_URL}/auth/reset-password/${token}`, { newPassword });
@@ -472,12 +504,17 @@ export const authService = {
             return error.response?.data || { success: false, message: "Network error" };
         }
     },
-    // Get current user
+
+    /**
+     * Get current user
+     */
     getCurrentUser: async () => {
         return await apiRequest('/auth/me', 'GET', null, true);
     },
 
-    // Update profile
+    /**
+     * Update profile
+     */
     updateProfile: async (profileData) => {
         const response = await apiRequest('/auth/profile', 'PUT', profileData, true);
         if (response.data) {
@@ -486,7 +523,9 @@ export const authService = {
         return response;
     },
 
-    // Logout
+    /**
+     * Logout
+     */
     logout: () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -495,17 +534,18 @@ export const authService = {
     }
 };
 
-// ============================================
+// ============================================================================
 // INCIDENT SERVICES
-// ============================================
+// ============================================================================
 
 export const incidentService = {
+    /**
+     * Report an incident with optional photo
+     */
     reportIncident: async (incidentData) => {
         console.log("📸 API - reportIncident called");
         console.log("📸 API - Has photo:", !!incidentData.photo);
         console.log("📸 API - API URL:", API_URL);
-
-
 
         const sanitizedIncidentData = sanitizeData(incidentData);
 
@@ -538,12 +578,16 @@ export const incidentService = {
         }
     },
 
-    // ✅ NEW: Get all teams from the database
+    /**
+     * Get all teams from the database
+     */
     getTeams: async () => {
         return await apiRequest('/teams', 'GET', null, true);
     },
 
-    // ✅ Get all incidents (Admin/Dispatcher only)
+    /**
+     * Get all incidents (Admin/Dispatcher only)
+     */
     getAllIncidents: async (filters = {}) => {
         const sanitizedFilters = sanitizeData(filters);
         const queryParams = new URLSearchParams(sanitizedFilters).toString();
@@ -551,7 +595,9 @@ export const incidentService = {
         return await apiRequest(endpoint, 'GET', null, true);
     },
 
-    // ✅ NEW: Get incidents assigned to a specific volunteer
+    /**
+     * Get incidents assigned to a specific volunteer
+     */
     getVolunteerIncidents: async (volunteerId, filters = {}) => {
         const sanitizedFilters = sanitizeData(filters);
         const queryParams = new URLSearchParams({
@@ -562,7 +608,9 @@ export const incidentService = {
         return await apiRequest(endpoint, 'GET', null, true);
     },
 
-    // ✅ NEW: Get incidents reported by a specific user
+    /**
+     * Get incidents reported by a specific user
+     */
     getUserReportedIncidents: async (userId, filters = {}) => {
         const sanitizedFilters = sanitizeData(filters);
         const queryParams = new URLSearchParams({
@@ -573,7 +621,9 @@ export const incidentService = {
         return await apiRequest(endpoint, 'GET', null, true);
     },
 
-    // ✅ NEW: Get all incidents (with user filtering on frontend if needed)
+    /**
+     * Get filtered incidents
+     */
     getFilteredIncidents: async (filters = {}) => {
         const sanitizedFilters = sanitizeData(filters);
         const queryParams = new URLSearchParams(sanitizedFilters).toString();
@@ -581,96 +631,171 @@ export const incidentService = {
         return await apiRequest(endpoint, 'GET', null, true);
     },
 
+    /**
+     * Get incident by ID
+     */
     getIncidentById: async (id) => {
         return await apiRequest(`/incidents/${sanitizeString(id)}`, 'GET', null, true);
     },
 
+    /**
+     * Get incident statistics
+     */
     getStats: async () => {
         return await apiRequest('/incidents/stats', 'GET', null, true);
     },
 
+    /**
+     * Get nearby incidents
+     */
     getNearbyIncidents: async (latitude, longitude, radius = 5) => {
-        return await apiRequest(`/incidents/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`, 'GET', null, true);
+        return await apiRequest(
+            `/incidents/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`,
+            'GET',
+            null,
+            true
+        );
     },
 
+    /**
+     * Resolve an incident
+     */
     resolveIncident: async (id, resolutionNotes) => {
-        return await apiRequest(`/incidents/${id}/resolve`, 'PUT', { resolutionNotes: sanitizeString(resolutionNotes) }, true);
+        return await apiRequest(
+            `/incidents/${id}/resolve`,
+            'PUT',
+            { resolutionNotes: sanitizeString(resolutionNotes) },
+            true
+        );
     },
 
+    /**
+     * Update incident status
+     */
     updateIncidentStatus: async (id, status) => {
-        return await apiRequest(`/incidents/${id}/status`, 'PUT', { status: sanitizeString(status) }, true);
+        return await apiRequest(
+            `/incidents/${id}/status`,
+            'PUT',
+            { status: sanitizeString(status) },
+            true
+        );
     },
 
+    /**
+     * Assign responders to an incident
+     */
     assignResponders: async (incidentId, responderIds, teamName, dispatchNotes) => {
-        return await apiRequest(`/incidents/${incidentId}/assign`, 'PUT', {
-            responderIds: sanitizeData(responderIds),
-            teamName: sanitizeString(teamName),
-            dispatchNotes: sanitizeString(dispatchNotes)
-        }, true);
+        return await apiRequest(
+            `/incidents/${incidentId}/assign`,
+            'PUT',
+            {
+                responderIds: sanitizeData(responderIds),
+                teamName: sanitizeString(teamName),
+                dispatchNotes: sanitizeString(dispatchNotes)
+            },
+            true
+        );
     }
 };
 
-// ============================================
+// ============================================================================
 // VOLUNTEER SERVICES
-// ============================================
+// ============================================================================
 
 export const volunteerService = {
+    /**
+     * Submit volunteer application
+     */
     submitApplication: async (applicationData) => {
         const sanitizedData = sanitizeData(applicationData);
         return await apiRequest('/volunteers/apply', 'POST', sanitizedData, false);
     },
 
+    /**
+     * Submit volunteer application with files
+     */
     submitApplicationWithFiles: async (formData) => {
         return await apiRequestFormData('/volunteers/apply', 'POST', formData, false);
     },
 
+    /**
+     * Get all volunteer applications
+     */
     getAllApplications: async (status = null, page = 1) => {
         const sanitizedStatus = status ? sanitizeString(status) : null;
-        const query = new URLSearchParams({ page, ...(sanitizedStatus && { status: sanitizedStatus }) }).toString();
+        const query = new URLSearchParams({
+            page,
+            ...(sanitizedStatus && { status: sanitizedStatus })
+        }).toString();
         return await apiRequest(`/volunteers/applications?${query}`, 'GET', null, true);
     },
 
+    /**
+     * Get application by ID
+     */
     getApplicationById: async (id) => {
         return await apiRequest(`/volunteers/applications/${sanitizeString(id)}`, 'GET', null, true);
     },
 
+    /**
+     * Review volunteer application
+     */
     reviewApplication: async (id, status, reviewNotes) => {
-        return await apiRequest(`/volunteers/applications/${id}/review`, 'PUT', {
-            status: sanitizeString(status),
-            reviewNotes: sanitizeString(reviewNotes)
-        }, true);
+        return await apiRequest(
+            `/volunteers/applications/${id}/review`,
+            'PUT',
+            {
+                status: sanitizeString(status),
+                reviewNotes: sanitizeString(reviewNotes)
+            },
+            true
+        );
     },
 
+    /**
+     * Delete volunteer application
+     */
     deleteApplication: async (id) => {
         return await apiRequest(`/volunteers/applications/${sanitizeString(id)}`, 'DELETE', null, true);
     },
 
+    /**
+     * Get volunteer statistics
+     */
     getStats: async () => {
         return await apiRequest('/volunteers/stats', 'GET', null, true);
     }
 };
 
-// ============================================
+// ============================================================================
 // NOTIFICATION SERVICES
-// ============================================
+// ============================================================================
 
 export const notificationService = {
+    /**
+     * Get all notifications
+     */
     getNotifications: async () => {
         return await apiRequest('/notifications', 'GET', null, true);
     },
 
+    /**
+     * Mark notification as read
+     */
     markAsRead: async (id) => {
         return await apiRequest(`/notifications/${id}/read`, 'PUT', null, true);
     },
 
+    /**
+     * Mark all notifications as read
+     */
     markAllAsRead: async () => {
         return await apiRequest('/notifications/read-all', 'PUT', null, true);
     }
 };
 
-// ============================================
+// ============================================================================
 // DEFAULT EXPORT
-// ============================================
+// ============================================================================
 
-// Export api as default
 export default api;

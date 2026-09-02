@@ -3,9 +3,16 @@ import { Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { authService } from '../services/api';
 
+/**
+ * Session timeout warning component
+ * Displays a warning when session is about to expire
+ */
 const SessionTimeoutWarning = ({ timeLeft, onExtend, onLogout }) => {
     const [showWarning, setShowWarning] = useState(false);
 
+    /**
+     * Show warning when time remaining is 2 minutes or less
+     */
     useEffect(() => {
         if (timeLeft <= 120 && timeLeft > 0 && !showWarning) {
             setShowWarning(true);
@@ -38,6 +45,10 @@ const SessionTimeoutWarning = ({ timeLeft, onExtend, onLogout }) => {
     );
 };
 
+/**
+ * Protected route wrapper component
+ * Handles authentication, authorization, and session management
+ */
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
@@ -45,14 +56,16 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     const [authorized, setAuthorized] = useState(false);
     const [sessionTimeLeft, setSessionTimeLeft] = useState(null);
 
-    // Check if user is authorized
+    /**
+     * Check if user is authenticated and authorized
+     */
     useEffect(() => {
         const checkAuth = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-                // ✅ If no token, redirect to login
+                // If no token, redirect to login
                 if (!token || !user.id) {
                     console.log('❌ No token or user found');
                     setAuthorized(false);
@@ -60,7 +73,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
                     return;
                 }
 
-                // ✅ Validate token with backend
+                // Validate token with backend
                 try {
                     const response = await authService.getCurrentUser();
                     console.log('✅ Auth check response:', response);
@@ -76,11 +89,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
                         return;
                     }
 
-                    // ✅ Check if user role is allowed
+                    // Check if user role is allowed
                     if (allowedRoles.length > 0) {
                         const userRole = response.data?.role || localStorage.getItem('userRole');
                         const isAuthorized = allowedRoles.some(role => {
-                            // ✅ Map volunteer to responder for compatibility
+                            // Map volunteer to responder for compatibility
                             if (role === 'volunteer') {
                                 return userRole === 'volunteer' || userRole === 'responder';
                             }
@@ -102,7 +115,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
                     setLoading(false);
                 } catch (authError) {
                     console.error('❌ Auth check failed:', authError);
-                    // ✅ Clear invalid data on auth error
+                    // Clear invalid data on auth error
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     localStorage.removeItem('userRole');
@@ -119,12 +132,18 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
         checkAuth();
     }, [token, userRole, allowedRoles]);
 
-    // Session timeout tracking
+    /**
+     * Session timeout tracking
+     * Monitors session duration and provides warnings
+     */
     useEffect(() => {
         if (!token || !authorized) return;
 
         let sessionStart = Date.now();
 
+        /**
+         * Check remaining session time
+         */
         const checkSession = async () => {
             try {
                 const response = await authService.getCurrentUser();
@@ -138,6 +157,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             }
         };
 
+        /**
+         * Extend session by resetting timer
+         */
         const extendSession = async () => {
             try {
                 const response = await authService.getCurrentUser();
@@ -150,6 +172,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             }
         };
 
+        /**
+         * Logout user and clear session data
+         */
         const logout = () => {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -157,16 +182,19 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             window.location.href = '/login';
         };
 
+        // Initialize session check
         checkSession();
         const interval = setInterval(checkSession, 10000);
 
+        // Expose session functions globally
         window.__extendSession = extendSession;
         window.__logout = logout;
 
+        // Cleanup on unmount
         return () => clearInterval(interval);
     }, [token, authorized]);
 
-    // Show loading spinner
+    // Show loading spinner during authentication check
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -181,12 +209,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             return <Navigate to="/login" replace />;
         }
 
-        // ✅ Clean up invalid token
+        // Clean up invalid token
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('userRole');
 
-        // Redirect based on role (if available)
+        // Redirect based on role
         const role = localStorage.getItem('userRole');
         if (role === 'volunteer' || role === 'responder') {
             return <Navigate to="/volunteer-dashboard" replace />;

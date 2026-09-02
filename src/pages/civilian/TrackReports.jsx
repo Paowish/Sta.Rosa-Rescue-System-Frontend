@@ -34,7 +34,10 @@ const blueIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// --- Component to re-center map ---
+/**
+ * Map Center Component
+ * Re-centers the map to a specific position
+ */
 function MapCenter({ position, shouldCenter }) {
     const map = useMap();
     const hasCentered = useRef(false);
@@ -49,7 +52,10 @@ function MapCenter({ position, shouldCenter }) {
     return null;
 }
 
-// --- Progress Stepper Component ---
+/**
+ * Progress Stepper Component
+ * Displays incident status progression
+ */
 const ProgressStepper = ({ currentStatus }) => {
     const statusMap = {
         'Pending': 0,
@@ -95,7 +101,10 @@ const ProgressStepper = ({ currentStatus }) => {
     );
 };
 
-// --- Dispatch Notification Badge ---
+/**
+ * Dispatch Notification Badge Component
+ * Displays dispatch status with appropriate styling
+ */
 const DispatchBadge = ({ status, responderName }) => {
     if (status === 'Dispatched' || status === 'En Route') {
         return (
@@ -126,8 +135,14 @@ const DispatchBadge = ({ status, responderName }) => {
     return null;
 };
 
+/**
+ * Track Reports Component
+ * Displays and tracks incident reports with real-time updates
+ */
 export default function TrackReports() {
     const navigate = useNavigate();
+
+    // State for incidents
     const [incidents, setIncidents] = useState([]);
     const [filteredIncidents, setFilteredIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -138,13 +153,16 @@ export default function TrackReports() {
     const [expanding, setExpanding] = useState(false);
     const [lastUpdate, setLastUpdate] = useState(null);
 
+    // Refs for socket and polling
     const socketRef = useRef(null);
     const loadRef = useRef(null);
     const pollIntervalRef = useRef(null);
     const isPollingRef = useRef(false);
     const isLoadingRef = useRef(false);
 
-    // ✅ Real-time status update function with force refresh
+    /**
+     * Manually update incident status in state
+     */
     const manuallyUpdateIncidentStatus = useCallback((incidentId, newStatus, responderName) => {
         if (!incidentId) return;
         console.log(`📡 Updating incident ${incidentId} to status: ${newStatus} with responder: ${responderName || 'N/A'}`);
@@ -186,9 +204,11 @@ export default function TrackReports() {
         setLastUpdate(new Date());
     }, []);
 
-    // ✅ FETCH INCIDENTS - with loading lock to prevent double updates
+    /**
+     * Fetch incidents from API
+     */
     const loadIncidents = useCallback(async () => {
-        // ✅ Prevent concurrent loads
+        // Prevent concurrent loads
         if (isLoadingRef.current) {
             console.log('⏳ Load already in progress, skipping...');
             return;
@@ -216,19 +236,23 @@ export default function TrackReports() {
         }
     }, []);
 
+    /**
+     * Initialize load reference and fetch incidents
+     */
     useEffect(() => {
         loadRef.current = loadIncidents;
         loadIncidents();
     }, [loadIncidents]);
 
-    // ✅ POLLING - EVERY 15 SECONDS with lock to prevent double updates
+    /**
+     * Start polling for updates
+     */
     const startPolling = useCallback(() => {
         if (isPollingRef.current) {
             console.log('⏰ Polling already running, skipping...');
             return;
         }
 
-        // Clear any existing interval
         if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
@@ -238,7 +262,6 @@ export default function TrackReports() {
         console.log('⏰ Starting polling every 15 seconds...');
 
         pollIntervalRef.current = setInterval(() => {
-            // ✅ Only poll if not already loading and document is visible
             if (!isLoadingRef.current && !document.hidden) {
                 console.log('⏰ Polling: fetching incidents...');
                 if (loadRef.current) {
@@ -247,9 +270,12 @@ export default function TrackReports() {
             } else if (isLoadingRef.current) {
                 console.log('⏰ Skipping poll - load in progress');
             }
-        }, 20000); // ✅ 20 seconds
+        }, 20000); // 20 seconds
     }, []);
 
+    /**
+     * Stop polling for updates
+     */
     const stopPolling = useCallback(() => {
         if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
@@ -259,16 +285,16 @@ export default function TrackReports() {
         isPollingRef.current = false;
     }, []);
 
-    // ✅ Start polling after initial load
+    /**
+     * Start polling after initial load
+     */
     useEffect(() => {
-        // Start polling after a delay
         const timer = setTimeout(() => {
             if (incidents.length > 0) {
                 console.log('✅ Incidents found, starting background polling');
                 startPolling();
             } else {
                 console.log('⏳ No incidents yet, waiting...');
-                // Check again after 5 seconds
                 setTimeout(() => {
                     if (incidents.length > 0) {
                         startPolling();
@@ -283,7 +309,9 @@ export default function TrackReports() {
         };
     }, [incidents.length, startPolling, stopPolling]);
 
-    // ✅ BROADCAST LISTENER
+    /**
+     * Broadcast channel listener for cross-tab updates
+     */
     useEffect(() => {
         try {
             const channel = new BroadcastChannel('incident_updates');
@@ -291,7 +319,6 @@ export default function TrackReports() {
                 const data = event.data;
                 console.log('📡 Broadcast message received:', data);
 
-                // Stop polling on any incident update
                 stopPolling();
 
                 if (data && data.type === 'FORCE_STATUS_UPDATE') {
@@ -320,7 +347,9 @@ export default function TrackReports() {
         }
     }, [manuallyUpdateIncidentStatus, stopPolling]);
 
-    // ✅ SOCKET CONNECTION - REAL-TIME UPDATES
+    /**
+     * Socket.IO connection for real-time updates
+     */
     useEffect(() => {
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -356,7 +385,7 @@ export default function TrackReports() {
                     reconnectAttempts = 0;
                 });
 
-                // ✅ Listen for ALL possible event names
+                // Listen for all possible event names
                 const eventNames = [
                     'incident-updated',
                     'incident_status_update',
@@ -374,10 +403,8 @@ export default function TrackReports() {
                     socket.on(eventName, (data) => {
                         console.log(`📡 Socket event "${eventName}" received:`, data);
 
-                        // ✅ Stop polling on any incident event
                         stopPolling();
 
-                        // Extract incident ID
                         const incidentId = data?.incidentId || data?.incident?._id || data?._id || data?.id;
                         const status = data?.status || data?.newStatus || data?.incident?.status;
                         const responderName = data?.responderName || data?.volunteerName || data?.responder?.name || data?.name;
@@ -385,7 +412,6 @@ export default function TrackReports() {
                         if (incidentId && status) {
                             manuallyUpdateIncidentStatus(incidentId, status, responderName);
 
-                            // Show notification for dispatch/arrival
                             if (status === 'Dispatched' || status === 'En Route' || eventName === 'dispatch_created') {
                                 setDispatchNotification({
                                     incidentId: incidentId,
@@ -416,7 +442,6 @@ export default function TrackReports() {
                                 setTimeout(() => setDispatchNotification(null), 8000);
                             }
                         } else {
-                            // If we can't extract data, do a full refresh
                             if (loadRef.current && !isLoadingRef.current) {
                                 setTimeout(() => loadRef.current(), 300);
                             }
@@ -424,7 +449,6 @@ export default function TrackReports() {
                     });
                 });
 
-                // ✅ Also listen to generic 'notification' events
                 socket.on('notification', (data) => {
                     console.log('📡 Generic notification received:', data);
                     stopPolling();
@@ -478,7 +502,9 @@ export default function TrackReports() {
         };
     }, [manuallyUpdateIncidentStatus, loadIncidents, startPolling, stopPolling]);
 
-    // ✅ WINDOW DISPATCH LISTENER
+    /**
+     * Window dispatch notification listener
+     */
     useEffect(() => {
         const handleDispatchNotification = (event) => {
             const data = event.detail;
@@ -502,7 +528,9 @@ export default function TrackReports() {
         return () => { window.removeEventListener('dispatch-notification', handleDispatchNotification); };
     }, [manuallyUpdateIncidentStatus, loadIncidents, stopPolling]);
 
-    // ✅ FILTER LOGIC
+    /**
+     * Filter incidents based on search term
+     */
     useEffect(() => {
         const filterIncidents = () => {
             if (!searchTerm || searchTerm.trim() === "") {
@@ -534,6 +562,9 @@ export default function TrackReports() {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, incidents]);
 
+    /**
+     * Get status color classes
+     */
     const getStatusColor = (status) => {
         switch (status) {
             case 'Resolved': return 'text-green-600 bg-green-50 border-green-200';
@@ -545,12 +576,18 @@ export default function TrackReports() {
         }
     };
 
+    /**
+     * Format date and time for display
+     */
     const formatDateTime = (dateString) => {
         if (!dateString) return "Date not available";
         const date = new Date(dateString);
         return date.toLocaleString();
     };
 
+    /**
+     * Toggle incident expansion
+     */
     const toggleExpand = (id) => {
         setExpanding(true);
         setExpandedId(prev => prev === id ? null : id);
@@ -562,6 +599,9 @@ export default function TrackReports() {
         }, 300);
     };
 
+    /**
+     * Get responder name from incident data
+     */
     const getResponderName = (incident) => {
         if (!incident) return null;
         if (incident.responderName && incident.responderName !== '') return incident.responderName;
@@ -577,6 +617,7 @@ export default function TrackReports() {
     const handleSearchChange = (e) => setSearchTerm(e.target.value);
     const clearSearch = () => { setSearchTerm(""); setFilteredIncidents(incidents); };
 
+    // Render loading state
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -585,6 +626,7 @@ export default function TrackReports() {
         );
     }
 
+    // Render empty state
     if (incidents.length === 0 && !loading) {
         return (
             <div className="min-h-screen bg-gray-50/80 p-4 sm:p-6 font-sans">
@@ -613,6 +655,7 @@ export default function TrackReports() {
         );
     }
 
+    // Render no results state
     if (filteredIncidents.length === 0 && searchTerm && !loading) {
         return (
             <div className="min-h-screen bg-gray-50/80 p-4 sm:p-6 font-sans">
@@ -642,9 +685,11 @@ export default function TrackReports() {
         );
     }
 
+    // Render main dashboard
     return (
         <div className="min-h-screen bg-gray-50/80 p-4 sm:p-6 font-sans">
             <div className="w-full max-w-7xl mx-auto">
+                {/* Page Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-2 sm:gap-3 mb-2">
                         <Icon icon="material-symbols:group-outline" width="28" className="text-[#1f4e6f] sm:w-8 sm:h-8" />
@@ -653,6 +698,7 @@ export default function TrackReports() {
                     <p className="text-xs sm:text-sm text-gray-500 mt-1">Enter your reference number to check the real-time status of your report.</p>
                 </div>
 
+                {/* Dispatch Notification */}
                 {dispatchNotification && (
                     <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between animate-slide-in">
                         <div className="flex items-center gap-3">
@@ -666,15 +712,24 @@ export default function TrackReports() {
                     </div>
                 )}
 
+                {/* Search Bar */}
                 <div className="mb-6">
                     <div className="relative">
                         <Icon icon="material-symbols:search" width="20" className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input type="text" id="searchInput" placeholder="Search Incident Name, ID, Reference Number, Location..." value={searchTerm} onChange={handleSearchChange} className="w-full pl-12 pr-4 py-3 sm:py-3.5 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm shadow-sm transition-all" />
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Search Incident Name, ID, Reference Number, Location..."
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            className="w-full pl-12 pr-4 py-3 sm:py-3.5 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm shadow-sm transition-all"
+                        />
                         {searchTerm && <button onClick={clearSearch} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"><Icon icon="mdi:close" width="18" /></button>}
                     </div>
                     {searchTerm && <p className="text-xs text-gray-400 mt-1">Found {filteredIncidents.length} result{filteredIncidents.length !== 1 ? 's' : ''}</p>}
                 </div>
 
+                {/* Incident List */}
                 <div className="space-y-4 sm:space-y-5">
                     {filteredIncidents.map((incident) => {
                         const isExpanded = expandedId === incident._id;
@@ -687,6 +742,7 @@ export default function TrackReports() {
 
                         return (
                             <div key={incident._id} className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+                                {/* Incident Header */}
                                 <div onClick={() => toggleExpand(incident._id)} className="p-4 sm:p-6 relative cursor-pointer hover:bg-gray-50/50 transition-colors duration-200">
                                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300 ${isResolved ? 'bg-green-500' : isOnScene ? 'bg-yellow-500' : isDispatched ? 'bg-blue-500' : 'bg-red-500'}`}></div>
                                     <div className="pl-2">
@@ -709,9 +765,13 @@ export default function TrackReports() {
                                     </div>
                                 </div>
 
+                                {/* Expanded Details */}
                                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'}`}>
                                     <div className="border-t border-gray-200 bg-gray-50/30 transform transition-all duration-500 ease-in-out origin-top">
+                                        {/* Progress Stepper */}
                                         <div className="px-4 sm:px-6 pt-4 pb-2"><p className="text-xs sm:text-sm text-gray-500 mb-2">Response Progress</p><ProgressStepper currentStatus={incident.status} /></div>
+
+                                        {/* Incident Details Grid */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-gray-200 bg-white">
                                             <div className="p-4 border-b sm:border-b-0 sm:border-r border-gray-200"><p className="text-[10px] sm:text-xs text-gray-500 mb-1">Type of Incident</p><p className="text-sm sm:text-base font-semibold text-gray-800">{incident.type}</p></div>
                                             <div className="p-4 border-b sm:border-b-0 border-gray-200"><p className="text-[10px] sm:text-xs text-gray-500 mb-1">Reported by</p><p className="text-sm sm:text-base font-semibold text-gray-800">{incident.reporterName || "Anonymous"}</p></div>
@@ -720,6 +780,8 @@ export default function TrackReports() {
                                             <div className="p-4 border-b sm:border-b-0 sm:border-r border-gray-200"><p className="text-[10px] sm:text-xs text-gray-500 mb-1">Victims / Casualties</p><p className="text-sm sm:text-base font-semibold text-gray-800">{incident.victimCount || incident.victimsAffected || "0"} People</p></div>
                                             <div className="p-4 border-b sm:border-b-0 border-gray-200"><p className="text-[10px] sm:text-xs text-gray-500 mb-1">Description</p><p className="text-sm sm:text-base text-gray-700">{incident.description || "No description provided."}</p></div>
                                         </div>
+
+                                        {/* Map */}
                                         <div className="h-48 sm:h-56 bg-gray-200 border-t border-gray-200 relative w-full z-0">
                                             <MapContainer key={`map-${incident._id}-${isExpanded}`} center={[incidentLat, incidentLng]} zoom={14} style={{ height: "100%", width: "100%" }} zoomControl={false} scrollWheelZoom={true} dragging={true}>
                                                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -737,6 +799,8 @@ export default function TrackReports() {
                                                 <button className="p-1 hover:bg-gray-50"><Icon icon="mdi:minus" className="w-4 h-4" /></button>
                                             </div>
                                         </div>
+
+                                        {/* Status and Timeline */}
                                         <div className="border-t border-gray-200 bg-white">
                                             <div className="p-4 border-b border-gray-200 flex items-center gap-4">
                                                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-gray-200 flex-shrink-0 flex items-center justify-center transition-colors duration-300 ${isResolved ? 'bg-green-100' : isOnScene ? 'bg-yellow-100' : isDispatched ? 'bg-blue-100' : 'bg-gray-300'}`}>
@@ -747,6 +811,8 @@ export default function TrackReports() {
                                                     <p className="text-[10px] sm:text-xs text-gray-500">{isResolved ? ' Incident has been successfully resolved' : isOnScene ? '🚑 Rescue team is on site' : isDispatched ? '🚗 Responder is on the way' : '⏳ Waiting for responder assignment'}</p>
                                                 </div>
                                             </div>
+
+                                            {/* Timeline */}
                                             <div className="p-4">
                                                 <p className="text-xs sm:text-sm font-medium text-gray-700 mb-3">Activity Timeline</p>
                                                 <div className="space-y-4 relative pl-4 border-l-2 border-gray-200 ml-2">

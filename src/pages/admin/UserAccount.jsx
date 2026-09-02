@@ -4,12 +4,17 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import ExportUserModal from "./ExportUserModal";
 
+/**
+ * User Account Management Component
+ * Displays and manages all user accounts with filtering, editing, and export capabilities
+ */
 export default function UserAccount() {
+    // State for users data
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
 
-    // ✅ NEW: Filter States
+    // Filter states
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -20,7 +25,7 @@ export default function UserAccount() {
     const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
 
-    // Error & Success Modal States
+    // Error and success modal states
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -37,7 +42,9 @@ export default function UserAccount() {
         password: ''
     });
 
-    // Get API URL dynamically
+    /**
+     * Get API URL based on environment
+     */
     const getApiUrl = () => {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://localhost:5000/api';
@@ -45,10 +52,16 @@ export default function UserAccount() {
         return '/api';
     };
 
+    /**
+     * Load users on component mount
+     */
     useEffect(() => {
         loadUsers();
     }, []);
 
+    /**
+     * Fetch all users from API
+     */
     const loadUsers = async () => {
         try {
             setLoading(true);
@@ -59,7 +72,7 @@ export default function UserAccount() {
             });
             const data = await response.json();
             if (data.success) {
-                // ✅ Filter out Admin and Rescuer accounts
+                // Filter out admin and responder accounts
                 const filteredData = data.data.filter(user =>
                     user.role !== 'admin' && user.role !== 'rescuer' && user.role !== 'responder'
                 );
@@ -98,10 +111,11 @@ export default function UserAccount() {
         }
     };
 
-    // ✅ FILTER LOGIC: Filter users based on search, role, and status
+    /**
+     * Filter users based on search, role, and status
+     */
     const filteredUsers = useMemo(() => {
         return users.filter(user => {
-            // 1. Search filter (matches name, email, phone, or ID)
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch =
                 user.name.toLowerCase().includes(searchLower) ||
@@ -109,25 +123,25 @@ export default function UserAccount() {
                 user.contact.toLowerCase().includes(searchLower) ||
                 user.id.toLowerCase().includes(searchLower);
 
-            // 2. Role filter
             const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-
-            // 3. Status filter
             const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
 
             return matchesSearch && matchesRole && matchesStatus;
         });
     }, [users, searchTerm, roleFilter, statusFilter]);
 
+    /**
+     * Export users to Excel
+     */
     const handleExportUsers = async (option, role) => {
         try {
             const token = localStorage.getItem('token');
             const apiUrl = getApiUrl();
 
-            // ✅ FIX: Handle BOTH 'RESCUER' (uppercase) and 'rescuer' (lowercase)
+            // Normalize role parameter
             let roleParam = role;
             if (role === 'RESCUER' || role === 'rescuer') {
-                roleParam = 'responder'; // Matches your database exactly
+                roleParam = 'responder';
             }
 
             let url = `${apiUrl}/admin/export-users?type=${option}`;
@@ -150,7 +164,6 @@ export default function UserAccount() {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(downloadUrl);
-
         } catch (error) {
             console.error("Export error:", error);
             setErrorMessage("Failed to export users.");
@@ -158,7 +171,9 @@ export default function UserAccount() {
         }
     };
 
-    // --- Open Modals ---
+    /**
+     * Open edit modal with user data
+     */
     const handleEditClick = (user) => {
         setSelectedUser(user);
         setEditForm({
@@ -173,17 +188,25 @@ export default function UserAccount() {
         setShowEditModal(true);
     };
 
+    /**
+     * Open delete confirmation modal
+     */
     const handleDeleteClick = (user) => {
         setSelectedUser(user);
         setShowDeleteModal(true);
     };
 
+    /**
+     * Open verify confirmation modal
+     */
     const handleVerifyClick = (user) => {
         setSelectedUser(user);
         setShowVerifyModal(true);
     };
 
-    // --- API Actions ---
+    /**
+     * Verify a user account
+     */
     const handleVerifyUser = async () => {
         if (!selectedUser) return;
         try {
@@ -209,6 +232,9 @@ export default function UserAccount() {
         }
     };
 
+    /**
+     * Save edited user data
+     */
     const handleSaveEdit = async () => {
         if (!selectedUser) return;
         try {
@@ -253,6 +279,9 @@ export default function UserAccount() {
         }
     };
 
+    /**
+     * Delete a user account
+     */
     const handleDeleteUser = async () => {
         if (!selectedUser) return;
         try {
@@ -278,7 +307,9 @@ export default function UserAccount() {
         }
     };
 
-    // --- UI Helpers ---
+    /**
+     * Get color scheme for user role badges
+     */
     const getRoleColor = (role) => {
         switch (role) {
             case 'VOLUNTEER': return 'bg-purple-100 text-purple-700 border-purple-200';
@@ -287,18 +318,25 @@ export default function UserAccount() {
         }
     };
 
+    /**
+     * Get color scheme for user status badges
+     */
     const getStatusColor = (status, isApproved) => {
         if (status === 'REJECTED') return 'bg-red-100 text-red-700 border-red-200';
         if (status === 'PENDING' || !isApproved) return 'bg-orange-100 text-orange-700 border-orange-200';
         return 'bg-green-100 text-green-700 border-green-200';
     };
 
+    /**
+     * Get display text for user status
+     */
     const getStatusDisplay = (status, isApproved) => {
         if (status === 'REJECTED') return 'REJECTED';
         if (status === 'PENDING' || !isApproved) return 'PENDING';
         return 'ACTIVE';
     };
 
+    // Render loading state
     if (loading) {
         return (
             <AdminLayout>
@@ -313,8 +351,7 @@ export default function UserAccount() {
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-
-                {/* Header */}
+                {/* Page Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-[#262D31] flex items-center gap-2">
                         <Icon icon="mdi:account-group" className="w-7 h-7 text-[#262D31]" />
@@ -323,7 +360,7 @@ export default function UserAccount() {
                     <p className="text-gray-500 text-sm">Manage all registered accounts across all roles</p>
                 </div>
 
-                {/* ✅ FUNCTIONAL FILTERS & EXPORT */}
+                {/* Filters and Export */}
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Search Input */}
@@ -444,11 +481,8 @@ export default function UserAccount() {
                 </div>
             </div>
 
-            {/* ============================================================ */}
-            {/* ✅ MODALS (PORTAL TO BODY) */}
-            {/* ============================================================ */}
-
-            {/* SUCCESS MODAL */}
+            {/* Modals */}
+            {/* Success Modal */}
             {showSuccessModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -474,7 +508,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* ERROR MODAL */}
+            {/* Error Modal */}
             {showErrorModal && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -500,7 +534,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* EDIT USER MODAL */}
+            {/* Edit User Modal */}
             {showEditModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -557,7 +591,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* DELETE USER MODAL */}
+            {/* Delete User Modal */}
             {showDeleteModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -584,7 +618,7 @@ export default function UserAccount() {
                 document.body
             )}
 
-            {/* VERIFY USER MODAL */}
+            {/* Verify User Modal */}
             {showVerifyModal && selectedUser && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">

@@ -27,7 +27,7 @@ export default function GuestReport() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState('');
 
-    // ✅ Success Modal State
+    // Success Modal State
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [submittedReportId, setSubmittedReportId] = useState('');
 
@@ -393,7 +393,7 @@ export default function GuestReport() {
                 </div>
             </div>
 
-            {/* ✅ SUBMISSION SPINNER */}
+            {/* SUBMISSION SPINNER */}
             {isSubmitting && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center">
                     <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center">
@@ -408,7 +408,7 @@ export default function GuestReport() {
                 </div>
             )}
 
-            {/* ✅ LOCATION PERMISSION MODAL */}
+            {/* LOCATION PERMISSION MODAL */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center text-center">
@@ -456,7 +456,7 @@ export default function GuestReport() {
                 </div>
             )}
 
-            {/* ✅ SUCCESS MODAL (New!) */}
+            {/* SUCCESS MODAL (New!) */}
             {showSuccessModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center text-center">

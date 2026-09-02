@@ -9,6 +9,7 @@ import { Icon } from "@iconify/react";
 import IncidentDetails from "./IncidentDetails";
 import DispatchModal from "./DispatchModal";
 
+// Fix for default Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -16,6 +17,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+/**
+ * Get custom marker icon based on severity
+ */
 const getMarkerIcon = (severity) => {
   const colors = { Critical: '#EF4444', High: '#F97316', Medium: '#EAB308', Low: '#3B82F6' };
   const color = colors[severity] || '#3B82F6';
@@ -27,6 +31,9 @@ const getMarkerIcon = (severity) => {
   });
 };
 
+/**
+ * Map Center Component - Centers map on a specific position
+ */
 function MapCenter({ position }) {
   const map = useMap();
   useEffect(() => {
@@ -37,6 +44,9 @@ function MapCenter({ position }) {
   return null;
 }
 
+/**
+ * Status Badge Component
+ */
 function StatusBadge({ status }) {
   const configs = {
     'Resolved': { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -55,6 +65,9 @@ function StatusBadge({ status }) {
   );
 }
 
+/**
+ * Severity Badge Component
+ */
 function SeverityBadge({ severity }) {
   const configs = {
     'Critical': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
@@ -70,6 +83,9 @@ function SeverityBadge({ severity }) {
   );
 }
 
+/**
+ * Stat Card Component
+ */
 function StatCard({ title, value, icon, color, trend }) {
   const bgColorClass = color.replace('text-', 'bg-').replace('-600', '-100').replace('-700', '-100');
   return (
@@ -93,6 +109,9 @@ function StatCard({ title, value, icon, color, trend }) {
   );
 }
 
+/**
+ * Incident Card Component
+ */
 function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, severity }) {
   const getStatusBorderColor = (status) => {
     const colors = {
@@ -110,7 +129,6 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, s
   const statusText = volunteerStatus?.status === 'en-route' ? 'En Route' :
     volunteerStatus?.status === 'arrived' ? 'On Scene' : incident.status || 'Pending';
 
-  // ✅ Timestamp for all cards
   const formatTimestamp = (dateString) => {
     if (!dateString) return 'Just now';
     const date = new Date(dateString);
@@ -122,7 +140,7 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, s
       onClick={() => onClick(incident)}
       className={`relative bg-white rounded-xl border-l-[6px] p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${borderColor} ${isSelected ? 'shadow-lg ring-2 ring-blue-100' : 'shadow-sm'}`}
     >
-      {/* ✅ ONLY SHOW "NEW" IF isNew is TRUE */}
+      {/* NEW Badge */}
       {isNew && (
         <div className="absolute -top-2 -left-2 z-10">
           <span className="bg-red-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-md animate-pulse">
@@ -151,7 +169,7 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, s
         </span>
       </div>
 
-      {/* ✅ TIMESTAMP ALL */}
+      {/* Timestamp */}
       <div className="mt-2 pt-2 border-t border-gray-100">
         <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,68 +201,78 @@ function IncidentCard({ incident, isSelected, onClick, isNew, volunteerStatus, s
   );
 }
 
+/**
+ * Rescue Team Dashboard Component
+ * Main dashboard for incident monitoring and response coordination
+ */
 export default function Dashboard({ onIncidentClick }) {
+  // State for statistics
   const [stats, setStats] = useState({ total: 0, active: 0, pending: 0, resolved: 0 });
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
 
+  // State for notifications
   const [showIncidentPopup, setShowIncidentPopup] = useState(false);
   const [latestIncidentAlert, setLatestIncidentAlert] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // State for selected incident and map
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [mapCenter, setMapCenter] = useState([15.3613, 120.9365]);
-  const socketRef = useRef(null);
-  const audioRef = useRef(null);
 
-  // ✅ SINGLE ID for the latest new incident (only ONE "NEW" badge)
+  // State for volunteer tracking
   const [latestNewIncidentId, setLatestNewIncidentId] = useState(null);
   const [volunteerStatuses, setVolunteerStatuses] = useState({});
 
+  // Refs for socket and loading
+  const socketRef = useRef(null);
+  const audioRef = useRef(null);
   const isLoadingRef = useRef(false);
   const loadDataRef = useRef(null);
+
+  // State for refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshStartTimeRef = useRef(0);
 
+  // State for dispatch modal
   const [showDispatchModal, setShowDispatchModal] = useState(false);
   const [selectedVolunteers, setSelectedVolunteers] = useState([]);
   const [dispatchNotes, setDispatchNotes] = useState("");
 
+  /**
+   * Load data from API
+   */
   const loadData = useCallback(async () => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
       const incidentResponse = await incidentService.getAllIncidents();
       if (incidentResponse.success) {
-        // ✅ SORT BY DATE DESCENDING (newest first)
+        // Sort by date descending (newest first)
         const sortedIncidents = [...incidentResponse.data].sort((a, b) => {
           return new Date(b.reportedAt) - new Date(a.reportedAt);
         });
 
         setIncidents(sortedIncidents);
 
-        // ✅ ALWAYS update the badge to the newest incident, unless it was clicked
+        // Update badge to the newest incident
         setLatestNewIncidentId(prev => {
           if (sortedIncidents.length === 0) return null;
-
-          // If we have a current badge, check if the sorted newest is newer
           if (prev) {
             const currentIncident = sortedIncidents.find(i => i._id === prev);
             if (currentIncident) {
-              // If the current badge is NOT the first (newest), move it to first
               if (currentIncident._id !== sortedIncidents[0]._id) {
                 return sortedIncidents[0]._id;
               }
-              return prev; // Keep it
+              return prev;
             }
           }
-
-          // No current badge or not found, set to newest
           return sortedIncidents[0]._id;
         });
 
+        // Calculate statistics
         const total = sortedIncidents.length;
         const active = sortedIncidents.filter(i => i.status === 'Active' || i.status === 'Pending' || i.status === 'Acknowledged' || i.status === 'Dispatched').length;
         const pending = sortedIncidents.filter(i => i.status === 'Pending').length;
@@ -265,10 +293,16 @@ export default function Dashboard({ onIncidentClick }) {
     }
   }, []);
 
+  /**
+   * Set load data reference
+   */
   useEffect(() => {
     loadDataRef.current = loadData;
   }, [loadData]);
 
+  /**
+   * Load notifications
+   */
   const loadNotifications = async () => {
     try {
       const response = await notificationService.getNotifications();
@@ -281,14 +315,25 @@ export default function Dashboard({ onIncidentClick }) {
     }
   };
 
+  /**
+   * Handle volunteer status update
+   */
   const handleVolunteerStatusUpdate = (data) => {
     setVolunteerStatuses(prev => ({
       ...prev,
-      [data.volunteerId || data.id]: { status: data.status, location: data.location, timestamp: new Date().toISOString(), incidentId: data.incidentId }
+      [data.volunteerId || data.id]: {
+        status: data.status,
+        location: data.location,
+        timestamp: new Date().toISOString(),
+        incidentId: data.incidentId
+      }
     }));
     if (loadDataRef.current) loadDataRef.current();
   };
 
+  /**
+   * Setup Socket.IO connection
+   */
   const setupSocketConnection = () => {
     try {
       const token = localStorage.getItem('token');
@@ -296,9 +341,13 @@ export default function Dashboard({ onIncidentClick }) {
 
       if (token && user._id) {
         const socketUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:5000' : 'https://sta-rosa-rescue-system-backend.onrender.com';
+          ? 'http://localhost:5000'
+          : 'https://sta-rosa-rescue-system-backend.onrender.com';
 
-        socketRef.current = io(socketUrl, { auth: { token }, transports: ['websocket', 'polling'] });
+        socketRef.current = io(socketUrl, {
+          auth: { token },
+          transports: ['websocket', 'polling']
+        });
 
         socketRef.current.on('connect', () => {
           console.log('Rescue Team socket connected');
@@ -309,10 +358,9 @@ export default function Dashboard({ onIncidentClick }) {
         socketRef.current.on('new_incident', (notification) => {
           const incidentId = notification._id || notification.id || notification.incidentId;
 
-          // ✅ Move NEW badge to the incoming incident IMMEDIATELY
           if (incidentId) setLatestNewIncidentId(incidentId);
 
-          // ✅ Add to top instantly
+          // Add to top instantly
           if (incidentId) {
             const newIncidentData = {
               _id: incidentId,
@@ -325,11 +373,9 @@ export default function Dashboard({ onIncidentClick }) {
             setIncidents(prev => [newIncidentData, ...prev.filter(i => i._id !== incidentId)]);
           }
 
-          // ✅ Trigger popup and audio
           showIncidentAlert(notification);
           loadNotifications();
 
-          // ✅ Load full data (will sort properly and move badge to newest)
           if (loadDataRef.current) loadDataRef.current();
         });
 
@@ -389,6 +435,9 @@ export default function Dashboard({ onIncidentClick }) {
     }
   };
 
+  /**
+   * Show incident alert popup
+   */
   const showIncidentAlert = (notification) => {
     setLatestIncidentAlert(notification);
     setShowIncidentPopup(true);
@@ -403,10 +452,13 @@ export default function Dashboard({ onIncidentClick }) {
     setTimeout(() => setShowIncidentPopup(false), 5000);
   };
 
+  /**
+   * Handle incident click
+   */
   const handleIncidentClick = (incident) => {
     setSelectedIncident(incident);
 
-    // ✅ CLICKING THE LATEST INCIDENT REMOVES THE BADGE
+    // Remove badge when clicking the latest incident
     if (incident._id === latestNewIncidentId) {
       setLatestNewIncidentId(null);
     }
@@ -416,6 +468,9 @@ export default function Dashboard({ onIncidentClick }) {
     if (lat && lng) setMapCenter([parseFloat(lat), parseFloat(lng)]);
   };
 
+  /**
+   * Get filtered incidents based on search and filters
+   */
   const getFilteredIncidents = () => {
     let filtered = incidents;
     if (searchTerm) {
@@ -431,12 +486,18 @@ export default function Dashboard({ onIncidentClick }) {
     return filtered;
   };
 
+  /**
+   * Get volunteer status for an incident
+   */
   const getVolunteerStatusForIncident = (incidentId) => {
     const statuses = Object.values(volunteerStatuses).filter(s => s.incidentId === incidentId);
     if (statuses.length === 0) return null;
     return statuses[statuses.length - 1];
   };
 
+  /**
+   * Handle refresh button click
+   */
   const handleRefresh = () => {
     refreshStartTimeRef.current = Date.now();
     setIsRefreshing(true);
@@ -444,9 +505,16 @@ export default function Dashboard({ onIncidentClick }) {
     loadNotifications();
   };
 
+  /**
+   * Handle dispatch success
+   */
   const handleDispatchSuccess = async (dispatchInfo) => {
     try {
-      const response = await incidentService.assignResponders(selectedIncident._id, selectedVolunteers, dispatchNotes);
+      const response = await incidentService.assignResponders(
+        selectedIncident._id,
+        selectedVolunteers,
+        dispatchNotes
+      );
       if (response && response.success) {
         setShowDispatchModal(false);
         loadData();
@@ -457,6 +525,9 @@ export default function Dashboard({ onIncidentClick }) {
     }
   };
 
+  /**
+   * Initialize dashboard
+   */
   useEffect(() => {
     loadDataRef.current = loadData;
     loadData();
@@ -478,7 +549,9 @@ export default function Dashboard({ onIncidentClick }) {
     };
   }, []);
 
-  // ✅ Auto-center on newest incident
+  /**
+   * Auto-center map on newest incident
+   */
   useEffect(() => {
     if (incidents.length > 0) {
       const latest = incidents[0];
@@ -490,6 +563,7 @@ export default function Dashboard({ onIncidentClick }) {
 
   const filteredIncidents = getFilteredIncidents();
 
+  // Render loading state
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
@@ -501,6 +575,7 @@ export default function Dashboard({ onIncidentClick }) {
 
   return (
     <div className={`h-screen bg-gray-50 p-6 flex gap-6 overflow-hidden transition-all duration-300 ${selectedIncident ? 'pr-[420px]' : 'pr-6'}`}>
+      {/* Styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
@@ -510,6 +585,7 @@ export default function Dashboard({ onIncidentClick }) {
         @keyframes pulse-marker { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
       `}</style>
 
+      {/* Refresh Overlay */}
       {isRefreshing && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4">
@@ -519,6 +595,7 @@ export default function Dashboard({ onIncidentClick }) {
         </div>
       )}
 
+      {/* Incident Alert Popup */}
       {showIncidentPopup && latestIncidentAlert && (
         <div className="fixed top-20 right-4 z-[999] animate-slide-in">
           <div className="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl shadow-2xl p-5 max-w-sm">
@@ -535,7 +612,9 @@ export default function Dashboard({ onIncidentClick }) {
         </div>
       )}
 
+      {/* Main Content */}
       <div className="flex-1 min-w-0">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="min-w-0 flex-1 pr-4">
             <h1 className="text-2xl font-bold text-gray-800 truncate">Incident Dashboard</h1>
@@ -559,8 +638,9 @@ export default function Dashboard({ onIncidentClick }) {
           </div>
         </div>
 
+        {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* INCIDENTS LIST */}
+          {/* Incidents List */}
           <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-3">
@@ -595,8 +675,6 @@ export default function Dashboard({ onIncidentClick }) {
               {filteredIncidents.slice(0, 20).map((incident) => {
                 const volunteerStatus = getVolunteerStatusForIncident(incident._id);
                 const severity = incident.severity || 'Medium';
-
-                // ✅ ONLY THE LATEST INCIDENT GETS "NEW"
                 const isNew = (incident._id === latestNewIncidentId);
 
                 return (
@@ -620,7 +698,7 @@ export default function Dashboard({ onIncidentClick }) {
             </div>
           </div>
 
-          {/* MAP */}
+          {/* Map */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
             <MapContainer
               center={mapCenter}
@@ -666,6 +744,7 @@ export default function Dashboard({ onIncidentClick }) {
         </div>
       </div>
 
+      {/* Incident Details Sidebar */}
       {selectedIncident && (
         <IncidentDetails
           data={selectedIncident}
@@ -676,6 +755,7 @@ export default function Dashboard({ onIncidentClick }) {
         />
       )}
 
+      {/* Dispatch Modal */}
       {showDispatchModal && selectedIncident && (
         <DispatchModal
           isOpen={showDispatchModal}

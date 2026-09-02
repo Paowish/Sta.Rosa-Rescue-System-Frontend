@@ -3,6 +3,10 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 
+/**
+ * Dispatch Selection Modal Component
+ * Allows selecting and dispatching volunteers to an incident
+ */
 export default function DispatchSelectionModal({
     isOpen,
     onClose,
@@ -10,6 +14,7 @@ export default function DispatchSelectionModal({
     incidentId,
     onDispatch
 }) {
+    // State for volunteers
     const [volunteers, setVolunteers] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
     const [isDispatching, setIsDispatching] = useState(false);
@@ -17,6 +22,9 @@ export default function DispatchSelectionModal({
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState('volunteers');
 
+    /**
+     * Load available volunteers when modal opens
+     */
     useEffect(() => {
         if (isOpen) {
             loadAvailableVolunteers();
@@ -25,6 +33,9 @@ export default function DispatchSelectionModal({
         }
     }, [isOpen]);
 
+    /**
+     * Fetch available volunteers from API
+     */
     const loadAvailableVolunteers = async () => {
         setLoadingVolunteers(true);
         try {
@@ -43,6 +54,9 @@ export default function DispatchSelectionModal({
         }
     };
 
+    /**
+     * Toggle volunteer selection
+     */
     const handleVolunteerToggle = (volunteerId) => {
         setSelectedIds(prev =>
             prev.includes(volunteerId)
@@ -51,15 +65,22 @@ export default function DispatchSelectionModal({
         );
     };
 
+    /**
+     * Remove volunteer from selection
+     */
     const handleRemoveSelected = (volunteerId) => {
         setSelectedIds(prev => prev.filter(id => id !== volunteerId));
     };
 
+    /**
+     * Handle dispatch action
+     */
     const handleDispatch = async () => {
         if (selectedIds.length === 0) {
             alert('Please select at least one volunteer to dispatch');
             return;
         }
+
         setIsDispatching(true);
         try {
             const token = localStorage.getItem('token');
@@ -74,6 +95,7 @@ export default function DispatchSelectionModal({
                     dispatchNotes: 'Dispatched from Incident Management'
                 })
             });
+
             const result = await response.json();
             if (result.success) {
                 alert(`Incident dispatched to ${result.data.volunteersDispatched} responder(s)!`);
@@ -90,16 +112,25 @@ export default function DispatchSelectionModal({
         }
     };
 
+    /**
+     * Filter volunteers based on search term
+     */
     const filteredVolunteers = volunteers.filter(v =>
         `${v.firstName} ${v.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    /**
+     * Get selected volunteers data
+     */
     const selectedVolunteersData = volunteers.filter(v => selectedIds.includes(v._id));
 
+    // Don't render if modal is closed
     if (!isOpen) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
+                {/* Modal Header */}
                 <div className="bg-[#9fb2c2] p-5 flex justify-between items-start relative">
                     <div className="text-white">
                         <p className="text-xs font-medium opacity-90">Dispatch to</p>
@@ -113,6 +144,7 @@ export default function DispatchSelectionModal({
                     </button>
                 </div>
 
+                {/* Tabs */}
                 <div className="flex border-b border-gray-200 bg-white">
                     <button
                         onClick={() => setActiveTab('rescue')}
@@ -132,6 +164,7 @@ export default function DispatchSelectionModal({
                     </button>
                 </div>
 
+                {/* Search Bar */}
                 <div className="p-4 pt-5 pb-3 bg-white">
                     <div className="flex gap-4">
                         <div className="flex-1 relative">
@@ -150,6 +183,7 @@ export default function DispatchSelectionModal({
                     <p className="text-[11px] font-medium text-[#6b7280]">Within Incident Barangay Range (Publication)</p>
                 </div>
 
+                {/* Volunteer List */}
                 <div className="px-4 pb-4 h-[340px] overflow-y-auto custom-scrollbar">
                     {loadingVolunteers ? (
                         <p className="text-center py-4 text-gray-500 text-sm">Loading volunteers...</p>
@@ -160,6 +194,7 @@ export default function DispatchSelectionModal({
                             const isSelected = selectedIds.includes(volunteer._id);
                             return (
                                 <div key={volunteer._id} className="flex items-start gap-4 py-4 border-b border-gray-200">
+                                    {/* Selection Checkbox */}
                                     <div className="pt-1.5">
                                         <div
                                             onClick={() => handleVolunteerToggle(volunteer._id)}
@@ -169,22 +204,32 @@ export default function DispatchSelectionModal({
                                             {isSelected && <Icon icon="mdi:check" className="w-4 h-4 text-white" />}
                                         </div>
                                     </div>
+
+                                    {/* Volunteer Avatar */}
                                     <div className="relative flex-shrink-0">
                                         <div className="w-14 h-14 rounded-full bg-[#cbd5e1] border-2 border-white shadow-sm flex items-center justify-center text-gray-500 text-lg font-bold">
                                             {volunteer.firstName?.charAt(0)}{volunteer.lastName?.charAt(0)}
                                         </div>
                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2d7aff] rounded-full border border-white"></div>
                                     </div>
+
+                                    {/* Volunteer Info */}
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="text-lg font-bold text-gray-900">{volunteer.firstName} {volunteer.lastName}</h3>
+                                            <h3 className="text-lg font-bold text-gray-900">
+                                                {volunteer.firstName} {volunteer.lastName}
+                                            </h3>
                                             <span className="text-[10px] font-semibold text-[#25d366] uppercase tracking-wide">Active</span>
                                         </div>
                                         <p className="text-sm text-gray-600 font-medium">Volunteer Responder</p>
+
+                                        {/* Certifications */}
                                         <div className="flex flex-wrap gap-2 mt-1.5">
                                             <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">BLS/CPR</span>
                                             <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">First Aid</span>
                                         </div>
+
+                                        {/* Address */}
                                         <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-[#6b7280]">
                                             <Icon icon="mdi:location-on" className="w-3 h-3 text-gray-800" />
                                             <span>{volunteer.address1 || 'N/A'}</span>
@@ -196,7 +241,9 @@ export default function DispatchSelectionModal({
                     )}
                 </div>
 
+                {/* Footer */}
                 <div className="bg-white border-t border-gray-200 p-4">
+                    {/* Selected Volunteers */}
                     {selectedIds.length > 0 && (
                         <div className="mb-3">
                             <h4 className="text-base font-bold text-gray-800 mb-2">Selected</h4>
@@ -215,6 +262,8 @@ export default function DispatchSelectionModal({
                             </div>
                         </div>
                     )}
+
+                    {/* Action Buttons */}
                     <div className="flex justify-end gap-3">
                         <button
                             onClick={onClose}

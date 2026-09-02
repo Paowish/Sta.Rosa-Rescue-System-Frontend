@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from "@iconify/react";
 import notificationService from "../../services/notificationService";
 
-// --- Shared Professional Stat Card (Matches Dashboard) ---
+/**
+ * Stat Card Component
+ * Displays a statistics card with title and value
+ */
 function StatCard({ title, value, color }) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all duration-300 flex flex-col h-24">
@@ -14,14 +17,20 @@ function StatCard({ title, value, color }) {
     );
 }
 
-// --- Components ---
+/**
+ * Tag Component
+ * Displays a small label/tag
+ */
 const Tag = ({ label }) => (
     <span className="inline-block bg-blue-50 text-blue-600 text-xs font-medium px-2.5 py-1 rounded border border-blue-100 mr-1.5 mb-1.5">
         {label}
     </span>
 );
 
-// Schedule Component
+/**
+ * Schedule Bar Component
+ * Displays a weekly schedule with colored indicators
+ */
 const ScheduleBar = ({ schedule }) => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const getColor = (day) => {
@@ -54,9 +63,15 @@ const ScheduleBar = ({ schedule }) => {
     );
 };
 
-// --- Main Component ---
+/**
+ * Units Component
+ * Displays and manages responder teams with details sidebar
+ */
 export default function Units() {
+    // State for selected responder
     const [selectedId, setSelectedId] = useState(null);
+
+    // Statistics
     const [stats] = useState({
         total: 4,
         available: 1,
@@ -64,6 +79,7 @@ export default function Units() {
         standby: 1
     });
 
+    // Responders data
     const [responders] = useState([
         {
             id: 1,
@@ -119,6 +135,9 @@ export default function Units() {
         }
     ]);
 
+    /**
+     * Subscribe to notification service events
+     */
     useEffect(() => {
         const unsubscribe = notificationService.addListener((data) => {
             if (data.type === 'show') {
@@ -130,9 +149,12 @@ export default function Units() {
         return unsubscribe;
     }, []);
 
+    // Get selected responder
     const activeResponder = responders.find(r => r.id === selectedId);
 
-    // Get member count display
+    /**
+     * Get member count display
+     */
     const getMemberCount = (members) => {
         if (!members) return '0 Members';
         return members;
@@ -140,12 +162,10 @@ export default function Units() {
 
     return (
         <div className="min-h-screen bg-[#fafbfc] font-sans text-gray-800 relative">
-            {/* Main Flex Container - No top padding */}
             <div className="flex gap-6">
-
-                {/* --- Left Column (Header + Content) --- */}
+                {/* Left Column */}
                 <div className="flex-1 min-w-0 pb-6">
-                    {/* --- Header --- */}
+                    {/* Header */}
                     <header className="flex justify-between items-center pt-6 pb-4 pl-6 border-b border-gray-200">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-blue-50 rounded-lg">
@@ -158,16 +178,18 @@ export default function Units() {
                         </div>
                     </header>
 
-                    {/* --- Content --- */}
+                    {/* Responder Grid */}
                     <div className="pl-6 pt-6">
                         <div className="grid grid-cols-2 gap-5">
                             {responders.map((r) => (
                                 <div
                                     key={r.id}
                                     onClick={() => setSelectedId(r.id)}
-                                    className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'}`}
+                                    className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'
+                                        }`}
                                 >
                                     <div className="p-5 pb-3">
+                                        {/* Team Info */}
                                         <div className="flex items-center gap-3 mb-3">
                                             <div className="w-12 h-12 rounded-full bg-[#f0f2f5] flex-shrink-0 flex items-center justify-center text-gray-500 border border-gray-200">
                                                 <Icon icon="mdi:account-group" className="w-6 h-6" />
@@ -178,6 +200,7 @@ export default function Units() {
                                             </div>
                                         </div>
 
+                                        {/* Specialties */}
                                         <div className="border-t border-gray-100 pt-3 mt-2">
                                             <div className="text-[12px] font-medium text-gray-500 mb-1.5">Speciality</div>
                                             <div className="flex flex-wrap">
@@ -189,6 +212,7 @@ export default function Units() {
                                             </div>
                                         </div>
 
+                                        {/* Schedule */}
                                         <div className="mt-2 pt-2 border-t border-gray-100">
                                             <ScheduleBar schedule={r.schedule} />
                                         </div>
@@ -199,11 +223,11 @@ export default function Units() {
                     </div>
                 </div>
 
-                {/* --- Right Column (Sticky Top) --- */}
+                {/* Right Column - Details Sidebar */}
                 <div className="w-[400px] shrink-0 bg-white border-l border-gray-200 shadow-xl h-screen sticky top-0 overflow-y-auto flex flex-col">
                     {activeResponder ? (
                         <>
-                            {/* Top Section */}
+                            {/* Header */}
                             <div className="p-6 flex items-center gap-4 relative border-b border-gray-200 bg-white">
                                 <div className="w-16 h-16 rounded-full bg-[#f0f2f5] flex-shrink-0 relative flex items-center justify-center border-2 border-gray-200">
                                     <Icon icon="mdi:account-group" className="w-8 h-8 text-gray-400" />
@@ -211,7 +235,9 @@ export default function Units() {
                                 <div className="flex-1 pr-6">
                                     <h3 className="text-[20px] font-bold text-gray-800 truncate">{activeResponder.name}</h3>
                                     <p className="text-[13px] text-gray-500 font-medium">{activeResponder.role}</p>
-                                    <p className="text-xs text-blue-600 font-medium truncate">Team Leader: {activeResponder.teamLeader}</p>
+                                    <p className="text-xs text-blue-600 font-medium truncate">
+                                        Team Leader: {activeResponder.teamLeader}
+                                    </p>
                                 </div>
                                 <button
                                     onClick={() => setSelectedId(null)}
@@ -221,9 +247,9 @@ export default function Units() {
                                 </button>
                             </div>
 
-                            {/* Info Rows */}
+                            {/* Details */}
                             <div className="flex-1 text-[13px] bg-white pb-4">
-
+                                {/* Profile Section */}
                                 <div className="bg-[#f8f9fa] py-2.5 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[12px]">
                                     Profile
                                 </div>
@@ -232,14 +258,13 @@ export default function Units() {
                                         <span className="text-gray-500 font-medium">Members</span>
                                         <span className="text-gray-800 font-bold">{getMemberCount(activeResponder.members)}</span>
                                     </div>
-
                                     <div className="flex justify-between py-3 px-6 border-b border-gray-100 bg-white">
                                         <span className="text-gray-500 font-medium">Team Leader</span>
                                         <span className="text-gray-800 font-bold">{activeResponder.teamLeader}</span>
                                     </div>
                                 </div>
 
-                                {/* Team Members List - View Only */}
+                                {/* Team Members */}
                                 {activeResponder.teamMembers && activeResponder.teamMembers.length > 0 && (
                                     <div className="px-6 py-3 border-b border-gray-100 bg-white">
                                         <span className="text-gray-500 font-medium block mb-2">Team Members</span>
@@ -256,6 +281,7 @@ export default function Units() {
                                     </div>
                                 )}
 
+                                {/* Schedule Section */}
                                 <div className="bg-[#f8f9fa] py-2.5 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[12px]">
                                     Schedule
                                 </div>
@@ -263,13 +289,17 @@ export default function Units() {
                                     <ScheduleBar schedule={activeResponder.schedule} />
                                 </div>
 
+                                {/* Specialties Section */}
                                 <div className="bg-[#f8f9fa] py-2.5 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[12px]">
                                     Specialties
                                 </div>
                                 <div className="p-6 flex flex-wrap gap-1.5 bg-white">
                                     {activeResponder.specialties && activeResponder.specialties.length > 0 ? (
                                         activeResponder.specialties.map((cert, idx) => (
-                                            <span key={idx} className="bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded text-[11px] font-medium shadow-sm hover:border-blue-300 transition-colors">
+                                            <span
+                                                key={idx}
+                                                className="bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded text-[11px] font-medium shadow-sm hover:border-blue-300 transition-colors"
+                                            >
                                                 {cert}
                                             </span>
                                         ))
@@ -277,10 +307,10 @@ export default function Units() {
                                         <span className="text-gray-400 text-xs">No specialties listed</span>
                                     )}
                                 </div>
-
                             </div>
                         </>
                     ) : (
+                        // Empty State
                         <div className="h-full flex flex-col items-center justify-center p-6 bg-gray-50/50">
                             <div className="bg-gray-100 p-4 rounded-full mb-4">
                                 <Icon icon="mdi:account-search" className="w-10 h-10 text-gray-400" />
@@ -292,7 +322,6 @@ export default function Units() {
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );

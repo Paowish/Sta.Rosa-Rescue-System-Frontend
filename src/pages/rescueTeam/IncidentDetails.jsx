@@ -13,49 +13,55 @@ import DescriptionSection from "./DescriptionSection";
 import TimelineSection from "./TimelineSection";
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Incident Details Component
+ * Displays detailed incident information with dispatch and referral actions
+ */
 export default function IncidentDetails({ data, onClose, onDispatch, onResolve, onViewReport }) {
+    const navigate = useNavigate();
+
+    // State for image handling
     const [imageError, setImageError] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // State for dispatch
     const [volunteers, setVolunteers] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
     const [dispatchNotes, setDispatchNotes] = useState("");
     const [isDispatching, setIsDispatching] = useState(false);
+    const [loadingVolunteers, setLoadingVolunteers] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
-    // ✅ NEW: Fullscreen image state
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    // Modal States
+    // Modal states
     const [showDispatchModal, setShowDispatchModal] = useState(false);
     const [showPoliceModal, setShowPoliceModal] = useState(false);
     const [showFireModal, setShowFireModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showLoadingModal, setShowLoadingModal] = useState(false);
-    const [loadingVolunteers, setLoadingVolunteers] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const navigate = useNavigate();
-
-    // Success Data
     const [successData, setSuccessData] = useState(null);
 
-    // Animation
-    const [isVisible, setIsVisible] = useState(false);
+    // Local state for status tracking
+    const [localStatus, setLocalStatus] = useState(data?.status || "Pending");
+    const [dispatchedTeamName, setDispatchedTeamName] = useState("");
 
-    // Store incident data in ref
+    // Refs for persistent data
     const incidentDataRef = useRef(data);
     const persistentStatusRef = useRef(null);
 
-    // Add local status to update immediately after actions
-    const [localStatus, setLocalStatus] = useState(data?.status || "Pending");
+    // Entrance animation
+    const [isVisible, setIsVisible] = useState(false);
 
-    // ✅ NEW: To store the Team name if a team was dispatched
-    const [dispatchedTeamName, setDispatchedTeamName] = useState("");
-
-    // ✅ 1. Generate a unique Session Key for this specific Incident ID
+    /**
+     * Get session lock key for this incident
+     */
     const getSessionLockKey = () => {
         const id = getIncidentId();
         return id !== "N/A" ? `incident_lock_${id}` : null;
     };
 
-    // Update ref and local status when data changes
+    /**
+     * Update local status when data changes
+     */
     useEffect(() => {
         incidentDataRef.current = data;
         if (data) {
@@ -67,8 +73,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 if (sessionKey) sessionStorage.removeItem(sessionKey);
                 persistentStatusRef.current = null;
                 setLocalStatus(apiStatus);
-            }
-            else if (savedLock && savedLock === "Dispatched") {
+            } else if (savedLock && savedLock === "Dispatched") {
                 persistentStatusRef.current = "Dispatched";
                 setLocalStatus("Dispatched");
             } else {
@@ -78,7 +83,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     }, [data]);
 
-    // Entrance animation
+    /**
+     * Entrance animation
+     */
     useEffect(() => {
         if (data) {
             setIsVisible(false);
@@ -87,41 +94,61 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     }, [data]);
 
-    // Load volunteers
+    /**
+     * Load available volunteers on mount
+     */
     useEffect(() => {
         loadAvailableVolunteers();
     }, []);
 
+    // Derived state
     const finalStatus = persistentStatusRef.current || localStatus || data?.status || "Pending";
-    const isResolved = finalStatus === "Resolved" || finalStatus === "Solved" || finalStatus === "resolved" || finalStatus === "solved";
-    const isDispatched = finalStatus === "Dispatched" || finalStatus === "dispatched";
+    const isResolved = ["Resolved", "Solved", "resolved", "solved"].includes(finalStatus);
+    const isDispatched = ["Dispatched", "dispatched"].includes(finalStatus);
     const isActionLocked = isResolved || isDispatched;
 
-    // ===== Helper Functions =====
+    /**
+     * Get incident ID from data
+     */
     const getIncidentId = () => {
         const incident = incidentDataRef.current || data;
         return incident.incidentId || incident.id || incident._id || "N/A";
     };
 
+    /**
+     * Get value with fallback
+     */
     const getValue = (value, defaultValue = "N/A") => {
         return value && value !== "" && value !== null ? value : defaultValue;
     };
 
+    /**
+     * Get reporter name
+     */
     const getReporterName = () => {
         const incident = incidentDataRef.current || data;
         return getValue(incident.reporterName || incident.reporter?.name || incident.reporter, "Anonymous");
     };
 
+    /**
+     * Get reporter contact
+     */
     const getReporterContact = () => {
         const incident = incidentDataRef.current || data;
         return getValue(incident.reporterContact || incident.reporterNumber || incident.reporter?.contact || incident.contact);
     };
 
+    /**
+     * Get image URL
+     */
     const getImageUrl = () => {
         const incident = incidentDataRef.current || data;
         return incident.image || incident.photo || incident.images?.[0]?.url || null;
     };
 
+    /**
+     * Get coordinates
+     */
     const getCoordinates = () => {
         const incident = incidentDataRef.current || data;
         if (incident.coordinates && incident.coordinates !== "Coordinates not available") {
@@ -135,16 +162,25 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         return "Coordinates not available";
     };
 
+    /**
+     * Get address
+     */
     const getAddress = () => {
         const incident = incidentDataRef.current || data;
         return incident.address || incident.location?.address || "Unknown address";
     };
 
+    /**
+     * Get incident title
+     */
     const getTitle = () => {
         const incident = incidentDataRef.current || data;
         return incident.title || incident.type || "Untitled Incident";
     };
 
+    /**
+     * Get status display info
+     */
     const getStatusInfo = () => {
         const status = finalStatus || "Pending";
         const colorMap = {
@@ -162,6 +198,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         };
     };
 
+    /**
+     * Get timeline data
+     */
     const getTimeline = () => {
         const incident = incidentDataRef.current || data;
         if (incident.timeline?.length > 0) return incident.timeline;
@@ -174,7 +213,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         return [];
     };
 
-    // ===== Load Volunteers =====
+    /**
+     * Load available volunteers from API
+     */
     const loadAvailableVolunteers = async () => {
         setLoadingVolunteers(true);
         try {
@@ -193,18 +234,25 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
-    // ===== Handlers =====
+    /**
+     * Toggle volunteer selection
+     */
     const handleVolunteerToggle = (volunteerId) => {
         setSelectedIds(prev =>
             prev.includes(volunteerId) ? prev.filter(id => id !== volunteerId) : [...prev, volunteerId]
         );
     };
 
+    /**
+     * Remove volunteer from selection
+     */
     const handleRemoveSelected = (volunteerId) => {
         setSelectedIds(prev => prev.filter(id => id !== volunteerId));
     };
 
-    // ✅ UPDATED: Accept dispatchInfo and pass isTeam
+    /**
+     * Handle dispatch action
+     */
     const handleDispatch = async (dispatchInfo) => {
         const incident = incidentDataRef.current || data;
 
@@ -218,11 +266,11 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             return;
         }
 
-        // ✅ 1. FORCE CLOSE THE DISPATCH MODAL FIRST AND CLEAR SELECTED IDS
+        // Close dispatch modal and clear selections
         setShowDispatchModal(false);
         setSelectedIds([]);
 
-        // ✅ 2. SHOW LOADING
+        // Show loading
         setShowLoadingModal(true);
         setIsDispatching(true);
 
@@ -232,7 +280,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 ? 'http://localhost:5000/api'
                 : 'https://sta-rosa-rescue-system-backend.onrender.com/api';
 
-            const idsToDispatch = [...selectedIds]; // ✅ Capture IDs BEFORE clearing!
+            const idsToDispatch = [...selectedIds];
 
             const response = await fetch(`${apiUrl}/incidents/${incident._id || incident.id}/dispatch`, {
                 method: 'POST',
@@ -241,14 +289,14 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    volunteerIds: idsToDispatch, // ✅ FIXED: Use the captured IDs!
+                    volunteerIds: idsToDispatch,
                     dispatchNotes: dispatchNotes || `Dispatch for ${getTitle()} at ${getAddress()}`
                 })
             });
 
             const result = await response.json();
 
-            // ✅ 3. HIDE LOADING
+            // Hide loading
             setShowLoadingModal(false);
             setIsDispatching(false);
 
@@ -261,7 +309,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 persistentStatusRef.current = "Dispatched";
                 setLocalStatus("Dispatched");
 
-                // ✅ NEW: Save team name if it was a team dispatch!
+                // Save team name if team dispatch
                 if (dispatchInfo?.type === 'team') {
                     setDispatchedTeamName(dispatchInfo.teamName || 'Team');
                 } else {
@@ -270,14 +318,14 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
                 const dispatchedVolunteers = volunteers.filter(v => selectedIds.includes(v._id));
 
-                // ✅ 4. SHOW SUCCESS MODAL (This is the only modal now!)
+                // Show success modal
                 setSuccessData({
                     incidentId: getIncidentId(),
                     title: getTitle(),
                     address: getAddress(),
                     count: dispatchInfo?.count || result.data.volunteersDispatched || selectedIds.length,
-                    isTeam: dispatchInfo?.type === 'team', // ✅ IMPORTANT
-                    teamName: dispatchInfo?.teamName || '', // ✅ IMPORTANT
+                    isTeam: dispatchInfo?.type === 'team',
+                    teamName: dispatchInfo?.teamName || '',
                     volunteersDispatched: result.data.volunteersDispatched || selectedIds.length,
                     volunteers: dispatchedVolunteers,
                     message: result.message || `Incident successfully dispatched to ${selectedIds.length} responder(s)!`,
@@ -285,7 +333,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 });
                 setShowSuccessModal(true);
 
-                // ✅ 5. CLEAN UP
+                // Clean up
                 setDispatchNotes("");
                 if (onDispatch) onDispatch(result.data);
             } else {
@@ -317,6 +365,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    /**
+     * Handle referral to Police
+     */
     const handleReferToPolice = async () => {
         const incident = incidentDataRef.current || data;
         if (isActionLocked) {
@@ -342,6 +393,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    /**
+     * Handle referral to Fire Department
+     */
     const handleReferToFire = async () => {
         const incident = incidentDataRef.current || data;
         if (isActionLocked) {
@@ -367,6 +421,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    /**
+     * Handle resolve action
+     */
     const handleResolve = async () => {
         const incident = incidentDataRef.current || data;
 
@@ -416,6 +473,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    /**
+     * Handle view report action
+     */
     const handleViewReport = () => {
         const incident = incidentDataRef.current || data;
         const incidentId = incident._id || incident.id || incident.incidentId;
@@ -429,7 +489,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
         if (incidentId && incidentId !== "N/A") {
             if (onClose) onClose();
-
             const targetPath = `/incidents?view=${incidentId}`;
             navigate(targetPath);
         } else {
@@ -437,11 +496,15 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         }
     };
 
+    /**
+     * Close success modal
+     */
     const handleCloseSuccessModal = () => {
         setShowSuccessModal(false);
         setSuccessData(null);
     };
 
+    // Image handling
     const imageUrl = getImageUrl();
     const hasImage = imageUrl && imageUrl !== "" && imageUrl !== null;
     const defaultImage = "https://www.kraftlaw.com/wp-content/uploads/2021/10/common-injuries-car-accidents.jpg";
@@ -450,6 +513,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const statusInfo = getStatusInfo();
     const timeline = getTimeline();
 
+    // Render empty state
     if (!data) {
         return (
             <div className="h-full flex flex-col bg-white">
@@ -505,7 +569,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 incidentId={getIncidentId()}
             />
 
-            {/* ✅ FULLSCREEN IMAGE OVERLAY */}
+            {/* Fullscreen Image Overlay */}
             {isFullscreen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-transparent" onClick={() => setIsFullscreen(false)}>
                     <div className="relative max-w-[90vw] max-h-[90vh]">
@@ -528,7 +592,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 </div>
             )}
 
-            {/* Header - STAYS AT TOP */}
+            {/* Header */}
             <div className="shrink-0 bg-white z-10 p-4 border-b relative">
                 <button
                     onClick={onClose}
@@ -539,7 +603,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 <h2 className="font-semibold text-[#262D31]">Incident Details</h2>
             </div>
 
-            {/* Content - SCROLLS IN THE MIDDLE */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto">
                 <IncidentHeader
                     title={getTitle()}
@@ -572,7 +636,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                 <TimelineSection timeline={timeline} />
             </div>
 
-            {/* Footer/Buttons - STAYS AT BOTTOM */}
+            {/* Footer Actions */}
             <div className="sticky bottom-0 bg-white z-10 p-3 border-t space-y-2">
                 {isActionLocked ? (
                     <div className="rounded-lg p-3 text-center border bg-blue-50 border-blue-200">
@@ -585,7 +649,6 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                             ) : (
                                 <>
                                     <Icon icon="material-symbols:sync" className="w-5 h-5 text-blue-600 animate-spin" />
-                                    {/* ✅ UPDATED: Check if a team was dispatched */}
                                     <span className="text-blue-700 font-semibold">
                                         {dispatchedTeamName
                                             ? `Incident is currently dispatched to ${dispatchedTeamName}`
@@ -634,8 +697,8 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
                                 onClick={handleResolve}
                                 disabled={!isDispatched}
                                 className={`flex-1 py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors duration-200 ${isDispatched
-                                    ? 'bg-green-600 text-white hover:bg-green-700'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        ? 'bg-green-600 text-white hover:bg-green-700'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
                                 <Icon icon="material-symbols:check-circle" width="16" />

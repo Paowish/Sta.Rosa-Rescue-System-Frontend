@@ -1,30 +1,41 @@
 import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom"; // ✅ ADD THIS IMPORT
+import { createPortal } from "react-dom";
 import * as XLSX from 'xlsx';
 import ExportIncidentModal from "./ExportIncidentModal";
 
+/**
+ * Incident Reports Component
+ * Displays and manages all incident reports with filtering and export capabilities
+ */
 export default function IncidentReports() {
+    // State for incidents data
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
+
+    // State for filters
     const [searchTerm, setSearchTerm] = useState("");
     const [periodFilter, setPeriodFilter] = useState("All Time");
     const [statusFilter, setStatusFilter] = useState("All Time");
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
+
+    // State for modals
     const [selectedIncident, setSelectedIncident] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
 
-    // ✅ NEW: Export Error Modal State
-    const [showExportErrorModal, setShowExportErrorModal] = useState(false);
-    const [exportErrorMessage, setExportErrorMessage] = useState("");
-
+    /**
+     * Load incidents on component mount
+     */
     useEffect(() => {
         loadIncidents();
     }, []);
 
+    /**
+     * Fetch incidents from API
+     */
     const loadIncidents = async () => {
         try {
             setLoading(true);
@@ -53,6 +64,9 @@ export default function IncidentReports() {
         }
     };
 
+    /**
+     * Get status color classes based on incident status
+     */
     const getStatusColor = (status) => {
         switch (status) {
             case "Resolved": return "bg-[#D5FFE5] border border-[#15803D] text-[#15803D]";
@@ -63,6 +77,9 @@ export default function IncidentReports() {
         }
     };
 
+    /**
+     * Get display text for incident status
+     */
     const getStatusDisplay = (status) => {
         switch (status) {
             case "Resolved": return "SOLVED";
@@ -72,26 +89,32 @@ export default function IncidentReports() {
         }
     };
 
+    /**
+     * Close incident details modal
+     */
     const handleCloseModal = () => {
         setShowDetailsModal(false);
         setSelectedIncident(null);
     };
 
+    /**
+     * Export incidents to Excel with applied filters
+     */
     const handleExportIncidents = (option, barangay, status) => {
-        // 1. Start with the currently filtered incidents
+        // Start with currently filtered incidents
         let dataToExport = [...filteredIncidents];
 
-        // 2. Apply Barangay filter
+        // Apply barangay filter
         if (barangay !== 'all') {
             dataToExport = dataToExport.filter(inc => inc.location?.barangay === barangay);
         }
 
-        // 3. Apply Status filter
+        // Apply status filter
         if (status !== 'all') {
             dataToExport = dataToExport.filter(inc => inc.status === status);
         }
 
-        // 4. Apply Option filter (All, Active, Inactive)
+        // Apply option filter (All, Active, Inactive)
         if (option === 'active') {
             dataToExport = dataToExport.filter(inc =>
                 inc.status !== 'Resolved' && inc.status !== 'Closed'
@@ -102,12 +125,12 @@ export default function IncidentReports() {
             );
         }
 
-        // ✅ SILENT CHECK: Just stop silently if there is zero data
+        // Stop silently if no data to export
         if (dataToExport.length === 0) {
-            return; // No popup, just silently stop
+            return;
         }
 
-        // ✅ PROCEED WITH EXPORT (Includes Pending incidents)
+        // Proceed with export
         try {
             setSuccessMessage("Preparing export...");
 
@@ -126,9 +149,11 @@ export default function IncidentReports() {
                 'Description': incident.description || 'N/A'
             }));
 
+            // Create workbook and worksheet
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(exportData);
 
+            // Set column widths
             const colWidths = [
                 { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 30 },
                 { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
@@ -138,6 +163,7 @@ export default function IncidentReports() {
 
             XLSX.utils.book_append_sheet(wb, ws, 'Incidents');
 
+            // Generate filename with timestamp
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
@@ -154,9 +180,13 @@ export default function IncidentReports() {
         }
     };
 
+    /**
+     * Filter incidents based on search, status, and period
+     */
     const filterIncidents = () => {
         let filtered = [...incidents];
 
+        // Apply search filter
         if (searchTerm) {
             filtered = filtered.filter(incident =>
                 (incident.incidentId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -166,6 +196,7 @@ export default function IncidentReports() {
             );
         }
 
+        // Apply status filter
         if (statusFilter !== "All Time") {
             filtered = filtered.filter(incident => {
                 const displayStatus = getStatusDisplay(incident.status);
@@ -173,6 +204,7 @@ export default function IncidentReports() {
             });
         }
 
+        // Apply period filter
         if (periodFilter !== "All Time") {
             const now = new Date();
             filtered = filtered.filter(incident => {
@@ -200,6 +232,7 @@ export default function IncidentReports() {
 
     const filteredIncidents = filterIncidents();
 
+    // Render loading state
     if (loading) {
         return (
             <AdminLayout>
@@ -214,8 +247,7 @@ export default function IncidentReports() {
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-
-                {/* Header */}
+                {/* Page Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         <Icon icon="ic:outline-emergency" className="w-8 h-8 text-[#1f6b75]" />
@@ -226,6 +258,7 @@ export default function IncidentReports() {
                     </div>
                 </div>
 
+                {/* Success Message */}
                 {successMessage && (
                     <div className="mb-4 p-3 bg-[#D5FFE5] border border-[#15803D] rounded-lg text-[#15803D] flex items-center gap-2">
                         <Icon icon="mdi:check-circle" className="w-5 h-5" />
@@ -235,6 +268,8 @@ export default function IncidentReports() {
                         </button>
                     </div>
                 )}
+
+                {/* Error Message */}
                 {error && (
                     <div className="mb-4 p-3 bg-[#FDE6EA] border border-[#DC2626] rounded-lg text-[#DC2626] flex items-center gap-2">
                         <Icon icon="mdi:alert-circle" className="w-5 h-5" />
@@ -247,6 +282,7 @@ export default function IncidentReports() {
 
                 {/* Search and Filters */}
                 <div className="flex flex-wrap items-center gap-4 mb-6">
+                    {/* Search Input */}
                     <div className="relative w-[250px]">
                         <input
                             type="text"
@@ -258,6 +294,7 @@ export default function IncidentReports() {
                         <Icon icon="material-symbols:search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     </div>
 
+                    {/* Period Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Period</span>
                         <div className="relative">
@@ -276,6 +313,7 @@ export default function IncidentReports() {
                         </div>
                     </div>
 
+                    {/* Status Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Status</span>
                         <div className="relative">
@@ -293,6 +331,7 @@ export default function IncidentReports() {
                         </div>
                     </div>
 
+                    {/* Refresh Button */}
                     <button
                         onClick={loadIncidents}
                         className="flex items-center gap-2 px-4 py-2 border border-[#D3D2DE] rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
@@ -301,6 +340,7 @@ export default function IncidentReports() {
                         Refresh
                     </button>
 
+                    {/* Export Button */}
                     <button
                         onClick={() => setShowExportModal(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-[#1f6b75] text-white rounded-lg text-sm font-medium hover:bg-[#165a63] transition ml-auto"
@@ -310,7 +350,7 @@ export default function IncidentReports() {
                     </button>
                 </div>
 
-                {/* Table */}
+                {/* Incidents Table */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -365,6 +405,7 @@ export default function IncidentReports() {
                         </table>
                     </div>
 
+                    {/* Table Footer */}
                     {incidents.length > 0 && (
                         <div className="px-4 py-3 bg-gray-50 border-t text-sm text-gray-500 flex justify-between items-center">
                             <span>
@@ -392,13 +433,12 @@ export default function IncidentReports() {
                             </button>
                         </div>
                         <div className="p-6 space-y-4">
-                            {/* ... Details content ... */}
+                            {/* Details content would go here */}
                         </div>
                         <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 rounded-b-lg">
                             <button
                                 onClick={() => {
                                     handleCloseModal();
-                                    // Export single incident logic...
                                 }}
                                 className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
                             >
@@ -420,7 +460,6 @@ export default function IncidentReports() {
                 onExport={handleExportIncidents}
                 incidents={filteredIncidents}
             />
-
         </AdminLayout>
     );
 }

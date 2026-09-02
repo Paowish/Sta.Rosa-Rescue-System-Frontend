@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ✅ DATA FOR TERMS & PRIVACY (Matched to your screenshots)
+/**
+ * Terms of Service Sections Data
+ * Defines the content structure for Terms of Service
+ */
 const termsSections = [
     {
         title: "Acceptance of Terms",
@@ -21,6 +24,10 @@ const termsSections = [
     },
 ];
 
+/**
+ * Privacy Policy Sections Data
+ * Defines the content structure for Privacy Policy
+ */
 const privacySections = [
     {
         title: "Information We Collect",
@@ -60,10 +67,15 @@ const privacySections = [
     },
 ];
 
-// ✅ MAIN MODAL COMPONENT
+/**
+ * Legal Policy Modal Component
+ * Displays Terms of Service or Privacy Policy in a modal dialog
+ */
 export default function LegalPolicyModal({ isOpen, onClose, type = "terms" }) {
+    // Don't render if modal is closed
     if (!isOpen) return null;
 
+    // Select content based on modal type
     const sections = type === "privacy" ? privacySections : termsSections;
     const title = type === "privacy" ? "Privacy Policy" : "Terms of Service";
 
@@ -84,7 +96,7 @@ export default function LegalPolicyModal({ isOpen, onClose, type = "terms" }) {
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
+                    {/* Modal Header */}
                     <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
@@ -128,7 +140,7 @@ export default function LegalPolicyModal({ isOpen, onClose, type = "terms" }) {
                         ))}
                     </div>
 
-                    {/* Footer */}
+                    {/* Modal Footer */}
                     <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
                         <button
                             onClick={onClose}

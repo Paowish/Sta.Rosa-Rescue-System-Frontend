@@ -3,12 +3,14 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
-import LegalPolicyModal from "./LegalPolicyModal"
-// ✅ NEW IMPORTS FOR GOOGLE LOGIN
+import LegalPolicyModal from "./LegalPolicyModal";
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
-// Certifications Component - Same as in VolunteerApplication
+/**
+ * Certifications Component
+ * Allows users to select certifications with "Others" option
+ */
 function Certifications({ selected, setSelected, others, setOthers }) {
   const [othersChecked, setOthersChecked] = useState(false);
 
@@ -58,7 +60,10 @@ function Certifications({ selected, setSelected, others, setOthers }) {
   );
 }
 
-// Password Strength Component
+/**
+ * Password Strength Component
+ * Displays password strength indicator and requirements checklist
+ */
 function PasswordStrength({ password }) {
   const [strength, setStrength] = useState({ score: 0, label: "", color: "" });
 
@@ -139,7 +144,10 @@ function PasswordStrength({ password }) {
   );
 }
 
-// ✅ Terms Modal Component
+/**
+ * Terms Modal Component
+ * Displays terms acceptance requirement
+ */
 function TermsModal({ isOpen, onClose, onAccept }) {
   if (!isOpen) return null;
 
@@ -179,7 +187,10 @@ function TermsModal({ isOpen, onClose, onAccept }) {
   );
 }
 
-// ✅ Success Modal Component
+/**
+ * Success Modal Component
+ * Displays successful registration message
+ */
 function SuccessModal({ isOpen, onClose, message }) {
   if (!isOpen) return null;
 
@@ -200,7 +211,10 @@ function SuccessModal({ isOpen, onClose, message }) {
   );
 }
 
-// ✅ Error Modal Component
+/**
+ * Error Modal Component
+ * Displays registration error messages
+ */
 function ErrorModal({ isOpen, onClose, errorMessage }) {
   if (!isOpen) return null;
 
@@ -227,7 +241,10 @@ function ErrorModal({ isOpen, onClose, errorMessage }) {
   );
 }
 
-// ✅ Info Modal for validation errors
+/**
+ * Info Modal Component
+ * Displays informational messages and validation errors
+ */
 function InfoModal({ isOpen, onClose, title, message }) {
   if (!isOpen) return null;
 
@@ -254,7 +271,10 @@ function InfoModal({ isOpen, onClose, title, message }) {
   );
 }
 
-// ✅ Full Screen Spinner Component
+/**
+ * Full Screen Spinner Component
+ * Displays loading overlay during registration
+ */
 function FullScreenSpinner() {
   return (
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
@@ -270,33 +290,29 @@ function FullScreenSpinner() {
   );
 }
 
+/**
+ * Signup Component
+ * User registration page with role-based forms and Google OAuth
+ */
 export default function Signup() {
+  // UI state
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showVolunteerForm, setShowVolunteerForm] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [ageError, setAgeError] = useState("");
+
+  // Modal states
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
-
-  // Add inside your component
-  const [showLegalModal, setShowLegalModal] = useState(false);
-  const [legalType, setLegalType] = useState("terms"); // 'terms' or 'privacy'
-
-  const openTerms = () => {
-    setLegalType("terms");
-    setShowLegalModal(true);
-  };
-
-  const openPrivacy = () => {
-    setLegalType("privacy");
-    setShowLegalModal(true);
-  };
+  const [legalType, setLegalType] = useState("terms");
 
   // Account fields
   const [firstName, setFirstName] = useState("");
@@ -310,7 +326,6 @@ export default function Signup() {
 
   // Volunteer specific fields
   const [birthday, setBirthday] = useState("");
-  const [ageError, setAgeError] = useState("");
   const [experience, setExperience] = useState("");
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
@@ -327,21 +342,23 @@ export default function Signup() {
   const navigate = useNavigate();
   const phoneInputRef = useRef(null);
 
-  // ✅ AUTO-REDIRECT AFTER SUCCESSFUL SIGNUP (Production Friendly)
+  /**
+   * Auto-redirect after successful signup
+   */
   useEffect(() => {
     if (showSuccessModal) {
       const timer = setTimeout(() => {
         handleSuccessNavigate();
-      }, 1500); // Waits 1.5 seconds so they can read the success message
-
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [showSuccessModal]);
 
-  // ✅ GOOGLE SIGNUP HANDLER (Handles NEW vs EXISTING user)
+  /**
+   * Handle Google OAuth signup success
+   */
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      // Send the credential to your backend for verification
       const res = await authService.googleLogin(credentialResponse.credential);
 
       if (res.success) {
@@ -358,7 +375,6 @@ export default function Signup() {
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
 
-        // ✅ If backend says user is NEW, show the modal. If EXISTING, skip and go straight to dashboard.
         if (res.isNewUser) {
           setSuccessMessage("Successfully signed up with Google!");
           setShowSuccessModal(true);
@@ -373,14 +389,15 @@ export default function Signup() {
     }
   };
 
-  // Helper function to validate email addresses properly
+  /**
+   * Validate email address format
+   */
   const validateEmail = (email) => {
     if (!email || !email.trim()) {
       return { valid: false, error: "Email is required" };
     }
 
     const trimmedEmail = email.trim();
-
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     if (!emailRegex.test(trimmedEmail)) {
@@ -415,29 +432,23 @@ export default function Signup() {
     return { valid: true, error: null };
   };
 
-
+  /**
+   * Handle phone number change with formatting and validation
+   */
   const handlePhoneChange = (e) => {
     let value = e.target.value;
-
-    // ✅ Get only digits
     let digits = value.replace(/\D/g, '');
 
-    // ✅ If it starts with 0, remove it (user typed 0912...)
     if (digits.startsWith('0')) {
       digits = digits.substring(1);
     }
-
-    // ✅ If it starts with 63, remove it (user typed 63912...)
     if (digits.startsWith('63')) {
       digits = digits.substring(2);
     }
-
-    // ✅ Limit to 10 digits
     if (digits.length > 10) {
       digits = digits.slice(0, 10);
     }
 
-    // ✅ Format with spaces
     let formattedValue = '+63';
     if (digits.length > 0) {
       if (digits.length <= 3) {
@@ -451,7 +462,7 @@ export default function Signup() {
 
     setPhone(formattedValue);
 
-    // ✅ STRICT VALIDATION
+    // Validate phone number
     if (digits.length === 0) {
       setValidationErrors(prev => ({ ...prev, phone: "Phone number is required" }));
     } else if (!digits.startsWith('9')) {
@@ -459,10 +470,13 @@ export default function Signup() {
     } else if (digits.length < 10) {
       setValidationErrors(prev => ({ ...prev, phone: `Need ${10 - digits.length} more digit(s) (${digits.length}/10 digits)` }));
     } else if (digits.length === 10 && digits.startsWith('9')) {
-      setValidationErrors(prev => ({ ...prev, phone: null })); // ✅ Valid!
+      setValidationErrors(prev => ({ ...prev, phone: null }));
     }
   };
 
+  /**
+   * Set cursor position on phone input focus
+   */
   useEffect(() => {
     if (phoneInputRef.current) {
       phoneInputRef.current.setSelectionRange(3, 3);
@@ -477,6 +491,9 @@ export default function Signup() {
     }
   };
 
+  /**
+   * Validate signup form
+   */
   const validateSignupForm = () => {
     const errors = {};
 
@@ -497,7 +514,6 @@ export default function Signup() {
       errors.lastName = "Last name must be at least 2 characters";
     }
 
-    // ✅ FIXED: Phone validation - must start with 9
     const digitsAfter63 = phone.replace('+63', '').replace(/\D/g, '');
     if (!phone.trim() || phone === '+63') {
       errors.phone = "Phone number is required";
@@ -559,6 +575,9 @@ export default function Signup() {
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Calculate age from birthday
+   */
   const calculateAge = (birthdayDate) => {
     if (!birthdayDate) return 0;
     const today = new Date();
@@ -571,6 +590,9 @@ export default function Signup() {
     return age;
   };
 
+  /**
+   * Validate age requirement
+   */
   const validateAge = (birthdayDate) => {
     if (!birthdayDate) {
       setAgeError("");
@@ -598,14 +620,12 @@ export default function Signup() {
   const handleRoleChange = (e) => {
     const role = e.target.value;
     setSelectedRole(role);
-    if (role === "volunteer") {
-      setShowVolunteerForm(true);
-    } else {
-      setShowVolunteerForm(false);
-    }
+    setShowVolunteerForm(role === "volunteer");
   };
 
-  // Handle file selection
+  /**
+   * Handle file selection
+   */
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
 
@@ -655,19 +675,16 @@ export default function Signup() {
     setFilePreviews(newPreviews);
   };
 
-  // Toggle availability helper
   const toggleAvailability = (day) => {
     setAvailability(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     );
   };
 
-  // Handle Accept Terms from Modal
   const handleAcceptTerms = () => {
     setTermsAccepted(true);
   };
 
-  // Show validation errors in modal
   const showValidationErrors = () => {
     const errorMessages = Object.values(validationErrors).filter(Boolean);
     if (errorMessages.length > 0) {
@@ -679,13 +696,25 @@ export default function Signup() {
     }
   };
 
+  const openTerms = () => {
+    setLegalType("terms");
+    setShowLegalModal(true);
+  };
+
+  const openPrivacy = () => {
+    setLegalType("privacy");
+    setShowLegalModal(true);
+  };
+
+  /**
+   * Handle signup submission
+   */
   const handleSignup = async () => {
     if (!validateSignupForm()) {
       showValidationErrors();
       return;
     }
 
-    // Show modal if terms not accepted
     if (!termsAccepted) {
       setShowTermsModal(true);
       return;
@@ -703,7 +732,7 @@ export default function Signup() {
     setLoading(true);
     setError("");
 
-    // Simulate 2-second delay for the spinner
+    // Simulate delay for spinner
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     try {
@@ -780,30 +809,18 @@ export default function Signup() {
     }
   };
 
-  const handleTermsClick = () => {
-    setLegalType("terms");
-    setShowLegalModal(true);
-  };
-
-  const handlePrivacyClick = () => {
-    setLegalType("privacy");
-    setShowLegalModal(true);
-  };
-
+  /**
+   * Navigate to appropriate dashboard based on user role
+   */
   const handleSuccessNavigate = () => {
-    // Get the role you saved in localStorage
     const role = localStorage.getItem('userRole');
-
-    // Map roles to their specific dashboard routes
     const roleRoutes = {
-      civilian: "/overview",           // or "/civilian-dashboard"
+      civilian: "/overview",
       volunteer: "/volunteer-dashboard",
       responder: "/dashboard",
       dispatcher: "/dashboard",
       admin: "/admin/overview"
     };
-
-    // Redirect to the correct dashboard
     navigate(roleRoutes[role] || "/login");
   };
 
@@ -822,28 +839,22 @@ export default function Signup() {
         transition={{ duration: 0.8, ease: "easeInOut" }}
         className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6 font-Roboto"
       >
-        {/* ✅ Terms Modal */}
+        {/* Modals */}
         <TermsModal
           isOpen={showTermsModal}
           onClose={() => setShowTermsModal(false)}
           onAccept={handleAcceptTerms}
         />
-
-        {/* ✅ Success Modal */}
         <SuccessModal
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           message={successMessage}
         />
-
-        {/* ✅ Error Modal */}
         <ErrorModal
           isOpen={showErrorModal}
           onClose={() => setShowErrorModal(false)}
           errorMessage={error}
         />
-
-        {/* ✅ Info Modal for validation errors */}
         <InfoModal
           isOpen={showInfoModal}
           onClose={() => setShowInfoModal(false)}
@@ -852,6 +863,7 @@ export default function Signup() {
         />
 
         <div className="p-6 sm:p-8 md:p-10 max-w-4xl w-full">
+          {/* Brand Header */}
           <div className="flex items-center gap-3 mb-8">
             <Link to="/login" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
@@ -861,22 +873,19 @@ export default function Signup() {
             </Link>
           </div>
 
-          <h2 className="text-4xl font-bold text-[#1E252B] font-serif mb-2">
-            Sign up
-          </h2>
-
+          <h2 className="text-4xl font-bold text-[#1E252B] font-serif mb-2">Sign up</h2>
           <p className="text-gray-500 text-sm mb-6">
             Register your credentials to join the Santa Rosa Rescue Team operations network.
           </p>
 
-          {/* ✅ NOTE ABOVE GOOGLE BUTTON */}
+          {/* Google Signup Note */}
           <div className="w-full mb-2">
             <p className="text-[11px] text-center text-gray-500">
               *Using Google Sign-Up will automatically create a <span className="font-bold text-blue-600">Civilian</span> account.
             </p>
           </div>
 
-          {/* ✅ GOOGLE SIGN UP BUTTON */}
+          {/* Google Signup Button */}
           <div className="w-full mb-6 flex justify-center">
             <GoogleLogin
               theme="outline"
@@ -895,9 +904,8 @@ export default function Signup() {
             <hr className="w-full border-gray-300" />
           </div>
 
-          {/* Remove the inline error display since we use modals now */}
+          {/* Registration Form */}
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSignup(); }}>
-
             {/* Row 1: First Name & Last Name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="w-full">
@@ -973,7 +981,8 @@ export default function Signup() {
               </div>
 
               <div className="w-full">
-                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'}`}>
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.phone ? 'border-red-500' : 'border-gray-400'
+                  }`}>
                   <legend className="text-sm px-2 text-gray-700">Phone Number</legend>
                   <div className="flex items-center">
                     <span className="text-gray-500 font-medium mr-1">+63</span>
@@ -999,9 +1008,10 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Role Selection - ✅ ENABLED */}
+            {/* Role Selection */}
             <div className="w-full">
-              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'}`}>
+              <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.role ? 'border-red-500' : 'border-gray-400'
+                }`}>
                 <legend className="text-sm px-2 text-gray-700">Role / Position</legend>
                 <select
                   value={selectedRole}
@@ -1032,7 +1042,8 @@ export default function Signup() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${ageError ? 'border-red-500' : validationErrors.birthday ? 'border-red-500' : 'border-gray-400'}`}>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${ageError ? 'border-red-500' : validationErrors.birthday ? 'border-red-500' : 'border-gray-400'
+                      }`}>
                       <legend className="text-sm px-2 text-gray-700">Birthday</legend>
                       <input
                         type="date"
@@ -1047,7 +1058,8 @@ export default function Signup() {
                   </div>
 
                   <div>
-                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.experience ? 'border-red-500' : 'border-gray-400'}`}>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.experience ? 'border-red-500' : 'border-gray-400'
+                      }`}>
                       <legend className="text-sm px-2 text-gray-700">Years of Experience</legend>
                       <select
                         value={experience}
@@ -1078,7 +1090,8 @@ export default function Signup() {
                   </div>
 
                   <div>
-                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.address1 ? 'border-red-500' : 'border-gray-400'}`}>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.address1 ? 'border-red-500' : 'border-gray-400'
+                      }`}>
                       <legend className="text-sm px-2 text-gray-700">Address 1</legend>
                       <input
                         type="text"
@@ -1113,7 +1126,8 @@ export default function Signup() {
 
                 {/* Availability Selection */}
                 <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.availability ? 'border-red-500' : 'border-gray-400'}`}>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.availability ? 'border-red-500' : 'border-gray-400'
+                    }`}>
                     <legend className="text-sm px-2 text-gray-700">Availability <span className="text-red-500">*</span></legend>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
@@ -1135,7 +1149,8 @@ export default function Signup() {
 
                 {/* Description */}
                 <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.description ? 'border-red-500' : 'border-gray-400'}`}>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.description ? 'border-red-500' : 'border-gray-400'
+                    }`}>
                     <legend className="text-sm px-2 text-gray-700">Description <span className="text-red-500">*</span></legend>
                     <textarea
                       value={description}
@@ -1156,9 +1171,10 @@ export default function Signup() {
                   )}
                 </div>
 
-                {/* Certifications - REQUIRED */}
+                {/* Certifications */}
                 <div>
-                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.certifications ? 'border-red-500' : 'border-gray-400'}`}>
+                  <fieldset className={`border-2 rounded-lg px-4 pt-3 pb-4 bg-white ${validationErrors.certifications ? 'border-red-500' : 'border-gray-400'
+                    }`}>
                     <legend className="text-sm px-2 text-gray-700">Certifications <span className="text-red-500">*</span></legend>
                     <Certifications
                       selected={selectedCerts}
@@ -1174,9 +1190,9 @@ export default function Signup() {
 
                 {/* File Upload */}
                 <div>
-                  <div className={`border-2 border-dashed rounded-lg p-4 bg-white ${validationErrors.files ? 'border-red-500' : 'border-gray-400'}`}>
+                  <div className={`border-2 border-dashed rounded-lg p-4 bg-white ${validationErrors.files ? 'border-red-500' : 'border-gray-400'
+                    }`}>
                     <p className="text-sm text-gray-700 mb-2">Upload Documents <span className="text-red-500">*</span></p>
-
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1185,7 +1201,6 @@ export default function Signup() {
                       className="w-full text-sm"
                       accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
                     />
-
                     <p className="text-gray-400 text-xs mt-2">
                       Upload your resume, certificates, or any supporting documents (Required)
                     </p>
@@ -1234,7 +1249,7 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Password Section with Strength Indicator */}
+            {/* Password Section */}
             <div className="w-full">
               <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'
                 }`}>
@@ -1264,6 +1279,7 @@ export default function Signup() {
               <PasswordStrength password={password} />
             </div>
 
+            {/* Confirm Password */}
             <div className="w-full">
               <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.confirmPassword ? 'border-red-500' : 'border-gray-400'
                 }`}>
@@ -1301,14 +1317,17 @@ export default function Signup() {
               />
               <span>
                 I agree to all the{" "}
-                <span onClick={(e) => { e.preventDefault(); handleTermsClick(); }} className="text-red-500 cursor-pointer hover:underline">Terms</span>{" "}
+                <span onClick={(e) => { e.preventDefault(); openTerms(); }} className="text-red-500 cursor-pointer hover:underline">
+                  Terms
+                </span>{" "}
                 and{" "}
-                <span onClick={(e) => { e.preventDefault(); handlePrivacyClick(); }} className="text-red-500 cursor-pointer hover:underline">
+                <span onClick={(e) => { e.preventDefault(); openPrivacy(); }} className="text-red-500 cursor-pointer hover:underline">
                   Privacy Policies
                 </span>
               </span>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -1323,10 +1342,10 @@ export default function Signup() {
                 Login
               </Link>
             </p>
-
           </form>
         </div>
-        {/* ✅ LEGAL POLICIES MODAL */}
+
+        {/* Legal Policy Modal */}
         <LegalPolicyModal
           isOpen={showLegalModal}
           onClose={() => setShowLegalModal(false)}

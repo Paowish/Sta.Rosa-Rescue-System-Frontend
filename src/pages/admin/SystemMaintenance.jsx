@@ -3,7 +3,12 @@ import AdminLayout from "./AdminLayout";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
 
+/**
+ * System Maintenance Component
+ * Displays system logs and manages backup operations
+ */
 export default function SystemMaintenance() {
+    // State for filters and data
     const [periodFilter, setPeriodFilter] = useState("All Time");
     const [logs, setLogs] = useState([]);
     const [backups, setBackups] = useState([]);
@@ -11,7 +16,7 @@ export default function SystemMaintenance() {
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
-    // ------------------ SCHEDULE MODAL STATE ------------------
+    // Schedule modal state
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [scheduleData, setScheduleData] = useState({
         frequency: 'Daily',
@@ -21,18 +26,23 @@ export default function SystemMaintenance() {
         emailNotification: true
     });
 
-    // Load data on mount
+    /**
+     * Load system data on component mount
+     */
     useEffect(() => {
         loadData();
     }, []);
 
+    /**
+     * Fetch system logs and backup data from API
+     */
     const loadData = async () => {
         try {
             setLoading(true);
             setError(null);
             const token = localStorage.getItem('token');
 
-            // 1. Load system logs (REAL DATA)
+            // Load system logs
             const logsResponse = await fetch('/api/admin/system-logs', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -44,7 +54,7 @@ export default function SystemMaintenance() {
                 }
             }
 
-            // 2. Load backups (REAL DATA)
+            // Load backups
             const backupsResponse = await fetch('/api/admin/backups', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -55,7 +65,6 @@ export default function SystemMaintenance() {
                     setBackups(backupsData.data);
                 }
             }
-
         } catch (error) {
             console.error("Failed to load data:", error);
             setError("Failed to load system data. Please refresh.");
@@ -64,6 +73,9 @@ export default function SystemMaintenance() {
         }
     };
 
+    /**
+     * Get badge color based on log type
+     */
     const getLogBadge = (type) => {
         switch (type) {
             case "INFO": return "bg-[#CBE8FF] border border-[#4285F4] text-[#4285F4] font-medium";
@@ -74,6 +86,9 @@ export default function SystemMaintenance() {
         }
     };
 
+    /**
+     * Get badge color based on backup status
+     */
     const getStatusBadge = (status) => {
         switch (status) {
             case "OK": return "bg-[#D5FFE5] border border-[#15803D] text-[#15803D] font-medium";
@@ -83,7 +98,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Filter logs by period (REAL FILTERING)
+    /**
+     * Filter logs by selected period
+     */
     const getFilteredLogs = () => {
         if (periodFilter === "All Time") return logs;
 
@@ -110,14 +127,16 @@ export default function SystemMaintenance() {
 
     const filteredLogs = getFilteredLogs();
 
-    // Export logs to Excel (USES REAL ACTION)
+    /**
+     * Export system logs to Excel
+     */
     const handleExportLogs = () => {
         try {
             const dataToExport = filteredLogs.length > 0 ? filteredLogs : logs;
 
             const exportData = dataToExport.map(log => ({
                 'Time': log.timestamp ? new Date(log.timestamp).toLocaleString() : log.time || 'N/A',
-                'Action': log.action || log.type || 'N/A', // ✅ Uses real action, falls back to type
+                'Action': log.action || log.type || 'N/A',
                 'Status': log.message || log.description || 'N/A'
             }));
 
@@ -142,7 +161,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Export backups to Excel
+    /**
+     * Export backups data to Excel
+     */
     const handleExportBackups = () => {
         try {
             const exportData = backups.map(backup => ({
@@ -176,7 +197,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Handle backup now
+    /**
+     * Create a new backup immediately
+     */
     const handleBackupNow = async () => {
         try {
             setSuccessMessage("Starting backup...");
@@ -193,7 +216,7 @@ export default function SystemMaintenance() {
             const data = await response.json();
             if (data.success) {
                 setSuccessMessage("Backup completed successfully!");
-                loadData(); // Refresh backup list
+                loadData();
                 setTimeout(() => setSuccessMessage(null), 5000);
             } else {
                 setError(data.message || "Backup failed");
@@ -206,7 +229,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Handle restore backup
+    /**
+     * Restore a backup
+     */
     const handleRestore = async (backupId) => {
         if (!window.confirm("Are you sure you want to restore this backup? This will replace current data.")) {
             return;
@@ -239,7 +264,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Handle delete backup
+    /**
+     * Delete a backup
+     */
     const handleDeleteBackup = async (backupId) => {
         if (!window.confirm("Are you sure you want to delete this backup? This action cannot be undone.")) {
             return;
@@ -271,7 +298,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Save schedule configuration
+    /**
+     * Save backup schedule configuration
+     */
     const handleSaveSchedule = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -301,7 +330,9 @@ export default function SystemMaintenance() {
         }
     };
 
-    // Toggle component for the modal
+    /**
+     * Toggle Switch Component for modal
+     */
     const ToggleSwitch = ({ checked, onChange }) => (
         <button
             onClick={onChange}
@@ -314,6 +345,7 @@ export default function SystemMaintenance() {
         </button>
     );
 
+    // Render loading state
     if (loading) {
         return (
             <AdminLayout>
@@ -328,8 +360,7 @@ export default function SystemMaintenance() {
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-
-                {/* Header */}
+                {/* Page Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         <Icon icon="mdi:wrench" className="w-8 h-8 text-[#1f6b75]" />
@@ -340,7 +371,7 @@ export default function SystemMaintenance() {
                     </div>
                 </div>
 
-                {/* Success/Error Messages */}
+                {/* Success Message */}
                 {successMessage && (
                     <div className="mb-4 p-3 bg-[#D5FFE5] border border-[#15803D] rounded-lg text-[#15803D] flex items-center gap-2">
                         <Icon icon="mdi:check-circle" className="w-5 h-5" />
@@ -353,6 +384,8 @@ export default function SystemMaintenance() {
                         </button>
                     </div>
                 )}
+
+                {/* Error Message */}
                 {error && (
                     <div className="mb-4 p-3 bg-[#FDE6EA] border border-[#DC2626] rounded-lg text-[#DC2626] flex items-center gap-2">
                         <Icon icon="mdi:alert-circle" className="w-5 h-5" />
@@ -525,20 +558,16 @@ export default function SystemMaintenance() {
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            {/* ========================================== */}
-            {/* CONFIGURE SCHEDULE MODAL */}
-            {/* ========================================== */}
+            {/* Configure Schedule Modal */}
             {isScheduleModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-lg shadow-2xl w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
-
                         {/* Top Blue Border */}
                         <div className="h-1.5 w-full bg-[#3b82f6]"></div>
 
-                        {/* Header */}
+                        {/* Modal Header */}
                         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
                             <h3 className="text-[20px] font-bold text-gray-800">Configure Backup Schedule</h3>
                             <button
@@ -553,9 +582,8 @@ export default function SystemMaintenance() {
                             </button>
                         </div>
 
-                        {/* Body */}
+                        {/* Modal Body */}
                         <div className="p-6 space-y-5">
-
                             {/* Backup Frequency */}
                             <div>
                                 <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Frequency</label>
@@ -588,7 +616,7 @@ export default function SystemMaintenance() {
                                 </div>
                             </div>
 
-                            {/* Retention Period (Days) */}
+                            {/* Retention Period */}
                             <div>
                                 <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Retention Period (Days)</label>
                                 <input
@@ -612,7 +640,7 @@ export default function SystemMaintenance() {
                                 />
                             </div>
 
-                            {/* Email Notification */}
+                            {/* Email Notification Toggle */}
                             <div className="flex items-start justify-between pt-2">
                                 <div>
                                     <label className="block text-[14px] font-medium text-gray-700">Email Notification on Backup</label>
@@ -623,10 +651,9 @@ export default function SystemMaintenance() {
                                     onChange={() => setScheduleData({ ...scheduleData, emailNotification: !scheduleData.emailNotification })}
                                 />
                             </div>
-
                         </div>
 
-                        {/* Footer Buttons */}
+                        {/* Modal Footer */}
                         <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
                             <button
                                 onClick={() => {
@@ -645,11 +672,9 @@ export default function SystemMaintenance() {
                                 Save Schedule
                             </button>
                         </div>
-
                     </div>
                 </div>
             )}
-
         </AdminLayout>
     );
 }

@@ -6,14 +6,17 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
 
+  /**
+   * Initialize and listen for unread notification count changes
+   */
   useEffect(() => {
-    // Load unread count from localStorage
+    // Load unread count from localStorage on mount
     const storedCount = localStorage.getItem('unreadCount');
     if (storedCount) {
       setUnreadCount(parseInt(storedCount));
     }
 
-    // Listen for storage changes
+    // Listen for storage changes from other tabs/windows
     const handleStorageChange = () => {
       const newCount = localStorage.getItem('unreadCount');
       if (newCount) {
@@ -22,23 +25,29 @@ export default function Navbar() {
     };
     window.addEventListener('storage', handleStorageChange);
 
+    // Cleanup event listener on unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
+  /**
+   * Navigate to dashboard on logo click
+   */
   const handleLogoClick = () => {
     navigate("/dashboard");
   };
 
+  /**
+   * Navigate to notifications page
+   */
   const handleNotificationClick = () => {
     navigate("/notifications");
   };
 
   return (
     <div className="bg-[#1f6b75] h-16 px-6 flex items-center justify-between shadow">
-
-      {/* LEFT */}
+      {/* Logo and Brand Section */}
       <div
         onClick={handleLogoClick}
         className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
@@ -59,7 +68,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* RIGHT - White Notification Bell with Badge */}
+      {/* Notification Bell with Unread Badge */}
       <div className="relative">
         <button
           onClick={handleNotificationClick}

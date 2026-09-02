@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import notificationService from "../../services/notificationService";
 import io from 'socket.io-client';
 
-// Import the split components (ALL in the same folder)
+// Import split components
 import {
   ConfirmationModal, ToastModal, FullScreenSpinner, DispatchModal
 } from './VolunteerModals';
@@ -14,42 +14,57 @@ import {
 } from './VolunteerUI';
 import { RosterView, ApplicantView } from './VolunteerList';
 
+/**
+ * Volunteer Approval Component
+ * Manages volunteer roster and applicant approvals with real-time updates
+ */
 export default function VolunteerApproval() {
+  const navigate = useNavigate();
+
+  // Search and filter state
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("newest");
-  const navigate = useNavigate();
+
+  // Tab and selection state
   const [activeTab, setActiveTab] = useState('roster');
   const [selectedRosterId, setSelectedRosterId] = useState(null);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
 
+  // Modal states
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+
+  // Data state
   const [allVolunteers, setAllVolunteers] = useState([]);
   const [applicants, setApplicants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(null);
 
-  // 🟢 NEW: REAL-TIME STATUS TRACKING
+  // Real-time status tracking
   const [liveStatuses, setLiveStatuses] = useState({});
-  const socketRef = useRef(null);
 
-  // Loading spinner state for accept/reject
+  // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
 
-  // Modal states
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showResultModal, setShowResultModal] = useState(false);
+  // Modal data
   const [modalData, setModalData] = useState({
     title: '', message: '', confirmText: 'Confirm', confirmColor: 'bg-green-600 hover:bg-green-700',
     icon: 'success', iconColor: 'text-green-500', onConfirm: null, action: null
   });
   const [pendingApplicant, setPendingApplicant] = useState(null);
 
+  // Refs for loading and refresh
   const isLoadingRef = useRef(false);
   const lastRefreshTimeRef = useRef(0);
   const MIN_REFRESH_INTERVAL = 3000;
+  const socketRef = useRef(null);
 
+  /**
+   * Get API URL based on environment
+   */
   const getApiUrl = useCallback(() => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:5000/api';
@@ -57,7 +72,9 @@ export default function VolunteerApproval() {
     return '/api';
   }, []);
 
-  // Data Fetching
+  /**
+   * Load all volunteers from API
+   */
   const loadAllVolunteers = useCallback(async (force = false) => {
     const now = Date.now();
     if (!force && (now - lastRefreshTimeRef.current) < MIN_REFRESH_INTERVAL) {
@@ -75,18 +92,24 @@ export default function VolunteerApproval() {
       const token = localStorage.getItem('token');
       if (!token) {
         setApiError('Not authenticated. Please login again.');
-        isLoadingRef.current = false; setLoading(false); return;
+        isLoadingRef.current = false;
+        setLoading(false);
+        return;
       }
 
       const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/admin/all-users`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
       const data = await response.json();
 
       if (data.success) {
-        // ✅ STEP 1: Filter ONLY users with role = 'volunteer'
+        // Filter only users with role = 'volunteer'
         const volunteersOnly = data.data.filter(user => user.role === 'volunteer');
 
         const transformedData = volunteersOnly.map(volunteer => {
@@ -96,10 +119,14 @@ export default function VolunteerApproval() {
           else if (volunteer.applicationStatus === 'pending') status = 'pending';
 
           let certs = volunteer.certifications || [];
-          if (typeof certs === 'string') { try { certs = JSON.parse(certs); } catch (e) { certs = []; } }
+          if (typeof certs === 'string') {
+            try { certs = JSON.parse(certs); } catch (e) { certs = []; }
+          }
 
           let availability = volunteer.availability || [];
-          if (typeof availability === 'string') { try { availability = JSON.parse(availability); } catch (e) { availability = []; } }
+          if (typeof availability === 'string') {
+            try { availability = JSON.parse(availability); } catch (e) { availability = []; }
+          }
 
           let description = volunteer.description || `I am ${volunteer.firstName || 'Applicant'} ${volunteer.lastName || ''}.`;
 
@@ -132,7 +159,6 @@ export default function VolunteerApproval() {
             availability: availability,
             description: description,
             appliedDate: volunteer.createdAt ? new Date(volunteer.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A',
-            // ✅ ADD RAW TIMESTAMP FOR SORTING
             createdAtTimestamp: volunteer.createdAt ? new Date(volunteer.createdAt).getTime() : 0,
             profileImage: volunteer.profileImage || null,
             details: {
@@ -151,7 +177,7 @@ export default function VolunteerApproval() {
         const acceptedVolunteers = transformedData.filter(v => v.status === 'accepted');
         const pendingApplicants = transformedData.filter(v => v.status === 'pending');
 
-        // ✅ Apply Search Filter
+        // Apply search filter
         let filteredApplicants = pendingApplicants;
         if (searchQuery.trim() !== "") {
           const lowerQuery = searchQuery.toLowerCase();
@@ -160,7 +186,7 @@ export default function VolunteerApproval() {
           );
         }
 
-        // ✅ Apply Sort using RAW timestamp
+        // Apply sort
         filteredApplicants.sort((a, b) => {
           switch (sortOption) {
             case 'newest': return b.createdAtTimestamp - a.createdAtTimestamp;
@@ -172,15 +198,16 @@ export default function VolunteerApproval() {
         });
 
         setAllVolunteers(acceptedVolunteers);
-        setApplicants(filteredApplicants); // ✅ Keep ONLY this one
-
+        setApplicants(filteredApplicants);
       } else {
         setApiError(data.message || 'Failed to load volunteers');
-        setAllVolunteers([]); setApplicants([]);
+        setAllVolunteers([]);
+        setApplicants([]);
       }
     } catch (error) {
       setApiError(error.message || 'Network error. Please check your connection.');
-      setAllVolunteers([]); setApplicants([]);
+      setAllVolunteers([]);
+      setApplicants([]);
     } finally {
       setLoading(false);
       setIsSearching(false);
@@ -188,9 +215,9 @@ export default function VolunteerApproval() {
     }
   }, [getApiUrl, searchQuery, sortOption]);
 
-
-
-  // --- ✅ Setup WebSocket (Real-time Status Updates) ---
+  /**
+   * Setup WebSocket for real-time status updates
+   */
   useEffect(() => {
     const setupSocket = () => {
       try {
@@ -202,14 +229,20 @@ export default function VolunteerApproval() {
           ? 'http://localhost:5000'
           : 'https://sta-rosa-rescue-system-backend.onrender.com';
 
-        socketRef.current = io(socketUrl, { auth: { token }, transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: 5, reconnectionDelay: 1000 });
+        socketRef.current = io(socketUrl, {
+          auth: { token },
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000
+        });
 
         socketRef.current.on('connect', () => {
           socketRef.current.emit('join', user._id);
           socketRef.current.emit('join-room', 'admin');
         });
 
-        // 🟢 Real-time Incident Status Updates
+        // Real-time incident status updates
         socketRef.current.on('volunteer_status_update', (data) => {
           setLiveStatuses(prev => ({
             ...prev,
@@ -253,13 +286,23 @@ export default function VolunteerApproval() {
             loadAllVolunteers(true);
           }
         });
-      } catch (error) { console.error("Failed to setup socket:", error); }
+      } catch (error) {
+        console.error("Failed to setup socket:", error);
+      }
     };
+
     setupSocket();
-    return () => { if (socketRef.current) { socketRef.current.disconnect(); socketRef.current = null; } };
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [loadAllVolunteers]);
 
-  // --- Polling ---
+  /**
+   * Polling for updates
+   */
   useEffect(() => {
     const pollInterval = setInterval(() => {
       if (!document.hidden && !isLoadingRef.current) {
@@ -270,12 +313,16 @@ export default function VolunteerApproval() {
     return () => clearInterval(pollInterval);
   }, [loadAllVolunteers]);
 
-  // --- Initial Load ---
+  /**
+   * Initial load
+   */
   useEffect(() => {
     loadAllVolunteers(true);
   }, []);
 
-  // --- Dynamic Status Helper ---
+  /**
+   * Get volunteer status
+   */
   const getVolunteerStatus = (volunteerId) => {
     const live = liveStatuses[volunteerId];
     if (live) {
@@ -286,118 +333,228 @@ export default function VolunteerApproval() {
     return 'Available';
   };
 
-  // --- Data Setters ---
+  // Data setters
   const activeVolunteer = allVolunteers.find(v => v.id === selectedRosterId);
   const activeApplicant = applicants.find(a => a.id === selectedApplicant?.id);
 
   const handleCloseRoster = () => setSelectedRosterId(null);
   const handleCloseApplicant = () => setSelectedApplicant(null);
-  const handleSwitchTab = (tab) => { setActiveTab(tab); setSelectedRosterId(null); setSelectedApplicant(null); };
-  const handleDispatchClick = () => { if (activeVolunteer) setIsDispatchModalOpen(true); };
-  const handleDispatchComplete = () => { loadAllVolunteers(true); };
+  const handleSwitchTab = (tab) => {
+    setActiveTab(tab);
+    setSelectedRosterId(null);
+    setSelectedApplicant(null);
+  };
+  const handleDispatchClick = () => {
+    if (activeVolunteer) setIsDispatchModalOpen(true);
+  };
+  const handleDispatchComplete = () => {
+    loadAllVolunteers(true);
+  };
 
-  // --- Accept Logic ---
+  /**
+   * Handle accept click
+   */
   const handleAcceptClick = (applicant) => {
     setPendingApplicant(applicant);
     setModalData({
       title: `Accept ${applicant.name}?`,
       message: `Are you sure you want to ACCEPT ${applicant.name} as a volunteer?`,
-      confirmText: 'Yes, Accept', confirmColor: 'bg-green-600 hover:bg-green-700',
-      icon: 'success', iconColor: 'text-green-500', action: 'accept',
+      confirmText: 'Yes, Accept',
+      confirmColor: 'bg-green-600 hover:bg-green-700',
+      icon: 'success',
+      iconColor: 'text-green-500',
+      action: 'accept',
       onConfirm: () => handleConfirmAccept(applicant)
     });
     setShowConfirmModal(true);
   };
 
-  // --- Reject Logic ---
+  /**
+   * Handle reject click
+   */
   const handleRejectClick = (applicant) => {
     setPendingApplicant(applicant);
     setModalData({
       title: `Reject ${applicant.name}?`,
       message: `Are you sure you want to REJECT ${applicant.name}?`,
-      confirmText: 'Yes, Reject', confirmColor: 'bg-red-600 hover:bg-red-700',
-      icon: 'error', iconColor: 'text-red-500', action: 'reject',
+      confirmText: 'Yes, Reject',
+      confirmColor: 'bg-red-600 hover:bg-red-700',
+      icon: 'error',
+      iconColor: 'text-red-500',
+      action: 'reject',
       onConfirm: () => handleConfirmReject(applicant)
     });
     setShowConfirmModal(true);
   };
 
+  /**
+   * Confirm accept action
+   */
   const handleConfirmAccept = async (applicant) => {
     setIsProcessing(true);
     setProcessingMessage(`Accepting ${applicant.name}...`);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${getApiUrl()}/admin/approve-volunteer/${applicant.userId}`, {
-        method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       const data = await response.json();
       setIsProcessing(false);
       if (data.success) {
-        setModalData({ title: 'Accepted!', message: `${applicant.name} has been ACCEPTED.`, confirmText: 'OK', confirmColor: 'bg-green-600', icon: 'success', iconColor: 'text-green-500', action: null, onConfirm: null });
+        setModalData({
+          title: 'Accepted!',
+          message: `${applicant.name} has been ACCEPTED.`,
+          confirmText: 'OK',
+          confirmColor: 'bg-green-600',
+          icon: 'success',
+          iconColor: 'text-green-500',
+          action: null,
+          onConfirm: null
+        });
         setShowResultModal(true);
         loadAllVolunteers(true);
         setSelectedApplicant(null);
       } else {
-        setModalData({ title: '❌ Failed', message: data.message || 'Failed to accept.', confirmText: 'OK', confirmColor: 'bg-red-600', icon: 'error', iconColor: 'text-red-500', action: null, onConfirm: null });
+        setModalData({
+          title: '❌ Failed',
+          message: data.message || 'Failed to accept.',
+          confirmText: 'OK',
+          confirmColor: 'bg-red-600',
+          icon: 'error',
+          iconColor: 'text-red-500',
+          action: null,
+          onConfirm: null
+        });
         setShowResultModal(true);
       }
     } catch (error) {
       setIsProcessing(false);
-      setModalData({ title: '❌ Error', message: 'Error accepting volunteer.', confirmText: 'OK', confirmColor: 'bg-red-600', icon: 'error', iconColor: 'text-red-500', action: null, onConfirm: null });
+      setModalData({
+        title: '❌ Error',
+        message: 'Error accepting volunteer.',
+        confirmText: 'OK',
+        confirmColor: 'bg-red-600',
+        icon: 'error',
+        iconColor: 'text-red-500',
+        action: null,
+        onConfirm: null
+      });
       setShowResultModal(true);
     }
   };
 
+  /**
+   * Confirm reject action
+   */
   const handleConfirmReject = async (applicant) => {
     setIsProcessing(true);
     setProcessingMessage(`Rejecting ${applicant.name}...`);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${getApiUrl()}/admin/reject-volunteer/${applicant.userId}`, {
-        method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       const data = await response.json();
       setIsProcessing(false);
       if (data.success) {
-        setModalData({ title: 'Rejected', message: `${applicant.name} has been rejected.`, confirmText: 'OK', confirmColor: 'bg-red-600', icon: 'error', iconColor: 'text-red-500', action: null, onConfirm: null });
+        setModalData({
+          title: 'Rejected',
+          message: `${applicant.name} has been rejected.`,
+          confirmText: 'OK',
+          confirmColor: 'bg-red-600',
+          icon: 'error',
+          iconColor: 'text-red-500',
+          action: null,
+          onConfirm: null
+        });
         setShowResultModal(true);
         loadAllVolunteers(true);
         setSelectedApplicant(null);
       } else {
-        setModalData({ title: '❌ Failed', message: data.message || 'Failed to reject.', confirmText: 'OK', confirmColor: 'bg-red-600', icon: 'error', iconColor: 'text-red-500', action: null, onConfirm: null });
+        setModalData({
+          title: '❌ Failed',
+          message: data.message || 'Failed to reject.',
+          confirmText: 'OK',
+          confirmColor: 'bg-red-600',
+          icon: 'error',
+          iconColor: 'text-red-500',
+          action: null,
+          onConfirm: null
+        });
         setShowResultModal(true);
       }
     } catch (error) {
       setIsProcessing(false);
-      setModalData({ title: '❌ Error', message: 'Error rejecting volunteer.', confirmText: 'OK', confirmColor: 'bg-red-600', icon: 'error', iconColor: 'text-red-500', action: null, onConfirm: null });
+      setModalData({
+        title: '❌ Error',
+        message: 'Error rejecting volunteer.',
+        confirmText: 'OK',
+        confirmColor: 'bg-red-600',
+        icon: 'error',
+        iconColor: 'text-red-500',
+        action: null,
+        onConfirm: null
+      });
       setShowResultModal(true);
     }
   };
 
   const pendingApplicantCount = applicants.length;
 
+  // Render error state
   if (apiError && !loading) {
     return (
       <div className="min-h-screen bg-[#fafbfc] p-6 font-sans flex flex-col items-center justify-center">
         <Icon icon="mdi:alert-circle" className="w-16 h-16 text-red-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-800 mb-2">Failed to Load Data</h2>
         <p className="text-gray-600 text-center max-w-md">{apiError}</p>
-        <button onClick={() => loadAllVolunteers(true)} className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Retry</button>
+        <button onClick={() => loadAllVolunteers(true)} className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+          Retry
+        </button>
       </div>
     );
   }
 
+  // Render loading state
   if (loading && allVolunteers.length === 0 && applicants.length === 0) {
-    return <div className="min-h-screen bg-white p-6 flex justify-center items-center"><div className="text-gray-500">Loading volunteers...</div></div>;
+    return (
+      <div className="min-h-screen bg-white p-6 flex justify-center items-center">
+        <div className="text-gray-500">Loading volunteers...</div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-[#fafbfc] p-4 pt-2 font-sans relative">
       {isProcessing && <FullScreenSpinner message={processingMessage} />}
-      <ConfirmationModal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={modalData.onConfirm} title={modalData.title} message={modalData.message} confirmText={modalData.confirmText} confirmColor={modalData.confirmColor} icon={modalData.icon} iconColor={modalData.iconColor} />
-      <ToastModal isOpen={showResultModal} onClose={() => setShowResultModal(false)} title={modalData.title} message={modalData.message} type={modalData.icon === 'success' ? 'success' : modalData.icon === 'error' ? 'error' : 'warning'} />
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={modalData.onConfirm}
+        title={modalData.title}
+        message={modalData.message}
+        confirmText={modalData.confirmText}
+        confirmColor={modalData.confirmColor}
+        icon={modalData.icon}
+        iconColor={modalData.iconColor}
+      />
+      <ToastModal
+        isOpen={showResultModal}
+        onClose={() => setShowResultModal(false)}
+        title={modalData.title}
+        message={modalData.message}
+        type={modalData.icon === 'success' ? 'success' : modalData.icon === 'error' ? 'error' : 'warning'}
+      />
 
-      {/* ✅ SEARCHING / SORTING MODAL */}
+      {/* Searching Modal */}
       {isSearching && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl p-6 flex flex-col items-center gap-4 max-w-sm mx-auto animate-in fade-in zoom-in-95 duration-200">
@@ -409,37 +566,68 @@ export default function VolunteerApproval() {
       )}
 
       <div className="flex gap-4 h-[calc(100vh-110px)]">
+        {/* Left Column - Main Content */}
         <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          {/* Tabs */}
           <div className="flex items-center gap-6 border-b border-gray-200 px-4 pt-2 pb-0 bg-white">
-            <button onClick={() => handleSwitchTab('roster')} className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'roster' ? 'border-[#1f4e6f] text-[#1f4e6f]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            <button
+              onClick={() => handleSwitchTab('roster')}
+              className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'roster'
+                  ? 'border-[#1f4e6f] text-[#1f4e6f]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
               <Icon icon="mdi:list" className="w-4 h-4" /> Roster
             </button>
-            <button onClick={() => handleSwitchTab('applicant')} className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'applicant' ? 'border-[#1f4e6f] text-[#1f4e6f]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            <button
+              onClick={() => handleSwitchTab('applicant')}
+              className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'applicant'
+                  ? 'border-[#1f4e6f] text-[#1f4e6f]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
               <Icon icon="mdi:card-account-details" className="w-4 h-4" /> Applicant
-              {pendingApplicantCount > 0 && <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{pendingApplicantCount}</span>}
+              {pendingApplicantCount > 0 && (
+                <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                  {pendingApplicantCount}
+                </span>
+              )}
             </button>
           </div>
 
+          {/* Content */}
           <div className="flex-1 overflow-y-auto bg-white p-6">
             {activeTab === 'roster' && (
               <>
                 <div className="grid grid-cols-4 gap-4 mb-6">
                   <StatBox number={allVolunteers.length} label="Total Volunteers" barColor="border-gray-400" />
-                  <StatBox number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'On Scene' || getVolunteerStatus(v.id) === 'En Route').length} label="Active" barColor="border-green-600" />
-                  <StatBox number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'Dispatched').length} label="Deployed" barColor="border-orange-400" />
-                  <StatBox number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'Available').length} label="Stand By" barColor="border-yellow-400" />
+                  <StatBox
+                    number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'On Scene' || getVolunteerStatus(v.id) === 'En Route').length}
+                    label="Active"
+                    barColor="border-green-600"
+                  />
+                  <StatBox
+                    number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'Dispatched').length}
+                    label="Deployed"
+                    barColor="border-orange-400"
+                  />
+                  <StatBox
+                    number={allVolunteers.filter(v => getVolunteerStatus(v.id) === 'Available').length}
+                    label="Stand By"
+                    barColor="border-yellow-400"
+                  />
                 </div>
                 <RosterView
                   volunteers={allVolunteers}
                   selectedId={selectedRosterId}
                   onSelect={setSelectedRosterId}
-                  getStatus={getVolunteerStatus} // 🔥 Passing function to child
+                  getStatus={getVolunteerStatus}
                 />
               </>
             )}
             {activeTab === 'applicant' && (
               <>
-                {/* ✅ NEW: Search & Sort Bar */}
+                {/* Search & Sort Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-200 pb-3">
                   {/* Search Input */}
                   <div className="flex items-center gap-2">
@@ -452,7 +640,7 @@ export default function VolunteerApproval() {
                         onChange={(e) => {
                           setIsSearching(true);
                           setSearchQuery(e.target.value);
-                          loadAllVolunteers(true); // ✅ ADD THIS LINE
+                          loadAllVolunteers(true);
                         }}
                         className="pl-7 pr-3 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
                       />
@@ -489,12 +677,19 @@ export default function VolunteerApproval() {
                 </div>
 
                 {/* Applicant List */}
-                <ApplicantView applicants={applicants} onView={setSelectedApplicant} onAccept={handleAcceptClick} onReject={handleRejectClick} isProcessing={isProcessing} />
+                <ApplicantView
+                  applicants={applicants}
+                  onView={setSelectedApplicant}
+                  onAccept={handleAcceptClick}
+                  onReject={handleRejectClick}
+                  isProcessing={isProcessing}
+                />
               </>
             )}
           </div>
         </div>
 
+        {/* Right Column - Details Sidebar */}
         <div className="w-[380px] bg-white rounded-xl border border-gray-200 shadow-lg max-h-[calc(100vh-80px)] sticky top-0 shrink-0 flex flex-col">
           {activeTab === 'roster' && !activeVolunteer && (
             <div className="h-full flex flex-col items-center justify-center p-6">
@@ -513,29 +708,45 @@ export default function VolunteerApproval() {
                     <Icon icon="mdi:account" className="w-8 h-8 text-gray-400" />
                   )}
                 </div>
-                <div><h3 className="text-[20px] font-bold text-gray-800">{activeVolunteer.name}</h3><p className="text-[13px] text-gray-500 font-medium">{activeVolunteer.role}</p><div className="mt-1.5"><PanelStatusBadge label={getVolunteerStatus(activeVolunteer.id)} /></div></div>
-                <button onClick={handleCloseRoster} className="text-gray-400 hover:text-gray-600 absolute top-4 right-4"><Icon icon="mdi:close" className="w-6 h-6" /></button>
+                <div>
+                  <h3 className="text-[20px] font-bold text-gray-800">{activeVolunteer.name}</h3>
+                  <p className="text-[13px] text-gray-500 font-medium">{activeVolunteer.role}</p>
+                  <div className="mt-1.5">
+                    <PanelStatusBadge label={getVolunteerStatus(activeVolunteer.id)} />
+                  </div>
+                </div>
+                <button onClick={handleCloseRoster} className="text-gray-400 hover:text-gray-600 absolute top-4 right-4">
+                  <Icon icon="mdi:close" className="w-6 h-6" />
+                </button>
               </div>
+
               <div className="flex-1 overflow-y-auto pb-20">
                 <SectionHeader title="Profile" />
                 <DetailRow label="Volunteer ID" value={activeVolunteer.appId} />
                 <DetailRow label="Contact" value={activeVolunteer.details?.contact || 'N/A'} />
                 <DetailRow label="Current Assignment" value={activeVolunteer.status === 'accepted' ? 'Active' : 'N/A'} />
+
                 <SectionHeader title="Recent Incidents" />
                 <div className="p-6 space-y-4 border-b border-gray-200">
                   <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
                     <p className="text-xs text-gray-500 font-medium">No recent incidents assigned.</p>
                   </div>
                 </div>
+
                 <SectionHeader title="Certification and Skills" />
                 <div className="p-6 flex flex-wrap gap-1.5">
                   {activeVolunteer.details?.skills?.slice(0, 8).map((s, idx) => (
-                    <span key={idx} className="bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded text-[11px] font-medium shadow-sm">{s}</span>
+                    <span key={idx} className="bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded text-[11px] font-medium shadow-sm">
+                      {s}
+                    </span>
                   ))}
                 </div>
               </div>
+
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 flex gap-3">
-                <button onClick={handleDispatchClick} className="flex-1 bg-[#e60000] hover:bg-[#cc0000] text-white text-[13px] font-medium py-2 rounded">Dispatch</button>
+                <button onClick={handleDispatchClick} className="flex-1 bg-[#e60000] hover:bg-[#cc0000] text-white text-[13px] font-medium py-2 rounded">
+                  Dispatch
+                </button>
               </div>
             </div>
           )}
@@ -548,8 +759,7 @@ export default function VolunteerApproval() {
           )}
           {activeTab === 'applicant' && activeApplicant && (
             <div className="h-full flex flex-col relative bg-white rounded-xl">
-
-              {/* TOP HEADER - Tighter Padding */}
+              {/* Header */}
               <div className="pt-4 pb-3 px-4 flex flex-col border-b border-gray-200 relative">
                 <button onClick={handleCloseApplicant} className="absolute top-3 right-4 text-gray-400 hover:text-gray-600">
                   <Icon icon="mdi:close" className="w-5 h-5" />
@@ -575,9 +785,8 @@ export default function VolunteerApproval() {
                 </div>
               </div>
 
-              {/* MIDDLE DETAILS - Bigger text */}
+              {/* Details */}
               <div className="flex-1 overflow-y-auto bg-white pb-14">
-
                 {/* Personal Information */}
                 <div className="bg-[#f0f2f5] py-1.5 px-4 text-xs font-semibold text-gray-600 border-y border-gray-200">
                   Personal Information
@@ -632,8 +841,20 @@ export default function VolunteerApproval() {
                 <div className="p-3 flex flex-wrap gap-2">
                   {activeApplicant.details?.files?.length > 0 ? (
                     activeApplicant.details.files.map((file, idx) => (
-                      <div key={idx}
-                        onClick={() => { if (file.url) { const link = document.createElement('a'); link.href = file.url; link.download = file.name || 'document.pdf'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } else { alert("No file data found."); } }}
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (file.url) {
+                            const link = document.createElement('a');
+                            link.href = file.url;
+                            link.download = file.name || 'document.pdf';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          } else {
+                            alert("No file data found.");
+                          }
+                        }}
                         className="flex flex-col items-center justify-center border border-gray-200 bg-gray-50 rounded p-1.5 w-14 h-14 hover:shadow-md hover:border-blue-300 cursor-pointer group"
                       >
                         {file.type && file.type.startsWith('image/') ? (
@@ -651,11 +872,11 @@ export default function VolunteerApproval() {
                   )}
                 </div>
 
-                {/* BOTTOM SPACER - Prevents content from hiding behind the absolute buttons */}
+                {/* Bottom Spacer */}
                 <div className="h-12"></div>
               </div>
 
-              {/* CLEAN MINIMAL BUTTONS AT THE BOTTOM (With Borders) */}
+              {/* Action Buttons */}
               <div className="absolute bottom-0 left-0 right-0 py-3 px-5 bg-white border-t border-gray-200 flex justify-between items-center gap-2">
                 <button
                   onClick={() => handleRejectClick(activeApplicant)}
@@ -686,7 +907,13 @@ export default function VolunteerApproval() {
         </div>
       </div>
 
-      {isDispatchModalOpen && activeVolunteer && <DispatchModal volunteer={activeVolunteer} onClose={() => setIsDispatchModalOpen(false)} onDispatch={handleDispatchComplete} />}
+      {isDispatchModalOpen && activeVolunteer && (
+        <DispatchModal
+          volunteer={activeVolunteer}
+          onClose={() => setIsDispatchModalOpen(false)}
+          onDispatch={handleDispatchComplete}
+        />
+      )}
     </div>
   );
 }

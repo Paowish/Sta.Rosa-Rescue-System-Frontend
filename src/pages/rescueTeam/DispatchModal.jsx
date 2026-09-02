@@ -1,8 +1,12 @@
 import { Icon } from "@iconify/react";
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { incidentService } from "../../services/api"; // ✅ IMPORT THIS
+import { incidentService } from "../../services/api";
 
+/**
+ * Dispatch Modal Component
+ * Allows dispatching rescue teams or individual volunteers to incidents
+ */
 export default function DispatchModal({
     isOpen,
     onClose,
@@ -20,20 +24,28 @@ export default function DispatchModal({
     handleVolunteerToggle,
     handleRemoveSelected
 }) {
-    // ✅ 1. ALL HOOKS MUST BE AT THE TOP, BEFORE ANY RETURN!
+    // State for teams
     const [teams, setTeams] = useState([]);
     const [loadingTeams, setLoadingTeams] = useState(false);
     const [expandedTeamId, setExpandedTeamId] = useState(null);
+
+    // State for tab management
     const [activeTab, setActiveTab] = useState('rescue');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingTabChange, setPendingTabChange] = useState(null);
 
+    /**
+     * Fetch teams when modal opens
+     */
     useEffect(() => {
         if (isOpen) {
             fetchTeams();
         }
     }, [isOpen]);
 
+    /**
+     * Fetch rescue teams from API
+     */
     const fetchTeams = async () => {
         setLoadingTeams(true);
         try {
@@ -48,32 +60,51 @@ export default function DispatchModal({
         }
     };
 
+    /**
+     * Get member IDs from a team
+     */
     const getTeamMemberIds = (team) => {
         return team.members.map(m => m._id);
     };
 
+    /**
+     * Check if a team is fully selected
+     */
     const isTeamSelected = (team) => {
         const memberIds = getTeamMemberIds(team);
         return memberIds.every(id => selectedIds.includes(id));
     };
 
+    /**
+     * Get all team member IDs across all teams
+     */
     const getAllTeamMemberIds = () => {
         return teams.flatMap(t => getTeamMemberIds(t));
     };
 
+    /**
+     * Check if any team is selected
+     */
     const hasAnyTeamSelected = () => {
         return teams.some(team => isTeamSelected(team));
     };
 
+    /**
+     * Check if any individual volunteer is selected
+     */
     const hasAnyVolunteerSelected = () => {
         const allTeamMemberIds = getAllTeamMemberIds();
         const volunteerIds = volunteers.map(v => v._id);
         return selectedIds.some(id => volunteerIds.includes(id) && !allTeamMemberIds.includes(id));
     };
 
+    /**
+     * Handle tab change with confirmation if needed
+     */
     const handleTabChange = (tab) => {
         if (tab === activeTab) return;
 
+        // Check if switching from Rescue Team to Volunteers with team selected
         if (activeTab === 'rescue' && tab === 'volunteers') {
             if (hasAnyTeamSelected()) {
                 setPendingTabChange(tab);
@@ -82,6 +113,7 @@ export default function DispatchModal({
             }
         }
 
+        // Check if switching from Volunteers to Rescue Team with volunteers selected
         if (activeTab === 'volunteers' && tab === 'rescue') {
             if (hasAnyVolunteerSelected()) {
                 setPendingTabChange(tab);
@@ -94,6 +126,9 @@ export default function DispatchModal({
         setSearchTerm('');
     };
 
+    /**
+     * Confirm tab change and clear selections
+     */
     const confirmTabChange = () => {
         if (pendingTabChange === 'volunteers') {
             const allTeamMemberIds = getAllTeamMemberIds();
@@ -110,11 +145,17 @@ export default function DispatchModal({
         setPendingTabChange(null);
     };
 
+    /**
+     * Cancel tab change
+     */
     const cancelTabChange = () => {
         setShowConfirmModal(false);
         setPendingTabChange(null);
     };
 
+    /**
+     * Toggle team selection
+     */
     const handleTeamToggle = (team) => {
         const memberIds = getTeamMemberIds(team);
         const allSelected = isTeamSelected(team);
@@ -132,6 +173,9 @@ export default function DispatchModal({
         }
     };
 
+    /**
+     * Wrapper for volunteer toggle that handles team conflicts
+     */
     const handleVolunteerToggleWrapper = (volunteerId) => {
         const allTeamMemberIds = getAllTeamMemberIds();
         const hasTeamSelected = selectedIds.some(id => allTeamMemberIds.includes(id));
@@ -143,21 +187,33 @@ export default function DispatchModal({
         handleVolunteerToggle(volunteerId);
     };
 
+    /**
+     * Check if any team is selected
+     */
     const hasTeamSelected = () => {
         const allTeamMemberIds = getAllTeamMemberIds();
         return selectedIds.some(id => allTeamMemberIds.includes(id));
     };
 
+    /**
+     * Check if individual volunteers are selected (not part of teams)
+     */
     const hasIndividualVolunteersSelected = () => {
         const allTeamMemberIds = getAllTeamMemberIds();
         const volunteerIds = volunteers.map(v => v._id);
         return selectedIds.some(id => volunteerIds.includes(id) && !allTeamMemberIds.includes(id));
     };
 
+    /**
+     * Get selected teams
+     */
     const getSelectedTeams = () => {
         return teams.filter(team => isTeamSelected(team));
     };
 
+    /**
+     * Handle dispatch action
+     */
     const handleDispatchWrapper = () => {
         const hasTeams = hasTeamSelected();
         const hasVolunteers = hasIndividualVolunteersSelected();
@@ -185,6 +241,9 @@ export default function DispatchModal({
         onClose();
     };
 
+    /**
+     * Filter volunteers based on search term
+     */
     const filteredVolunteers = useMemo(() => {
         let filtered = volunteers;
         if (searchTerm) {
@@ -196,9 +255,15 @@ export default function DispatchModal({
         return filtered;
     }, [volunteers, searchTerm]);
 
+    /**
+     * Get selected volunteers data
+     */
     const selectedVolunteersData = volunteers.filter(v => selectedIds.includes(v._id));
     const selectedTeams = getSelectedTeams();
 
+    /**
+     * Get full address of a volunteer
+     */
     const getFullAddress = (volunteer) => {
         if (!volunteer) return 'N/A';
         if (volunteer.address && volunteer.address !== "") {
@@ -208,6 +273,9 @@ export default function DispatchModal({
         return parts.length > 0 ? parts.join(', ') : 'N/A';
     };
 
+    /**
+     * Schedule Bar Component
+     */
     const ScheduleBar = ({ schedule }) => {
         const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const getColor = (day) => {
@@ -240,6 +308,9 @@ export default function DispatchModal({
         );
     };
 
+    /**
+     * Check if there are selections in current tab
+     */
     const hasSelectionsInCurrentTab = () => {
         if (activeTab === 'rescue') {
             return hasAnyTeamSelected();
@@ -248,7 +319,7 @@ export default function DispatchModal({
         }
     };
 
-    // ✅ 2. NOW the conditional return!
+    // Don't render if modal is closed
     if (!isOpen) return null;
 
     return createPortal(
@@ -256,8 +327,7 @@ export default function DispatchModal({
             {/* Main Dispatch Modal */}
             <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-
-                    {/* Header */}
+                    {/* Modal Header */}
                     <div className="bg-[#9fb2c2] p-5 flex justify-between items-start relative sticky top-0 z-10">
                         <div className="text-white">
                             <p className="text-xs font-medium opacity-90">Dispatch to</p>
@@ -319,7 +389,7 @@ export default function DispatchModal({
                     {/* List Content */}
                     <div className="px-4 pb-4 h-[340px] overflow-y-auto custom-scrollbar">
                         {activeTab === 'rescue' ? (
-                            /* ✅ RESCUE TEAM TAB - REAL DATA FROM API */
+                            /* Rescue Team Tab - Real data from API */
                             loadingTeams ? (
                                 <p className="text-center py-4 text-gray-500">Loading teams...</p>
                             ) : teams.length === 0 ? (
@@ -332,7 +402,7 @@ export default function DispatchModal({
 
                                         return (
                                             <div key={team._id} className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
-                                                {/* Clickable Team Header */}
+                                                {/* Team Header */}
                                                 <div
                                                     className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                                                     onClick={() => setExpandedTeamId(isExpanded ? null : team._id)}
@@ -362,7 +432,9 @@ export default function DispatchModal({
                                                                 )}
                                                             </div>
                                                             <span className="text-[12px] text-gray-500">{team.role}</span>
-                                                            <p className="text-xs text-blue-600 font-medium">Team Leader: {team.teamLeader?.firstName} {team.teamLeader?.lastName}</p>
+                                                            <p className="text-xs text-blue-600 font-medium">
+                                                                Team Leader: {team.teamLeader?.firstName} {team.teamLeader?.lastName}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                     <div className="text-gray-400">
@@ -370,7 +442,7 @@ export default function DispatchModal({
                                                     </div>
                                                 </div>
 
-                                                {/* Expandable Members List */}
+                                                {/* Expanded Members */}
                                                 {isExpanded && (
                                                     <div className="border-t border-gray-100 bg-gray-50/50 p-3 space-y-2">
                                                         {/* Specialties */}
@@ -417,7 +489,7 @@ export default function DispatchModal({
                                 </div>
                             )
                         ) : (
-                            /* ✅ VOLUNTEERS TAB - Individual volunteers */
+                            /* Volunteers Tab - Individual volunteers */
                             loadingVolunteers ? (
                                 <p className="text-center py-4 text-gray-500">Loading volunteers...</p>
                             ) : filteredVolunteers.length === 0 ? (
@@ -470,6 +542,7 @@ export default function DispatchModal({
 
                     {/* Footer */}
                     <div className="bg-white border-t border-gray-200 p-4 sticky bottom-0">
+                        {/* Selected Items */}
                         {selectedIds.length > 0 && (
                             <div className="mb-3">
                                 <h4 className="text-base font-bold text-gray-800 mb-2">Selected</h4>
@@ -504,6 +577,7 @@ export default function DispatchModal({
                             </div>
                         )}
 
+                        {/* Action Buttons */}
                         <div className="flex justify-end gap-3">
                             <button onClick={onClose} className="px-6 py-2 text-gray-500 font-medium hover:bg-gray-100 rounded-md">
                                 Cancel
@@ -520,7 +594,7 @@ export default function DispatchModal({
                 </div>
             </div>
 
-            {/* ✅ Confirmation Modal */}
+            {/* Confirmation Modal */}
             {showConfirmModal && (
                 <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">

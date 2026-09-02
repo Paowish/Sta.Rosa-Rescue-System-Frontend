@@ -2,12 +2,21 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
+/**
+ * Export User Modal Component
+ * Provides options for exporting user data with role-based filtering
+ */
 export default function ExportUserModal({ isOpen, onClose, onExport }) {
+    // State for export options
     const [selectedOption, setSelectedOption] = useState('all');
     const [selectedRole, setSelectedRole] = useState('all');
 
+    // Don't render if modal is closed
     if (!isOpen) return null;
 
+    /**
+     * Handle export button click
+     */
     const handleExport = () => {
         onExport(selectedOption, selectedRole);
         onClose();
@@ -16,8 +25,7 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-                {/* Header */}
+                {/* Modal Header */}
                 <div className="px-6 py-4 border-b flex justify-between items-center bg-white">
                     <div className="flex items-center gap-2">
                         <Icon icon="mdi:upload" className="w-6 h-6 text-gray-700" />
@@ -28,8 +36,9 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                     </button>
                 </div>
 
-                {/* Body - Export Options */}
+                {/* Modal Body */}
                 <div className="p-6">
+                    {/* Export Options Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Option 1: All Users */}
                         <button
@@ -44,8 +53,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                                     <Icon icon="mdi:account-multiple" className="w-6 h-6 text-gray-700" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">List of all users</h3>
-                                    <p className="text-[10px] text-gray-500 mt-1">Complete log of every incident</p>
+                                    <h3 className="font-semibold text-gray-800 text-sm">List of All Users</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Complete list of all registered users</p>
                                 </div>
                             </div>
                         </button>
@@ -63,8 +72,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                                     <Icon icon="mdi:check-circle" className="w-6 h-6 text-gray-700" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">All users - Active</h3>
-                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of incident</p>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Active Users</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Users with active accounts</p>
                                 </div>
                             </div>
                         </button>
@@ -82,8 +91,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                                     <Icon icon="mdi:pause-circle" className="w-6 h-6 text-gray-700" />
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-gray-800 text-sm">All users - Inactive</h3>
-                                    <p className="text-[10px] text-gray-500 mt-1">Incidents grouped by type of barangay</p>
+                                    <h3 className="font-semibold text-gray-800 text-sm">Inactive Users</h3>
+                                    <p className="text-[10px] text-gray-500 mt-1">Users with inactive accounts</p>
                                 </div>
                             </div>
                         </button>
@@ -93,7 +102,7 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                     <div className="mt-6 pt-6 border-t border-gray-100">
                         <h4 className="text-sm font-medium text-gray-700 mb-3">Filter Options</h4>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs text-gray-500 font-medium">Roles</label>
+                            <label className="text-xs text-gray-500 font-medium">Role</label>
                             <select
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -109,7 +118,7 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                     </div>
                 </div>
 
-                {/* Footer - Actions */}
+                {/* Modal Footer */}
                 <div className="px-6 py-4 border-t flex justify-end gap-3 bg-gray-50">
                     <button
                         onClick={onClose}
@@ -124,7 +133,6 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                         Export Users
                     </button>
                 </div>
-
             </div>
         </div>,
         document.body

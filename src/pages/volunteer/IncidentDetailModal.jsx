@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 
+/**
+ * Incident Detail Modal Component
+ * Displays incident details with accept/decline actions for volunteers
+ */
 const IncidentDetailModal = React.memo(({
     incident,
     isOpen,
@@ -17,8 +21,10 @@ const IncidentDetailModal = React.memo(({
 }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
 
+    // Don't render if modal is closed and not closing
     if (!isOpen && !isClosing) return null;
 
+    // Extract incident data
     const incidentTitle = incident?.title || incident?.type || 'N/A';
     const incidentId = incident?.id || incident?._id || 'N/A';
     const incidentStatus = incident?.status || 'N/A';
@@ -28,6 +34,7 @@ const IncidentDetailModal = React.memo(({
     const incidentDescription = incident?.description || 'No description provided';
     const incidentImage = incident?.image || null;
 
+    // Check if actioned
     const isActioned = actionedIncidents[incident?.id || incident?._id];
     const isDisabled = isLoading ||
         incidentStatus === 'accepted' ||
@@ -35,12 +42,18 @@ const IncidentDetailModal = React.memo(({
         !isOnDuty ||
         isActioned;
 
+    /**
+     * Handle accept click
+     */
     const handleAcceptClick = () => {
         if (isActioned) return;
         onAccept(incident);
         onClose();
     };
 
+    /**
+     * Handle decline click
+     */
     const handleDeclineClick = () => {
         if (isActioned) return;
         onDecline(incident);
@@ -49,8 +62,10 @@ const IncidentDetailModal = React.memo(({
 
     return (
         <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center lg:hidden">
+            {/* Backdrop */}
             <div
-                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${isClosing ? 'opacity-0' : 'opacity-100'
+                    }`}
                 style={{
                     position: 'fixed',
                     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -59,22 +74,39 @@ const IncidentDetailModal = React.memo(({
                 onClick={onClose}
             ></div>
 
-            <div className={`relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[85vh] overflow-hidden ${isClosing ? 'modal-slide-down' : 'modal-slide-up'}`}>
+            {/* Modal Content */}
+            <div className={`relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[85vh] overflow-hidden ${isClosing ? 'modal-slide-down' : 'modal-slide-up'
+                }`}>
+                {/* Header */}
                 <div className="sticky top-0 bg-white z-10 px-4 py-3 border-b flex items-center justify-between rounded-t-2xl">
                     <h2 className="font-semibold text-[#262D31] text-sm">Incident Details</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200">✕</button>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200"
+                    >
+                        ✕
+                    </button>
                 </div>
 
+                {/* Scrollable Content */}
                 <div className="overflow-y-auto p-4 space-y-3" style={{ maxHeight: 'calc(85vh - 180px)' }}>
+                    {/* Incident Header */}
                     <div className="bg-[#F5F4FF] p-3 rounded-lg modal-content-fade-in">
                         <h1 className="font-bold text-base text-[#262D31]">{incidentTitle}</h1>
                         <div className="flex flex-wrap gap-1 mt-1">
-                            <span className={`text-[10px] px-2 py-0.5 rounded ${getPriorityColor(incidentPriority)}`}>{incidentPriority}</span>
-                            {incident?.badge && <span className={`text-[10px] px-2 py-0.5 rounded-full border ${incident.badgeColor}`}>{incident.badge}</span>}
+                            <span className={`text-[10px] px-2 py-0.5 rounded ${getPriorityColor(incidentPriority)}`}>
+                                {incidentPriority}
+                            </span>
+                            {incident?.badge && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${incident.badgeColor}`}>
+                                    {incident.badge}
+                                </span>
+                            )}
                         </div>
                         <p className="text-[10px] text-gray-500">ID: {incidentId}</p>
                     </div>
 
+                    {/* Incident Image */}
                     {incidentImage && (
                         <>
                             <div className="border-t border-[#DFDFF0] pt-4 modal-content-fade-in">
@@ -96,8 +128,6 @@ const IncidentDetailModal = React.memo(({
                                         onClick={() => setIsFullscreen(true)}
                                         onError={(e) => { e.target.style.display = 'none'; }}
                                     />
-
-                                    {/* ✅ Expand Icon Badge */}
                                     <div className="absolute bottom-6 right-6 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
                                         <Icon icon="material-symbols:fullscreen" className="w-3 h-3" />
                                         View Full
@@ -133,6 +163,7 @@ const IncidentDetailModal = React.memo(({
                         </>
                     )}
 
+                    {/* Location */}
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.05s' }}>
                         <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
                             <Icon icon="material-symbols:location-on" className="w-3 h-3" />
@@ -143,6 +174,7 @@ const IncidentDetailModal = React.memo(({
                         </div>
                     </div>
 
+                    {/* Reporter */}
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.1s' }}>
                         <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
                             <Icon icon="material-symbols:person" className="w-3 h-3" />
@@ -154,6 +186,7 @@ const IncidentDetailModal = React.memo(({
                         </div>
                     </div>
 
+                    {/* Description */}
                     <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.15s' }}>
                         <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
                             <Icon icon="material-symbols:description" className="w-3 h-3" />
@@ -164,6 +197,7 @@ const IncidentDetailModal = React.memo(({
                         </div>
                     </div>
 
+                    {/* Victims */}
                     {incidentVictims > 0 && (
                         <div className="border-t border-[#DFDFF0] pt-3 modal-content-fade-in" style={{ animationDelay: '0.2s' }}>
                             <div className="bg-[#EBEDFA] px-3 py-1 font-medium text-[#656363] text-xs rounded-t-lg flex items-center gap-1.5">
@@ -177,23 +211,29 @@ const IncidentDetailModal = React.memo(({
                     )}
                 </div>
 
+                {/* Footer Actions */}
                 <div className="sticky bottom-0 bg-white border-t p-4 space-y-2 rounded-b-2xl modal-content-fade-in" style={{ animationDelay: '0.1s' }}>
                     <div className="flex gap-2">
-                        {/* ✅ Accept Button - Always visible */}
+                        {/* Accept Button */}
                         <button
                             onClick={handleAcceptClick}
                             disabled={isDisabled}
-                            className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200 btn-hover btn-press ${isDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                            className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200 btn-hover btn-press ${isDisabled
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                }`}
                         >
                             {isLoading ? (
                                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                            ) : <><Icon icon="material-symbols:check" className="w-3 h-3" /> Accept</>}
+                            ) : (
+                                <><Icon icon="material-symbols:check" className="w-3 h-3" /> Accept</>
+                            )}
                         </button>
 
-                        {/* ✅ "Resolve?" button - ONLY appears when isNotReadyMode is true */}
+                        {/* Resolve Button - Only when isNotReadyMode is true */}
                         {isNotReadyMode && (
                             <button
                                 onClick={onResolve}
@@ -205,22 +245,29 @@ const IncidentDetailModal = React.memo(({
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                ) : <><Icon icon="material-symbols:flag" className="w-3 h-3" /> Resolve?</>}
+                                ) : (
+                                    <><Icon icon="material-symbols:flag" className="w-3 h-3" /> Resolve?</>
+                                )}
                             </button>
                         )}
 
-                        {/* ✅ Decline Button - Always visible */}
+                        {/* Decline Button */}
                         <button
                             onClick={handleDeclineClick}
                             disabled={isDisabled}
-                            className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200 btn-hover btn-press ${isDisabled ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                            className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200 btn-hover btn-press ${isDisabled
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-red-600 text-white hover:bg-red-700'
+                                }`}
                         >
                             {isLoading ? (
                                 <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                            ) : <><Icon icon="material-symbols:close" className="w-3 h-3" /> Decline</>}
+                            ) : (
+                                <><Icon icon="material-symbols:close" className="w-3 h-3" /> Decline</>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -228,6 +275,7 @@ const IncidentDetailModal = React.memo(({
         </div>
     );
 }, (prevProps, nextProps) => {
+    // Custom comparison for memoization
     return (
         prevProps.incident?.id === nextProps.incident?.id &&
         prevProps.isOpen === nextProps.isOpen &&

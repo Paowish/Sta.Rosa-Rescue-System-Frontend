@@ -2,13 +2,14 @@ import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
-import { motion, AnimatePresence } from "framer-motion"; // ✅ ADD AnimatePresence
-
-// ✅ NEW IMPORTS FOR GOOGLE LOGIN
+import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
-// ✅ Pending Approval Modal Component
+/**
+ * Pending Approval Modal Component
+ * Displays when volunteer application is pending review
+ */
 function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
   if (!isOpen) return null;
   return (
@@ -32,7 +33,10 @@ function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
   );
 }
 
-// ✅ Rejected Modal Component
+/**
+ * Rejected Modal Component
+ * Displays when volunteer application has been rejected
+ */
 function RejectedModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   return (
@@ -40,7 +44,9 @@ function RejectedModal({ isOpen, onClose }) {
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-800">Application Rejected</h3>
           <p className="text-sm text-gray-600 mt-2">Your volunteer application has been rejected.</p>
@@ -53,7 +59,10 @@ function RejectedModal({ isOpen, onClose }) {
   );
 }
 
-// ✅ NotApproved Modal Component
+/**
+ * Not Approved Modal Component
+ * Displays when account is not yet approved
+ */
 function NotApprovedModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   return (
@@ -61,7 +70,9 @@ function NotApprovedModal({ isOpen, onClose }) {
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-4">
           <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-800">Account Not Approved</h3>
           <p className="text-sm text-gray-600 mt-2">Your account is not yet approved.</p>
@@ -74,7 +85,10 @@ function NotApprovedModal({ isOpen, onClose }) {
   );
 }
 
-// ✅ Deactivated Modal Component
+/**
+ * Deactivated Modal Component
+ * Displays when account has been deactivated
+ */
 function DeactivatedModal({ isOpen, onClose }) {
   if (!isOpen) return null;
   return (
@@ -82,7 +96,9 @@ function DeactivatedModal({ isOpen, onClose }) {
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="text-center mb-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-800">Account Deactivated</h3>
           <p className="text-sm text-gray-600 mt-2">Your account has been deactivated.</p>
@@ -95,13 +111,19 @@ function DeactivatedModal({ isOpen, onClose }) {
   );
 }
 
-// ✅ Forgot Password Modal Component
+/**
+ * Forgot Password Modal Component
+ * Handles password reset request
+ */
 function ForgotPasswordModal({ isOpen, onClose }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  /**
+   * Handle password reset form submission
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -174,8 +196,12 @@ function ForgotPasswordModal({ isOpen, onClose }) {
   );
 }
 
-// ✅ Main Login Component
+/**
+ * Login Component
+ * Main authentication page with email/password and Google OAuth
+ */
 export default function Login() {
+  // Form state
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -193,7 +219,9 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  // ✅ GOOGLE LOGIN HANDLER (RECEIVES TOKEN AUTOMATICALLY)
+  /**
+   * Handle Google OAuth login success
+   */
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const res = await authService.googleLogin(credentialResponse.credential);
@@ -224,6 +252,10 @@ export default function Login() {
       setError("Google login failed. Please try again.");
     }
   };
+
+  /**
+   * Validate form inputs
+   */
   const validateForm = () => {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -248,6 +280,9 @@ export default function Login() {
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Handle email/password login
+   */
   const handleLogin = async () => {
     if (!validateForm()) return;
 
@@ -258,17 +293,26 @@ export default function Login() {
       const response = await authService.login(email, password);
 
       if (response.success === false) {
+        // Handle specific error cases
         if (response.code === 'PENDING_APPROVAL' || (response.message && response.message.includes('pending approval'))) {
-          setLoading(false); setShowPendingModal(true); return;
+          setLoading(false);
+          setShowPendingModal(true);
+          return;
         }
         if (response.code === 'REJECTED' || (response.message && response.message.includes('rejected'))) {
-          setLoading(false); setShowRejectedModal(true); return;
+          setLoading(false);
+          setShowRejectedModal(true);
+          return;
         }
         if (response.code === 'NOT_APPROVED' || (response.message && response.message.includes('not yet approved'))) {
-          setLoading(false); setShowNotApprovedModal(true); return;
+          setLoading(false);
+          setShowNotApprovedModal(true);
+          return;
         }
         if (response.message && response.message.includes('deactivated')) {
-          setLoading(false); setShowDeactivatedModal(true); return;
+          setLoading(false);
+          setShowDeactivatedModal(true);
+          return;
         }
 
         setError(response.message || "Login failed.");
@@ -276,6 +320,7 @@ export default function Login() {
         return;
       }
 
+      // Successful login
       let userData = response.user;
       let token = response.token;
 
@@ -299,6 +344,7 @@ export default function Login() {
         const userRole = userData.role || 'civilian';
         await new Promise(resolve => setTimeout(resolve, 2000));
 
+        // Redirect based on role
         if (userRole === "admin") navigate("/admin/overview");
         else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
         else if (userRole === "volunteer") navigate("/volunteer-dashboard");
@@ -312,11 +358,11 @@ export default function Login() {
       console.error("❌ Login error:", err);
       setError(err.message || "Login failed. Please try again.");
       setLoading(false);
-
       setLockUntil(Date.now() + 30000);
     }
   };
 
+  // Render loading overlay
   if (loading) {
     return (
       <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
@@ -334,22 +380,27 @@ export default function Login() {
   return (
     <AnimatePresence mode="wait">
       <div className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4 sm:px-6 md:px-10 py-6">
-        {/* ✅ Modals */}
-        <PendingApprovalModal isOpen={showPendingModal} onClose={() => setShowPendingModal(false)} onLoginClick={() => { setEmail(""); setPassword(""); setError(""); }} />
+        {/* Modals */}
+        <PendingApprovalModal
+          isOpen={showPendingModal}
+          onClose={() => setShowPendingModal(false)}
+          onLoginClick={() => { setEmail(""); setPassword(""); setError(""); }}
+        />
         <RejectedModal isOpen={showRejectedModal} onClose={() => setShowRejectedModal(false)} />
         <NotApprovedModal isOpen={showNotApprovedModal} onClose={() => setShowNotApprovedModal(false)} />
         <DeactivatedModal isOpen={showDeactivatedModal} onClose={() => setShowDeactivatedModal(false)} />
         <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
 
-        {/* ✅ MAIN CONTENT WITH SLIDE LEFT & RIGHT ANIMATION */}
+        {/* Main Content with Slide Animation */}
         <motion.div
           key="login-page"
-          initial={{ opacity: 0, x: -100 }}      // Starts 100px to the LEFT (hidden)
-          animate={{ opacity: 1, x: 0 }}          // Slides IN to the center
-          exit={{ opacity: 0, x: 100 }}           // Slides OUT to the RIGHT
+          initial={{ opacity: 0, x: -100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 100 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
           className="w-full max-w-md md:max-w-6xl py-4 md:py-10"
         >
+          {/* Brand Header */}
           <div className="flex items-center gap-3 mb-8">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
@@ -358,18 +409,19 @@ export default function Login() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
+            {/* Login Form */}
             <div>
               <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-              {/* ✅ GOOGLE LOGIN BUTTON */}
+              {/* Google Login Button */}
               <div className="w-full mb-5 flex justify-center">
                 <GoogleLogin
                   theme="outline"
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="300" // ✅ FIXED NUMBER - Fills most of the container!
+                  width={300}
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />
@@ -381,31 +433,60 @@ export default function Login() {
                 <hr className="w-full border-gray-300" />
               </div>
 
+              {/* Error Message */}
               {error && (
-                <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️') ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                <div className={`mb-4 p-3 rounded-md text-sm ${error.includes('⏳') || error.includes('⚠️')
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-red-100 text-red-700'
+                  }`}>
                   {error}
                 </div>
               )}
 
+              {/* Email Input */}
               <div className="w-full mb-5">
-                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'}`}>
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.email ? 'border-red-500' : 'border-gray-400'
+                  }`}>
                   <legend className="text-sm px-2 text-gray-700">Email</legend>
-                  <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (validationErrors.email) setValidationErrors({ ...validationErrors, email: null }); }} placeholder="john.doe@gmail.com" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (validationErrors.email) setValidationErrors({ ...validationErrors, email: null });
+                    }}
+                    placeholder="john.doe@gmail.com"
+                    className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                  />
                 </fieldset>
                 {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
               </div>
 
+              {/* Password Input */}
               <div className="w-full">
-                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'}`}>
+                <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-[#F3F6FA] focus-within:border-blue-500 ${validationErrors.password ? 'border-red-500' : 'border-gray-400'
+                  }`}>
                   <legend className="text-sm px-2 text-gray-700">Password</legend>
                   <div className="flex items-center">
-                    <input type={showPass ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); if (validationErrors.password) setValidationErrors({ ...validationErrors, password: null }); }} placeholder="••••••••" className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base" />
-                    <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">{showPass ? <FaEyeSlash /> : <FaEye />}</span>
+                    <input
+                      type={showPass ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (validationErrors.password) setValidationErrors({ ...validationErrors, password: null });
+                      }}
+                      placeholder="••••••••"
+                      className="w-full bg-transparent outline-none placeholder-gray-400 text-sm sm:text-base"
+                    />
+                    <span onClick={() => setShowPass(!showPass)} className="cursor-pointer text-gray-500 ml-2">
+                      {showPass ? <FaEyeSlash /> : <FaEye />}
+                    </span>
                   </div>
                 </fieldset>
                 {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
               </div>
 
+              {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between mt-2 mb-6">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
                   <input type="checkbox" className="w-4 h-4" /> Remember me
@@ -415,7 +496,7 @@ export default function Login() {
                 </button>
               </div>
 
-              {/* ✅ CORRECT BUTTON LOGIC */}
+              {/* Login Button */}
               <button
                 onClick={handleLogin}
                 disabled={loading || (lockUntil && Date.now() < lockUntil)}
@@ -424,15 +505,23 @@ export default function Login() {
                 {loading ? "Logging in..." : (lockUntil && Date.now() < lockUntil ? "Please wait 30s..." : "Login")}
               </button>
 
-              <button onClick={() => navigate('/Guest/Report')} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 mt-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+              {/* Guest Report Button */}
+              <button
+                onClick={() => navigate('/Guest/Report')}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-md font-medium transition flex items-center justify-center gap-2 mt-3"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
                 Report as Guest
               </button>
 
+              {/* Sign Up Link */}
               <p className="text-center text-sm text-gray-600 mt-5">
                 Don't have an account? <Link to="/signup" className="text-red-400 font-medium hover:underline cursor-pointer">Sign up</Link>
               </p>
 
+              {/* Back to Home */}
               <div className="mt-4 text-center text-sm text-gray-500">
                 <Link to="/" className="text-[#FF6B6B] hover:text-[#E55A5A] transition-colors">
                   ← Back to Home
@@ -440,6 +529,7 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Hero Image */}
             <div className="hidden md:block">
               <div className="rounded-xl overflow-hidden shadow-lg">
                 <img src="/shers.png" alt="building" className="w-full h-full object-cover" />
