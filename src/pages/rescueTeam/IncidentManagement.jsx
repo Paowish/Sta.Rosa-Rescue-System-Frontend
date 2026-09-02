@@ -265,6 +265,8 @@ export default function IncidentManagement() {
       if (response && response.success) {
         setIsDispatchModalOpen(false);
 
+        loadIncidents();
+
         // Save team info to incident
         const updatedIncident = {
           ...selectedIncident,
