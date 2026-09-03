@@ -483,7 +483,12 @@ export const authService = {
             return response.data;
         } catch (error) {
             console.error('❌ Google login error:', error);
-            return error.response?.data || { success: false, message: "Google authentication failed." };
+            // ✅ RETURN THE ERROR RESPONSE DATA (WITH CODE)
+            return error.response?.data || {
+                success: false,
+                message: "Google authentication failed.",
+                code: error.response?.data?.code || null
+            };
         }
     },
 

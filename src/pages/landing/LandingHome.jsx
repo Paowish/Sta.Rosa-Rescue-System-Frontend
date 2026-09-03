@@ -2,60 +2,112 @@
 import { Link } from 'react-router-dom';
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
+// ✅ Get API URL
+const getApiUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:5000/api';
+    }
+    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+};
+
+// ✅ Helper: Format time ago
+const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Just Now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+
+    return date.toLocaleDateString();
+};
+
+// ✅ Helper: Get status color
+const getStatusColor = (status) => {
+    const statusColors = {
+        'Pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Dispatched': 'bg-blue-100 text-blue-700 border-blue-200',
+        'En Route': 'bg-purple-100 text-purple-700 border-purple-200',
+        'On Scene': 'bg-green-100 text-green-700 border-green-200',
+        'Resolved': 'bg-gray-100 text-gray-600 border-gray-200',
+        'Closed': 'bg-gray-100 text-gray-600 border-gray-200',
+        'Solved': 'bg-gray-100 text-gray-600 border-gray-200',
+    };
+    return statusColors[status] || 'bg-yellow-100 text-yellow-700 border-yellow-200';
+};
 
 /**
  * Landing Home Component
  * The main landing page featuring hero section, how it works, mission, services, and CTA
  */
 export default function LandingHome() {
-    // State for live incident feed simulation
-    const [fakeIncidents, setFakeIncidents] = useState([
-        { id: '01:11:11', type: 'Medical Emergency', loc: 'Brgy. San Mariano', time: 'Just Now', status: 'PENDING', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-        { id: '01:22:22', type: 'Crime Incident', loc: 'Brgy. Gomez', time: '1 Minute Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
-        { id: '01:33:33', type: 'Landslide', loc: 'Brgy. San Pedro', time: '2 Minutes Ago', status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
-    ]);
+    // State for live incident feed (REAL DATA)
+    const [liveIncidents, setLiveIncidents] = useState([]);
+
+    // State for real statistics
+    const [stats, setStats] = useState({
+        incidentsResolved: 0,
+        activeVolunteers: 0,
+        activeUnits: 0
+    });
+
+    // State for loading
+    const [loading, setLoading] = useState(true);
 
     /**
-     * Simulate live incident feed with random data
+     * Fetch real incident data and stats from PUBLIC endpoint (No auth needed)
      */
-    useEffect(() => {
-        const types = ['Medical Emergency', 'Fire Incident', 'Traffic Accident', 'Crime Incident', 'Landslide', 'Flood Warning'];
-        const barangays = ['Brgy. San Mariano', 'Brgy. Gomez', 'Brgy. San Pedro', 'Brgy. Rizal', 'Brgy. Del Pilar', 'Brgy. Maligaya'];
-        const statuses = [
-            { status: 'PENDING', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-            { status: 'On Scene', color: 'bg-green-100 text-green-700 border-green-200' },
-            { status: 'Dispatched', color: 'bg-blue-100 text-blue-700 border-blue-200' }
-        ];
+    const fetchRealData = useCallback(async () => {
+        const apiUrl = getApiUrl();
 
-        const interval = setInterval(() => {
-            // Generate random incident data
-            const randomType = types[Math.floor(Math.random() * types.length)];
-            const randomBrgy = barangays[Math.floor(Math.random() * barangays.length)];
-            const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-            const randomId = `02:${Math.floor(Math.random() * 59) + 10}:${Math.floor(Math.random() * 59) + 10}`;
+        try {
+            // ✅ USE PUBLIC STATS ENDPOINT - NO AUTH NEEDED
+            const response = await fetch(`${apiUrl}/public/stats`);
+            const data = await response.json();
 
-            const newIncident = {
-                id: randomId,
-                type: randomType,
-                loc: randomBrgy,
-                time: 'Just Now',
-                status: randomStatus.status,
-                color: randomStatus.color,
-            };
+            if (data.success) {
+                // Transform recent incidents to feed format
+                const transformed = (data.data.recentIncidents || []).map(incident => ({
+                    id: incident.id,
+                    type: incident.type,
+                    loc: incident.loc,
+                    time: formatTimeAgo(incident.time),
+                    status: incident.status,
+                    color: getStatusColor(incident.status)
+                }));
 
-            // Keep maximum of 4 items in the feed
-            setFakeIncidents(prev => {
-                const updated = [newIncident, ...prev];
-                return updated.slice(0, 4);
-            });
-        }, 2000);
+                setLiveIncidents(transformed);
 
-        // Cleanup interval on unmount
-        return () => clearInterval(interval);
+                // Set real statistics from database
+                setStats({
+                    incidentsResolved: data.data.incidentsResolved || 0,
+                    activeVolunteers: data.data.activeVolunteers || 0,
+                    activeUnits: data.data.activeUnits || 0
+                });
+            }
+        } catch (err) {
+            console.error('Failed to fetch real data:', err);
+
+            // ✅ Fallback to empty data (NO fake numbers)
+            setLiveIncidents([]);
+            setStats({ incidentsResolved: 0, activeVolunteers: 0, activeUnits: 0 });
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    // Services data
+    // ✅ Fetch ONLY ONCE on mount - NO polling to prevent lag
+    useEffect(() => {
+        fetchRealData();
+    }, [fetchRealData]);
+
+    // Services data (static - no re-computation needed)
     const services = [
         {
             img: "/medical.jpeg",
@@ -137,26 +189,26 @@ export default function LandingHome() {
                         </a>
                     </div>
 
-                    {/* Statistics */}
+                    {/* Statistics - Show REAL data from database */}
                     <div className="flex items-center gap-8 mt-12 pt-8 border-t border-gray-300">
                         <div>
-                            <p className="text-4xl font-bold text-gray-900">50<span className="text-lg font-normal text-gray-500">+</span></p>
+                            <p className="text-4xl font-bold text-gray-900">{stats.incidentsResolved}</p>
                             <p className="text-xs text-gray-500 font-medium">Incidents Resolved</p>
                         </div>
                         <div className="w-px h-10 bg-gray-300"></div>
                         <div>
-                            <p className="text-4xl font-bold text-gray-900">15</p>
+                            <p className="text-4xl font-bold text-gray-900">{stats.activeVolunteers}</p>
                             <p className="text-xs text-gray-500 font-medium">Active Volunteers</p>
                         </div>
                         <div className="w-px h-10 bg-gray-300"></div>
                         <div>
-                            <p className="text-4xl font-bold text-gray-900">9</p>
+                            <p className="text-4xl font-bold text-gray-900">{stats.activeUnits}</p>
                             <p className="text-xs text-gray-500 font-medium">Active Units</p>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Live Incident Feed */}
+                {/* Live Incident Feed - Show REAL data from database */}
                 <motion.div
                     initial={{ opacity: 0, x: 50 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -172,27 +224,31 @@ export default function LandingHome() {
 
                     {/* Feed List */}
                     <div className="space-y-3 max-h-[400px] overflow-hidden">
-                        {fakeIncidents.map((item, i) => (
-                            <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                className="flex items-start justify-between text-xs bg-gray-50 p-2 rounded hover:bg-gray-100 transition-colors duration-200"
-                            >
-                                <div className="flex gap-2">
-                                    <span className="font-mono text-gray-400 w-14">{item.id}</span>
-                                    <div>
-                                        <p className="font-bold text-gray-800">{item.type}</p>
-                                        <p className="text-gray-500">{item.loc}</p>
+                        {liveIncidents.length > 0 ? (
+                            liveIncidents.map((item, i) => (
+                                <motion.div
+                                    key={item.id || i}
+                                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.4, ease: "easeOut" }}
+                                    className="flex items-start justify-between text-xs bg-gray-50 p-2 rounded hover:bg-gray-100 transition-colors duration-200"
+                                >
+                                    <div className="flex gap-2">
+                                        <span className="font-mono text-gray-400 w-14">{item.id}</span>
+                                        <div>
+                                            <p className="font-bold text-gray-800">{item.type}</p>
+                                            <p className="text-gray-500">{item.loc}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-right flex flex-col items-end gap-1">
-                                    <span className="text-[10px] text-gray-400">{item.time}</span>
-                                    <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${item.color}`}>{item.status}</span>
-                                </div>
-                            </motion.div>
-                        ))}
+                                    <div className="text-right flex flex-col items-end gap-1">
+                                        <span className="text-[10px] text-gray-400">{item.time}</span>
+                                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${item.color}`}>{item.status}</span>
+                                    </div>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-400 py-4 text-sm">No recent incidents</p>
+                        )}
                     </div>
                 </motion.div>
             </section>

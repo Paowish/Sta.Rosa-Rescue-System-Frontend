@@ -585,6 +585,16 @@ export default function Signup() {
       const res = await authService.googleLogin(credentialResponse.credential);
 
       if (res.success) {
+        // ✅ CHECK IF USER IS PENDING APPROVAL
+        if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
+          // Show pending approval message
+          setSuccessMessage(
+            "Your volunteer application is pending approval. Please wait for the rescue team to review your application. You will receive an email once approved."
+          );
+          setShowSuccessModal(true);
+          return;
+        }
+
         const userToStore = {
           id: res.user._id,
           firstName: res.user.firstName,
@@ -605,6 +615,19 @@ export default function Signup() {
           // ✅ GO TO LOGIN FOR EXISTING USERS
           navigate('/login');
         }
+      } else {
+        // ✅ HANDLE PENDING APPROVAL ERROR
+        if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+          setSuccessMessage(
+            "Your volunteer application is pending approval. Please wait for the rescue team to review your application."
+          );
+          setShowSuccessModal(true);
+          return;
+        }
+
+        // Handle other errors
+        setError(res.message || "Google signup failed on the server.");
+        setShowErrorModal(true);
       }
     } catch (err) {
       console.error("Google signup error:", err);

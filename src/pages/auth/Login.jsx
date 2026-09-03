@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
@@ -121,9 +122,6 @@ function ForgotPasswordModal({ isOpen, onClose }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  /**
-   * Handle password reset form submission
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -227,30 +225,98 @@ export default function Login() {
       const res = await authService.googleLogin(credentialResponse.credential);
 
       if (res.success) {
+        // ✅ CHECK IF USER IS PENDING APPROVAL
+        if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
+          setShowPendingModal(true);
+          return;
+        }
+
+        // ✅ CHECK IF USER IS REJECTED
+        if (res.user?.applicationStatus === 'rejected') {
+          setShowRejectedModal(true);
+          return;
+        }
+
         const userToStore = {
-          id: res.user._id,
+          id: res.user._id || res.user.id,
           firstName: res.user.firstName,
           lastName: res.user.lastName,
           email: res.user.email,
           role: res.user.role,
-          profileImage: res.user.profileImage
+          profileImage: res.user.profileImage,
+          // ✅ INCLUDE THESE FIELDS!
+          isApproved: res.user.isApproved,
+          applicationStatus: res.user.applicationStatus
         };
 
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
 
-        const userRole = res.user.role || 'civilian';
-        if (userRole === "admin") navigate("/admin/overview");
-        else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
-        else if (userRole === "volunteer") navigate("/volunteer-dashboard");
-        else if (userRole === "civilian") navigate("/overview");
-        else navigate("/dashboard");
+        // ✅ Redirect based on role
+        handleSuccessNavigate();
+      } else {
+        // ✅ HANDLE PENDING APPROVAL ERROR FROM BACKEND
+        if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+          setShowPendingModal(true);
+          return;
+        }
+
+        // ✅ HANDLE REJECTED ERROR FROM BACKEND
+        if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
+          setShowRejectedModal(true);
+          return;
+        }
+
+        // ✅ HANDLE NOT APPROVED ERROR
+        if (res.code === 'NOT_APPROVED' || res.message?.includes('not yet approved')) {
+          setShowNotApprovedModal(true);
+          return;
+        }
+
+        // ✅ HANDLE DEACTIVATED ERROR
+        if (res.message?.includes('deactivated')) {
+          setShowDeactivatedModal(true);
+          return;
+        }
+
+        // Handle other errors
+        setError(res.message || "Google login failed. Please try again.");
       }
     } catch (err) {
       console.error("Google login error:", err);
       setError("Google login failed. Please try again.");
     }
+  };
+
+  /**
+   * Navigate based on user role
+   */
+  const handleSuccessNavigate = () => {
+    const role = localStorage.getItem('userRole');
+    const roleRoutes = {
+      civilian: "/overview",
+      volunteer: "/volunteer-dashboard",
+      responder: "/dashboard",
+      dispatcher: "/dashboard",
+      admin: "/admin/overview"
+    };
+
+    // ✅ FOR VOLUNTEERS - Check if approved before navigating
+    if (role === 'volunteer') {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      // ✅ FIX: Only show pending if user is ACTUALLY pending
+      if (user.applicationStatus === 'pending' || user.isApproved === false) {
+        setShowPendingModal(true);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        return;
+      }
+    }
+
+    navigate(roleRoutes[role] || "/login");
   };
 
   /**
@@ -332,7 +398,10 @@ export default function Login() {
           email: userData.email || "",
           role: userData.role || "civilian",
           phoneNumber: userData.phoneNumber || "",
-          profileImage: userData.profileImage || ""
+          profileImage: userData.profileImage || "",
+          // ✅ INCLUDE THESE FIELDS!
+          isApproved: userData.isApproved,
+          applicationStatus: userData.applicationStatus
         };
 
         localStorage.setItem('token', token);
@@ -344,12 +413,8 @@ export default function Login() {
         const userRole = userData.role || 'civilian';
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Redirect based on role
-        if (userRole === "admin") navigate("/admin/overview");
-        else if (userRole === "dispatcher" || userRole === "responder") navigate("/dashboard");
-        else if (userRole === "volunteer") navigate("/volunteer-dashboard");
-        else if (userRole === "civilian") navigate("/overview");
-        else navigate("/dashboard");
+        // ✅ Redirect based on role (with approval check)
+        handleSuccessNavigate();
       } else {
         setError("Invalid response from server");
         setLoading(false);
