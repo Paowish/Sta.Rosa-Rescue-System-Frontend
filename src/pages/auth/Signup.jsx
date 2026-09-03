@@ -372,6 +372,17 @@ function OTPVerificationModal({ isOpen, onClose, userId, email, onVerified }) {
   };
 
   // Verify OTP
+  // Add this helper at the top of your Signup.jsx file (after imports):
+
+  const getApiUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:5000/api';
+    }
+    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+  };
+
+  // In OTPVerificationModal component, update handleVerify:
+
   const handleVerify = async () => {
     if (otp.length !== 6) {
       setError("Please enter the 6-digit OTP");
@@ -382,8 +393,9 @@ function OTPVerificationModal({ isOpen, onClose, userId, email, onVerified }) {
     setError("");
 
     try {
-      // ✅ USE FETCH DIRECTLY - NO AUTH REQUIRED
-      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      // ✅ USE DYNAMIC API URL
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -410,14 +422,16 @@ function OTPVerificationModal({ isOpen, onClose, userId, email, onVerified }) {
     }
   };
 
-  // Resend OTP
+  // In OTPVerificationModal component, update handleResend:
+
   const handleResend = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // ✅ USE FETCH DIRECTLY - NO AUTH REQUIRED
-      const response = await fetch('http://localhost:5000/api/auth/resend-otp', {
+      // ✅ USE DYNAMIC API URL
+      const API_URL = getApiUrl();
+      const response = await fetch(`${API_URL}/auth/resend-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
