@@ -21,6 +21,7 @@ import FileReport from './pages/landing/FileReport';
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
+import VerifyEmail from './pages/VerifyEmail';
 
 // =============================================================
 // ✅ RESCUE TEAM / ADMIN LAYOUT
@@ -89,6 +90,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
             {/* ============================================================ */}
             {/* 🚀 GUEST ROUTES                                               */}

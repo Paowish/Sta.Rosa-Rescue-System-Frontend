@@ -1,3 +1,4 @@
+// src/pages/Signup.jsx
 import { useState, useRef, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
@@ -191,7 +192,7 @@ function TermsModal({ isOpen, onClose, onAccept }) {
  * Success Modal Component
  * Displays successful registration message
  */
-function SuccessModal({ isOpen, onClose, message }) {
+function SuccessModal({ isOpen, onClose, message, showLoginButton = false, onLoginClick }) {
   if (!isOpen) return null;
 
   return (
@@ -206,6 +207,15 @@ function SuccessModal({ isOpen, onClose, message }) {
           <h3 className="text-xl font-bold text-gray-800">Registration Successful!</h3>
           <p className="text-sm text-gray-600 mt-2">{message}</p>
         </div>
+
+        {showLoginButton && (
+          <button
+            onClick={onLoginClick}
+            className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+          >
+            Go to Login
+          </button>
+        )}
       </div>
     </div>
   );
@@ -291,6 +301,175 @@ function FullScreenSpinner() {
 }
 
 /**
+ * OTP Verification Modal Component
+ * Displays OTP input for email verification
+ */
+function OTPVerificationModal({ isOpen, onClose, userId, email, onVerified }) {
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(180); // 3 minutes = 180 seconds
+
+  // Resend timer countdown
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isOpen]);
+
+  // Handle OTP input change
+  const handleOtpChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setOtp(value);
+    setError("");
+  };
+
+  // Verify OTP
+  const handleVerify = async () => {
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit OTP");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // ✅ USE FETCH DIRECTLY - NO AUTH REQUIRED
+      const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, otp })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Store token and user
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem('userRole', result.user.role);
+
+        onVerified(result);
+      } else {
+        setError(result.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResend = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      // ✅ USE FETCH DIRECTLY - NO AUTH REQUIRED
+      const response = await fetch('http://localhost:5000/api/auth/resend-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setResendTimer(180);
+        setOtp("");
+        setError("");
+      } else {
+        setError(result.message || "Failed to resend OTP");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">Email Verification</h3>
+          <p className="text-sm text-gray-600 mt-2">
+            We've sent a 6-digit OTP code to your email:
+            <br />
+            <span className="font-semibold text-blue-600">{email}</span>
+          </p>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Enter OTP Code
+          </label>
+          <input
+            type="text"
+            value={otp}
+            onChange={handleOtpChange}
+            placeholder="------"
+            maxLength={6}
+            className="w-full text-center text-2xl font-bold tracking-widest border-2 border-gray-300 rounded-lg px-4 py-3 focus:border-blue-500 focus:outline-none"
+            autoFocus
+          />
+          {error && (
+            <p className="text-red-500 text-xs mt-2">{error}</p>
+          )}
+        </div>
+
+        <button
+          onClick={handleVerify}
+          disabled={loading || otp.length !== 6}
+          className="w-full py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+        >
+          {loading ? "Verifying..." : "Verify Email"}
+        </button>
+
+        <div className="mt-4 text-center">
+          {resendTimer > 0 ? (
+            <p className="text-gray-500 text-sm">
+              Resend code in <span className="font-semibold">{Math.floor(resendTimer / 60)}:{String(resendTimer % 60).padStart(2, '0')}</span>
+            </p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={loading}
+              className="text-blue-600 text-sm font-medium hover:underline"
+            >
+              Resend OTP Code
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Signup Component
  * User registration page with role-based forms and Google OAuth
  */
@@ -310,9 +489,14 @@ export default function Signup() {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
   const [legalType, setLegalType] = useState("terms");
+
+  // OTP Verification state
+  const [pendingUserId, setPendingUserId] = useState(null);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   // Account fields
   const [firstName, setFirstName] = useState("");
@@ -343,18 +527,6 @@ export default function Signup() {
   const phoneInputRef = useRef(null);
 
   /**
-   * Auto-redirect after successful signup
-   */
-  useEffect(() => {
-    if (showSuccessModal) {
-      const timer = setTimeout(() => {
-        handleSuccessNavigate();
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccessModal]);
-
-  /**
    * Handle Google OAuth signup success
    */
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -379,7 +551,8 @@ export default function Signup() {
           setSuccessMessage("Successfully signed up with Google!");
           setShowSuccessModal(true);
         } else {
-          handleSuccessNavigate();
+          // ✅ GO TO LOGIN FOR EXISTING USERS
+          navigate('/login');
         }
       }
     } catch (err) {
@@ -773,22 +946,23 @@ export default function Signup() {
       }
 
       if (response.success) {
-        const userToStore = {
-          id: response.user.id,
-          firstName: response.user.firstName,
-          lastName: response.user.lastName,
-          email: response.user.email,
-          role: response.user.role,
-          phoneNumber: response.user.phoneNumber || "",
-          profileImage: response.user.profileImage || ""
-        };
-        localStorage.setItem('user', JSON.stringify(userToStore));
-        localStorage.setItem('userRole', response.user.role);
+        // ✅ CHECK IF OTP IS REQUIRED
+        if (response.requiresOTP) {
+          // Store OTP verification data
+          setPendingUserId(response.userId);
+          setPendingEmail(response.email);
 
+          // Show OTP modal
+          setShowOTPModal(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback - no OTP required
         setSuccessMessage(
           selectedRole === "volunteer"
-            ? "Your volunteer application has been submitted for review. You will receive an email once approved."
-            : "Your account has been created successfully!"
+            ? "Your volunteer application has been submitted! Please check your email to verify your address."
+            : "Your account has been created! Please check your email to verify your address."
         );
         setShowSuccessModal(true);
         setLoading(false);
@@ -810,18 +984,43 @@ export default function Signup() {
   };
 
   /**
-   * Navigate to appropriate dashboard based on user role
+   * Handle OTP verification success
    */
-  const handleSuccessNavigate = () => {
-    const role = localStorage.getItem('userRole');
-    const roleRoutes = {
-      civilian: "/overview",
-      volunteer: "/volunteer-dashboard",
-      responder: "/dashboard",
-      dispatcher: "/dashboard",
-      admin: "/admin/overview"
-    };
-    navigate(roleRoutes[role] || "/login");
+  const handleOTPVerified = (result) => {
+    // Close OTP modal
+    setShowOTPModal(false);
+
+    // ✅ DON'T STORE TOKEN FOR VOLUNTEERS - They need approval first
+    if (selectedRole === "volunteer") {
+      // Clear token - volunteer can't login until approved
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userRole');
+
+      setSuccessMessage(
+        "Email verified! Your volunteer application has been submitted for review. You will receive an email once your application is approved or rejected."
+      );
+    } else {
+      // Store token for civilians
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+      localStorage.setItem('userRole', result.user.role);
+
+      setSuccessMessage(
+        "Email verified! Your account has been created successfully!"
+      );
+    }
+
+    // ✅ SHOW SUCCESS MODAL WITH LOGIN BUTTON
+    setShowSuccessModal(true);
+  };
+
+  /**
+   * Handle login button click
+   */
+  const handleLoginClick = () => {
+    setShowSuccessModal(false);
+    navigate('/login');
   };
 
   // Show full screen spinner when loading
@@ -849,6 +1048,8 @@ export default function Signup() {
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           message={successMessage}
+          showLoginButton={true}
+          onLoginClick={handleLoginClick}
         />
         <ErrorModal
           isOpen={showErrorModal}
@@ -860,6 +1061,15 @@ export default function Signup() {
           onClose={() => setShowInfoModal(false)}
           title={infoModalData.title}
           message={infoModalData.message}
+        />
+
+        {/* ✅ OTP Verification Modal */}
+        <OTPVerificationModal
+          isOpen={showOTPModal}
+          onClose={() => setShowOTPModal(false)}
+          userId={pendingUserId}
+          email={pendingEmail}
+          onVerified={handleOTPVerified}
         />
 
         <div className="p-6 sm:p-8 md:p-10 max-w-4xl w-full">
