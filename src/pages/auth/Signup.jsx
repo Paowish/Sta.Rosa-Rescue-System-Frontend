@@ -8,6 +8,38 @@ import LegalPolicyModal from "./LegalPolicyModal";
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
+// ✅ STA. ROSA, NUEVA ECIJA BARANGAYS
+const STA_ROSA_BARANGAYS = [
+  "Agbannawag",
+  "Bagong Silang",
+  "Bantug",
+  "Bendia",
+  "Bentigan",
+  "Bonifacio",
+  "Col. Buenaventura",
+  "La Consolacion",
+  "Luna",
+  "Malitlit",
+  "Mabini",
+  "Malusac",
+  "Natividad",
+  "Poblacion",
+  "San Gregorio",
+  "San Isidro",
+  "San Jose",
+  "San Mariano",
+  "San Miguel",
+  "San Pedro",
+  "San Roque",
+  "San Vicente",
+  "Santo Cristo",
+  "Santo Domingo",
+  "Santo Rosario",
+  "Soledad",
+  "Villa Flores",
+  "Villa Angeles"
+];
+
 /**
  * Certifications Component
  * Allows users to select certifications with "Others" option
@@ -511,8 +543,8 @@ export default function Signup() {
   // Volunteer specific fields
   const [birthday, setBirthday] = useState("");
   const [experience, setExperience] = useState("");
-  const [address1, setAddress1] = useState("");
-  const [address2, setAddress2] = useState("");
+  const [selectedBarangay, setSelectedBarangay] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
   const [selectedCerts, setSelectedCerts] = useState([]);
   const [othersCert, setOthersCert] = useState("");
   const [availability, setAvailability] = useState([]);
@@ -726,8 +758,11 @@ export default function Signup() {
       if (!experience) {
         errors.experience = "Years of experience is required";
       }
-      if (!address1.trim()) {
-        errors.address1 = "Address is required";
+      if (!selectedBarangay) {
+        errors.selectedBarangay = "Please select your barangay";
+      }
+      if (!streetAddress.trim()) {
+        errors.streetAddress = "Street address is required";
       }
       if (availability.length === 0) {
         errors.availability = "Please select at least one availability day";
@@ -921,8 +956,8 @@ export default function Signup() {
         formData.append('role', selectedRole);
         formData.append('birthday', birthday);
         formData.append('yearsOfExperience', experience);
-        formData.append('address1', address1);
-        formData.append('address2', address2 || '');
+        formData.append('address1', streetAddress);
+        formData.append('address2', selectedBarangay);
         formData.append('certifications', JSON.stringify([...selectedCerts, ...(othersCert ? [othersCert] : [])]));
         formData.append('availability', JSON.stringify(availability));
         formData.append('description', description);
@@ -1300,37 +1335,52 @@ export default function Signup() {
                   </div>
 
                   <div>
-                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.address1 ? 'border-red-500' : 'border-gray-400'
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.selectedBarangay ? 'border-red-500' : 'border-gray-400'
                       }`}>
-                      <legend className="text-sm px-2 text-gray-700">Address 1</legend>
-                      <input
-                        type="text"
-                        value={address1}
+                      <legend className="text-sm px-2 text-gray-700">Barangay</legend>
+                      <select
+                        value={selectedBarangay}
                         onChange={(e) => {
-                          setAddress1(e.target.value);
-                          if (validationErrors.address1) {
-                            setValidationErrors({ ...validationErrors, address1: null });
+                          setSelectedBarangay(e.target.value);
+                          if (validationErrors.selectedBarangay) {
+                            setValidationErrors({ ...validationErrors, selectedBarangay: null });
                           }
                         }}
-                        placeholder="Street, Barangay"
+                        className="w-full bg-transparent outline-none text-gray-700"
+                        required
+                      >
+                        <option value="">- Select Barangay -</option>
+                        {STA_ROSA_BARANGAYS.map((barangay) => (
+                          <option key={barangay} value={barangay}>
+                            {barangay}
+                          </option>
+                        ))}
+                      </select>
+                    </fieldset>
+                    {validationErrors.selectedBarangay && (
+                      <p className="text-red-500 text-xs mt-1">{validationErrors.selectedBarangay}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <fieldset className={`border-2 rounded-lg px-4 pt-2 pb-2 bg-white ${validationErrors.streetAddress ? 'border-red-500' : 'border-gray-400'
+                      }`}>
+                      <legend className="text-sm px-2 text-gray-700">Street Address</legend>
+                      <input
+                        type="text"
+                        value={streetAddress}
+                        onChange={(e) => {
+                          setStreetAddress(e.target.value);
+                          if (validationErrors.streetAddress) {
+                            setValidationErrors({ ...validationErrors, streetAddress: null });
+                          }
+                        }}
+                        placeholder="House No., Street, Purok"
                         className="w-full bg-transparent outline-none"
                         required
                       />
                     </fieldset>
-                    {validationErrors.address1 && <p className="text-red-500 text-xs mt-1">{validationErrors.address1}</p>}
-                  </div>
-
-                  <div>
-                    <fieldset className="border-2 border-gray-400 rounded-lg px-4 pt-2 pb-2 bg-white">
-                      <legend className="text-sm px-2 text-gray-700">Address 2</legend>
-                      <input
-                        type="text"
-                        value={address2}
-                        onChange={(e) => setAddress2(e.target.value)}
-                        placeholder="Street, Barangay (optional)"
-                        className="w-full bg-transparent outline-none"
-                      />
-                    </fieldset>
+                    {validationErrors.streetAddress && <p className="text-red-500 text-xs mt-1">{validationErrors.streetAddress}</p>}
                   </div>
                 </div>
 
