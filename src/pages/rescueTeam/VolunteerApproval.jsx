@@ -73,8 +73,8 @@ export default function VolunteerApproval() {
   }, []);
 
   /**
-   * Load all volunteers from API
-   */
+ * Load all volunteers from API
+ */
   const loadAllVolunteers = useCallback(async (force = false) => {
     const now = Date.now();
     if (!force && (now - lastRefreshTimeRef.current) < MIN_REFRESH_INTERVAL) {
@@ -143,7 +143,10 @@ export default function VolunteerApproval() {
             }
           }
 
-          const loc = volunteer.address1 || volunteer.application?.address1 || volunteer.address2 || volunteer.application?.address2 || "N/A";
+          // ✅ FIX: COMBINE STREET ADDRESS AND BARANGAY
+          const street = volunteer.address1 || volunteer.application?.address1 || '';
+          const barangay = volunteer.address2 || volunteer.application?.address2 || '';
+          const loc = [street, barangay].filter(Boolean).join(', ') || "N/A";
 
           return {
             id: volunteer._id,
@@ -573,8 +576,8 @@ export default function VolunteerApproval() {
             <button
               onClick={() => handleSwitchTab('roster')}
               className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'roster'
-                  ? 'border-[#1f4e6f] text-[#1f4e6f]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-[#1f4e6f] text-[#1f4e6f]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               <Icon icon="mdi:list" className="w-4 h-4" /> Roster
@@ -582,8 +585,8 @@ export default function VolunteerApproval() {
             <button
               onClick={() => handleSwitchTab('applicant')}
               className={`flex items-center gap-2 pb-4 border-b-2 text-sm font-bold ${activeTab === 'applicant'
-                  ? 'border-[#1f4e6f] text-[#1f4e6f]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-[#1f4e6f] text-[#1f4e6f]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               <Icon icon="mdi:card-account-details" className="w-4 h-4" /> Applicant
