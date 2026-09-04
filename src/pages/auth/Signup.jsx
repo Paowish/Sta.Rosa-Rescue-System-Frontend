@@ -5,7 +5,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import LegalPolicyModal from "./LegalPolicyModal";
-import { useGoogleLogin } from '@react-oauth/google';
+
+import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 // ✅ STA. ROSA, NUEVA ECIJA BARANGAYS
@@ -577,8 +578,6 @@ export default function Signup() {
   const navigate = useNavigate();
   const phoneInputRef = useRef(null);
 
-
-
   /**
    * Handle Google OAuth signup success
    */
@@ -589,45 +588,56 @@ export default function Signup() {
       if (res.success) {
         // ✅ CHECK IF USER IS PENDING APPROVAL
         if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
-          // Show pending approval message
-          setSuccessMessage(
-            "Your volunteer application is pending approval. Please wait for the rescue team to review your application. You will receive an email once approved."
-          );
+          setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
           setShowSuccessModal(true);
           return;
         }
 
+        // ✅ CHECK IF USER IS REJECTED
+        if (res.user?.applicationStatus === 'rejected') {
+          setError("Your volunteer application has been rejected.");
+          setShowErrorModal(true);
+          return;
+        }
+
+        // ✅ Store user and redirect to dashboard
         const userToStore = {
-          id: res.user._id,
+          id: res.user._id || res.user.id,
           firstName: res.user.firstName,
           lastName: res.user.lastName,
           email: res.user.email,
           role: res.user.role,
-          profileImage: res.user.profileImage
+          profileImage: res.user.profileImage,
+          isApproved: res.user.isApproved,
+          applicationStatus: res.user.applicationStatus
         };
 
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(userToStore));
         localStorage.setItem('userRole', userToStore.role);
+        if (userToStore.profileImage) localStorage.setItem('profileImage', userToStore.profileImage);
 
-        if (res.isNewUser) {
-          setSuccessMessage("Successfully signed up with Google!");
-          setShowSuccessModal(true);
-        } else {
-          // ✅ GO TO LOGIN FOR EXISTING USERS
-          navigate('/login');
-        }
+        // ✅ REDIRECT TO DASHBOARD
+        const roleRoutes = {
+          civilian: "/overview",
+          volunteer: "/volunteer-dashboard",
+          responder: "/dashboard",
+          dispatcher: "/dashboard",
+          admin: "/admin/overview"
+        };
+        navigate(roleRoutes[userToStore.role] || "/overview");
       } else {
-        // ✅ HANDLE PENDING APPROVAL ERROR
+        // ✅ Handle backend errors
         if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
-          setSuccessMessage(
-            "Your volunteer application is pending approval. Please wait for the rescue team to review your application."
-          );
+          setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
           setShowSuccessModal(true);
           return;
         }
-
-        // Handle other errors
+        if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
+          setError("Your volunteer application has been rejected.");
+          setShowErrorModal(true);
+          return;
+        }
         setError(res.message || "Google signup failed on the server.");
         setShowErrorModal(true);
       }
@@ -1062,61 +1072,6 @@ export default function Signup() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const res = await authService.googleLogin(tokenResponse.access_token);
-        if (res.success) {
-          if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
-            setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
-            setShowSuccessModal(true);
-            return;
-          }
-          const userToStore = {
-            id: res.user._id || res.user.id,
-            firstName: res.user.firstName,
-            lastName: res.user.lastName,
-            email: res.user.email,
-            role: res.user.role,
-            profileImage: res.user.profileImage
-          };
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify(userToStore));
-          localStorage.setItem('userRole', userToStore.role);
-          if (res.isNewUser) {
-            setSuccessMessage("Successfully signed up with Google!");
-            setShowSuccessModal(true);
-          } else {
-            navigate('/login');
-          }
-        } else {
-          if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
-            setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
-            setShowSuccessModal(true);
-            return;
-          }
-          setError(res.message || "Google signup failed on the server.");
-          setShowErrorModal(true);
-        }
-      } catch (err) {
-        console.error("Google signup error:", err);
-        setError("Google signup failed on the server.");
-        setShowErrorModal(true);
-      }
-    },
-    onError: (error) => {
-      console.error('Google Signup Failed:', error);
-      setError("Google signup failed. Please try again.");
-      setShowErrorModal(true);
-    },
-    flow: 'implicit',
-  });
-
-
-  const handleGoogleClick = () => {
-    googleLogin();
-  };
-
   /**
    * Handle OTP verification success
    */
@@ -1148,6 +1103,8 @@ export default function Signup() {
     // ✅ SHOW SUCCESS MODAL WITH LOGIN BUTTON
     setShowSuccessModal(true);
   };
+
+
 
   /**
    * Handle login button click
@@ -1230,32 +1187,33 @@ export default function Signup() {
           </div>
 
           {/* Google Login Button - Custom Styled */}
-          <div className="w-full mb-5">
-            <button
-              onClick={handleGoogleClick}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-120 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
-            >
+          <div className="w-full mb-5 relative">
+            {/* ✅ GoogleLogin component FIRST (on top, receives click) */}
+            <div className="absolute inset-0 opacity-0 z-10">
+              <GoogleLogin
+                theme="outline"
+                size="large"
+                text="signup_with"
+                shape="rectangular"
+                width="400"
+                onSuccess={handleGoogleSuccess}
+                onError={() => console.log('Google Signup Failed')}
+              />
+            </div>
+
+            {/* ✅ Custom SVG button SECOND (visual only, underneath) */}
+            <div className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 rounded-lg px-4 py-3 hover:bg-gray-50 transition pointer-events-none">
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
               <span className="text-gray-700 font-medium text-sm sm:text-base">Mag-sign in sa Google</span>
-            </button>
+            </div>
           </div>
+
+
 
           <div className="flex items-center gap-3 mb-6">
             <hr className="w-full border-gray-300" />

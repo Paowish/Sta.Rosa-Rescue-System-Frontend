@@ -479,7 +479,17 @@ export const authService = {
      */
     googleLogin: async (credential) => {
         try {
-            const response = await axios.post(`${API_URL}/auth/google`, { token: credential });
+            // ✅ CHECK IF IT'S AN ACCESS_TOKEN (starts with "ya29.") OR A CREDENTIAL (starts with "eyJ")
+            const isAccessToken = credential && credential.startsWith('ya29.');
+
+            // ✅ SEND THE CORRECT FIELD NAME
+            const requestBody = isAccessToken
+                ? { access_token: credential }     // ✅ For useGoogleLogin hook
+                : { credential: credential };      // ✅ For GoogleLogin component
+
+            console.log('🔵 Google login request body:', requestBody);
+
+            const response = await axios.post(`${API_URL}/auth/google`, requestBody);
             return response.data;
         } catch (error) {
             console.error('❌ Google login error:', error);
