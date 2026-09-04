@@ -480,13 +480,12 @@ export default function Login() {
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
               {/* Google Login Button */}
-              <div className="w-full mb-5 flex justify-center">
+              <div className="w-full mb-5 google-login-container">
                 <GoogleLogin
                   theme="outline"
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width="360"
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />

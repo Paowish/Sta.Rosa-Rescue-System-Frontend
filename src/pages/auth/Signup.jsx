@@ -1172,16 +1172,15 @@ export default function Signup() {
             </p>
           </div>
 
-          {/* Google Signup Button */}
-          <div className="w-full mb-6 flex justify-center">
+          {/* Google Login Button */}
+          <div className="w-full mb-5 google-signup-container">
             <GoogleLogin
               theme="outline"
               size="large"
-              text="signup_with"
+              text="signin_with"
               shape="rectangular"
-              width="300"
               onSuccess={handleGoogleSuccess}
-              onError={() => console.log('Login Failed')}
+              onError={() => console.log('Google Login Failed')}
             />
           </div>
 
