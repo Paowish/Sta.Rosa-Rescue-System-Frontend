@@ -486,7 +486,7 @@ export default function Login() {
                   size="large"
                   text="signin_with"
                   shape="rectangular"
-                  width={300}
+                  width="360"
                   onSuccess={handleGoogleSuccess}
                   onError={() => console.log('Google Login Failed')}
                 />
