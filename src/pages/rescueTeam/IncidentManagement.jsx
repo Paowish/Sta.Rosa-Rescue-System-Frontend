@@ -259,7 +259,8 @@ export default function IncidentManagement() {
         selectedIncident._id,
         dispatchInfo?.selectedIds || [],
         dispatchInfo?.teamName || null,
-        dispatchNotes
+        dispatchNotes,
+        dispatchInfo?.dispatchType || 'volunteers'  // ✅ ADD THIS!
       );
 
       if (response && response.success) {

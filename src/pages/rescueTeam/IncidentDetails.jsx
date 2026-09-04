@@ -223,8 +223,9 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
             const response = await incidentService.assignResponders(
                 incident._id || incident.id,
                 selectedIds,
-                dispatchInfo?.teamName || 'Rescue Team',
-                dispatchNotes
+                dispatchInfo?.teamName || null,
+                dispatchNotes,
+                dispatchInfo?.dispatchType || 'volunteers'  // ✅ ADD THIS!
             );
 
             const result = response;

@@ -227,6 +227,7 @@ export default function DispatchModal({
             const selectedTeam = getSelectedTeams()[0];
             onDispatch({
                 type: 'team',
+                dispatchType: 'team',  // ✅ ADD THIS!
                 teamName: selectedTeam?.name || 'Rescue Team',
                 selectedIds: selectedIds,
                 count: selectedIds.length
@@ -234,6 +235,7 @@ export default function DispatchModal({
         } else {
             onDispatch({
                 type: 'volunteers',
+                dispatchType: 'volunteers',  // ✅ ADD THIS!
                 teamName: null,
                 selectedIds: selectedIds,
                 count: selectedIds.length

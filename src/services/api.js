@@ -702,8 +702,9 @@ export const incidentService = {
     /**
      * Assign responders to an incident
      */
-    assignResponders: async (incidentId, responderIds, teamName, dispatchNotes) => {
+    assignResponders: async (incidentId, responderIds, teamName, dispatchNotes, dispatchType = 'volunteers') => {
         console.log('🎯 [API] RECEIVED teamName:', teamName);
+        console.log('🎯 [API] RECEIVED dispatchType:', dispatchType);
 
         return await apiRequest(
             `/incidents/${incidentId}/dispatch`,
@@ -711,7 +712,8 @@ export const incidentService = {
             {
                 volunteerIds: sanitizeData(responderIds),
                 teamName: teamName,
-                dispatchNotes: sanitizeString(dispatchNotes)
+                dispatchNotes: sanitizeString(dispatchNotes),
+                dispatchType: dispatchType  // ✅ ADD THIS!
             },
             true
         );
