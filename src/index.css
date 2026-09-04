@@ -311,10 +311,12 @@ button {
     animation: fadeInContent 0.4s ease-out forwards;
 }
 
-/* Force Google button to be full width */
+/* Force Google button to match inputs in production */
 .google-login-container,
 .google-login-container>div,
+.google-login-container>div>div,
 .google-login-container iframe {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 100% !important;
 }
