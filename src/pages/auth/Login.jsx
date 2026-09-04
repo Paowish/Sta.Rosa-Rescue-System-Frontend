@@ -4,7 +4,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
 import { motion, AnimatePresence } from "framer-motion";
-import { useGoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 /**
@@ -217,77 +217,57 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  // ✅ USE GOOGLE LOGIN HOOK - THIS MAKES THE BUTTON CLICKABLE
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        console.log("Google Login Success:", tokenResponse);
 
-        // ✅ Send the access_token to your backend
-        const res = await authService.googleLogin(tokenResponse.access_token);
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await authService.googleLogin(credentialResponse.credential);
 
-        if (res.success) {
-          // ✅ CHECK IF USER IS PENDING APPROVAL
-          if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
-            setShowPendingModal(true);
-            return;
-          }
-
-          // ✅ CHECK IF USER IS REJECTED
-          if (res.user?.applicationStatus === 'rejected') {
-            setShowRejectedModal(true);
-            return;
-          }
-
-          const userToStore = {
-            id: res.user._id || res.user.id,
-            firstName: res.user.firstName,
-            lastName: res.user.lastName,
-            email: res.user.email,
-            role: res.user.role,
-            profileImage: res.user.profileImage,
-            isApproved: res.user.isApproved,
-            applicationStatus: res.user.applicationStatus
-          };
-
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify(userToStore));
-          localStorage.setItem('userRole', userToStore.role);
-
-          // ✅ Redirect based on role
-          handleSuccessNavigate();
-        } else {
-          // Handle error cases
-          if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
-            setShowPendingModal(true);
-            return;
-          }
-          if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
-            setShowRejectedModal(true);
-            return;
-          }
-          if (res.code === 'NOT_APPROVED' || res.message?.includes('not yet approved')) {
-            setShowNotApprovedModal(true);
-            return;
-          }
-          if (res.message?.includes('deactivated')) {
-            setShowDeactivatedModal(true);
-            return;
-          }
-          setError(res.message || "Google login failed. Please try again.");
+      if (res.success) {
+        if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
+          setShowPendingModal(true);
+          return;
         }
-      } catch (error) {
-        console.error("Google login error:", error);
-        setError("Google login failed. Please try again.");
-      }
-    },
-    onError: (error) => {
-      console.error('Google Login Failed:', error);
-      setError("Google login failed. Please try again.");
-    },
-    flow: 'implicit', // ✅ Use implicit flow to get access_token directly
-  });
 
+        const userToStore = {
+          id: res.user._id || res.user.id,
+          firstName: res.user.firstName,
+          lastName: res.user.lastName,
+          email: res.user.email,
+          role: res.user.role,
+          profileImage: res.user.profileImage,
+          isApproved: res.user.isApproved,
+          applicationStatus: res.user.applicationStatus
+        };
+
+        localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify(userToStore));
+        localStorage.setItem('userRole', userToStore.role);
+
+        // ✅ Redirect based on role
+        const roleRoutes = {
+          civilian: "/overview",
+          volunteer: "/volunteer-dashboard",
+          responder: "/dashboard",
+          dispatcher: "/dashboard",
+          admin: "/admin/overview"
+        };
+        navigate(roleRoutes[userToStore.role] || "/login");
+      } else {
+        if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+          setShowPendingModal(true);
+          return;
+        }
+        if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
+          setShowRejectedModal(true);
+          return;
+        }
+        setError(res.message || "Google login failed.");
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError("Google login failed.");
+    }
+  };
   // ✅ HANDLE GOOGLE CLICK - THIS MAKES THE BUTTON WORK
   const handleGoogleClick = () => {
     googleLogin();
@@ -482,32 +462,30 @@ export default function Login() {
               <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-              {/* ✅ Google Login Button - Custom Styled (Works on ALL devices) */}
-              <div className="w-full mb-5">
-                <button
-                  onClick={handleGoogleClick}
-                  className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-120 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
-                >
+              <div className="w-full mb-5 relative">
+                {/* ✅ GoogleLogin component (on top, receives click) */}
+                <div className="absolute inset-0 opacity-0 z-10">
+                  <GoogleLogin
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                    shape="rectangular"
+                    width="400"
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => console.log('Google Login Failed')}
+                  />
+                </div>
+
+                {/* ✅ Custom SVG button (visual only, underneath) */}
+                <div className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 rounded-lg px-4 py-3 hover:bg-gray-50 transition pointer-events-none">
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  <span className="text-gray-700 font-medium text-sm sm:text-base">Mag-sign in sa Google</span>
-                </button>
+                  <span className="text-gray-700 font-medium text-sm sm:text-base">Sign in with Google</span>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 mb-5">
