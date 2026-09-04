@@ -4,7 +4,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
 import { authService } from '../../services/api';
 import { motion, AnimatePresence } from "framer-motion";
-import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 /**
@@ -217,76 +217,80 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  /**
-   * Handle Google OAuth login success
-   */
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const res = await authService.googleLogin(credentialResponse.credential);
+  // ✅ USE GOOGLE LOGIN HOOK - THIS MAKES THE BUTTON CLICKABLE
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        console.log("Google Login Success:", tokenResponse);
 
-      if (res.success) {
-        // ✅ CHECK IF USER IS PENDING APPROVAL
-        if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
-          setShowPendingModal(true);
-          return;
+        // ✅ Send the access_token to your backend
+        const res = await authService.googleLogin(tokenResponse.access_token);
+
+        if (res.success) {
+          // ✅ CHECK IF USER IS PENDING APPROVAL
+          if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
+            setShowPendingModal(true);
+            return;
+          }
+
+          // ✅ CHECK IF USER IS REJECTED
+          if (res.user?.applicationStatus === 'rejected') {
+            setShowRejectedModal(true);
+            return;
+          }
+
+          const userToStore = {
+            id: res.user._id || res.user.id,
+            firstName: res.user.firstName,
+            lastName: res.user.lastName,
+            email: res.user.email,
+            role: res.user.role,
+            profileImage: res.user.profileImage,
+            isApproved: res.user.isApproved,
+            applicationStatus: res.user.applicationStatus
+          };
+
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(userToStore));
+          localStorage.setItem('userRole', userToStore.role);
+
+          // ✅ Redirect based on role
+          handleSuccessNavigate();
+        } else {
+          // Handle error cases
+          if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+            setShowPendingModal(true);
+            return;
+          }
+          if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
+            setShowRejectedModal(true);
+            return;
+          }
+          if (res.code === 'NOT_APPROVED' || res.message?.includes('not yet approved')) {
+            setShowNotApprovedModal(true);
+            return;
+          }
+          if (res.message?.includes('deactivated')) {
+            setShowDeactivatedModal(true);
+            return;
+          }
+          setError(res.message || "Google login failed. Please try again.");
         }
-
-        // ✅ CHECK IF USER IS REJECTED
-        if (res.user?.applicationStatus === 'rejected') {
-          setShowRejectedModal(true);
-          return;
-        }
-
-        const userToStore = {
-          id: res.user._id || res.user.id,
-          firstName: res.user.firstName,
-          lastName: res.user.lastName,
-          email: res.user.email,
-          role: res.user.role,
-          profileImage: res.user.profileImage,
-          // ✅ INCLUDE THESE FIELDS!
-          isApproved: res.user.isApproved,
-          applicationStatus: res.user.applicationStatus
-        };
-
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify(userToStore));
-        localStorage.setItem('userRole', userToStore.role);
-
-        // ✅ Redirect based on role
-        handleSuccessNavigate();
-      } else {
-        // ✅ HANDLE PENDING APPROVAL ERROR FROM BACKEND
-        if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
-          setShowPendingModal(true);
-          return;
-        }
-
-        // ✅ HANDLE REJECTED ERROR FROM BACKEND
-        if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
-          setShowRejectedModal(true);
-          return;
-        }
-
-        // ✅ HANDLE NOT APPROVED ERROR
-        if (res.code === 'NOT_APPROVED' || res.message?.includes('not yet approved')) {
-          setShowNotApprovedModal(true);
-          return;
-        }
-
-        // ✅ HANDLE DEACTIVATED ERROR
-        if (res.message?.includes('deactivated')) {
-          setShowDeactivatedModal(true);
-          return;
-        }
-
-        // Handle other errors
-        setError(res.message || "Google login failed. Please try again.");
+      } catch (error) {
+        console.error("Google login error:", error);
+        setError("Google login failed. Please try again.");
       }
-    } catch (err) {
-      console.error("Google login error:", err);
+    },
+    onError: (error) => {
+      console.error('Google Login Failed:', error);
       setError("Google login failed. Please try again.");
-    }
+    },
+    flow: 'implicit', // ✅ Use implicit flow to get access_token directly
+  });
+
+  // ✅ HANDLE GOOGLE CLICK - THIS MAKES THE BUTTON WORK
+  const handleGoogleClick = () => {
+    googleLogin();
   };
 
   /**
@@ -346,16 +350,6 @@ export default function Login() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleGoogleClick = () => {
-    // Initialize Google Identity Services
-    if (window.google) {
-      window.google.accounts.id.prompt();
-    } else {
-      // Fallback: redirect to Google OAuth
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}&redirect_uri=${window.location.origin}/login&response_type=code&scope=email%20profile`;
-    }
-  };
-
   /**
    * Handle email/password login
    */
@@ -409,7 +403,6 @@ export default function Login() {
           role: userData.role || "civilian",
           phoneNumber: userData.phoneNumber || "",
           profileImage: userData.profileImage || "",
-          // ✅ INCLUDE THESE FIELDS!
           isApproved: userData.isApproved,
           applicationStatus: userData.applicationStatus
         };
@@ -489,11 +482,11 @@ export default function Login() {
               <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-              {/* Google Login Button - Custom Styled */}
+              {/* ✅ Google Login Button - Custom Styled (Works on ALL devices) */}
               <div className="w-full mb-5">
                 <button
                   onClick={handleGoogleClick}
-                  className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-120 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
+                  className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
                 >
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                     <path

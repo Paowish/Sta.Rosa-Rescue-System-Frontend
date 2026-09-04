@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { authService, volunteerService } from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 import LegalPolicyModal from "./LegalPolicyModal";
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 // ✅ STA. ROSA, NUEVA ECIJA BARANGAYS
@@ -577,6 +577,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const phoneInputRef = useRef(null);
 
+
+
   /**
    * Handle Google OAuth signup success
    */
@@ -1060,14 +1062,59 @@ export default function Signup() {
     }
   };
 
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const res = await authService.googleLogin(tokenResponse.access_token);
+        if (res.success) {
+          if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
+            setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
+            setShowSuccessModal(true);
+            return;
+          }
+          const userToStore = {
+            id: res.user._id || res.user.id,
+            firstName: res.user.firstName,
+            lastName: res.user.lastName,
+            email: res.user.email,
+            role: res.user.role,
+            profileImage: res.user.profileImage
+          };
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(userToStore));
+          localStorage.setItem('userRole', userToStore.role);
+          if (res.isNewUser) {
+            setSuccessMessage("Successfully signed up with Google!");
+            setShowSuccessModal(true);
+          } else {
+            navigate('/login');
+          }
+        } else {
+          if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+            setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
+            setShowSuccessModal(true);
+            return;
+          }
+          setError(res.message || "Google signup failed on the server.");
+          setShowErrorModal(true);
+        }
+      } catch (err) {
+        console.error("Google signup error:", err);
+        setError("Google signup failed on the server.");
+        setShowErrorModal(true);
+      }
+    },
+    onError: (error) => {
+      console.error('Google Signup Failed:', error);
+      setError("Google signup failed. Please try again.");
+      setShowErrorModal(true);
+    },
+    flow: 'implicit',
+  });
+
+
   const handleGoogleClick = () => {
-    // Initialize Google Identity Services
-    if (window.google) {
-      window.google.accounts.id.prompt();
-    } else {
-      // Fallback: redirect to Google OAuth
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}&redirect_uri=${window.location.origin}/login&response_type=code&scope=email%20profile`;
-    }
+    googleLogin();
   };
 
   /**
