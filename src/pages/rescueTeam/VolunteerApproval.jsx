@@ -160,6 +160,8 @@ export default function VolunteerApproval() {
             tags: certs.slice(0, 3).map(s => s.length > 15 ? s.substring(0, 15) + '...' : s),
             hasMoreSkills: certs.length > 3,
             availability: availability,
+            isOnDuty: volunteer.isOnDuty !== false,
+            availabilityStatus: volunteer.availabilityStatus || 'on-duty',
             description: description,
             appliedDate: volunteer.createdAt ? new Date(volunteer.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A',
             createdAtTimestamp: volunteer.createdAt ? new Date(volunteer.createdAt).getTime() : 0,
@@ -327,6 +329,13 @@ export default function VolunteerApproval() {
    * Get volunteer status
    */
   const getVolunteerStatus = (volunteerId) => {
+    const volunteer = allVolunteers.find(v => v.id === volunteerId);
+
+    // ✅ Check if off duty
+    if (volunteer && (volunteer.isOnDuty === false || volunteer.availabilityStatus === 'off-duty')) {
+      return 'Off Duty';
+    }
+
     const live = liveStatuses[volunteerId];
     if (live) {
       if (live.status === 'en-route') return 'En Route';

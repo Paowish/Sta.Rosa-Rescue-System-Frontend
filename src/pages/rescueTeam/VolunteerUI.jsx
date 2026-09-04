@@ -26,6 +26,17 @@ export const RosterStatusBadge = ({ status }) => {
         bgColor = 'bg-yellow-100';
         borderColor = 'border-yellow-300';
         dotColor = 'bg-yellow-500';
+    } else if (status === 'Off Duty') {
+        // ✅ OFF DUTY - Gray/Red color
+        textColor = 'text-gray-700';
+        bgColor = 'bg-gray-200';
+        borderColor = 'border-gray-300';
+        dotColor = 'bg-gray-500';
+    } else if (status === 'Dispatched') {
+        textColor = 'text-purple-700';
+        bgColor = 'bg-purple-100';
+        borderColor = 'border-purple-300';
+        dotColor = 'bg-purple-500';
     }
 
     return (
@@ -40,12 +51,21 @@ export const RosterStatusBadge = ({ status }) => {
  * Panel Status Badge Component
  * Displays status in panel view
  */
-export const PanelStatusBadge = ({ label }) => (
-    <span className="inline-block bg-[#e6f2ff] text-[#0066cc] border border-[#b3d9ff] px-2.5 py-0.5 rounded-full text-[11px] font-medium">
-        <span className="w-1.5 h-1.5 rounded-full inline-block mr-1.5 bg-[#0066cc]"></span>
-        • {label}
-    </span>
-);
+export const PanelStatusBadge = ({ label }) => {
+    // ✅ OFF DUTY - Gray/Red color
+    const isOffDuty = label === 'Off Duty';
+
+    return (
+        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${isOffDuty
+            ? 'bg-gray-200 text-gray-700 border-gray-300'
+            : 'bg-[#e6f2ff] text-[#0066cc] border-[#b3d9ff]'
+            }`}>
+            <span className={`w-1.5 h-1.5 rounded-full inline-block mr-1.5 ${isOffDuty ? 'bg-gray-500' : 'bg-[#0066cc]'
+                }`}></span>
+            • {label}
+        </span>
+    );
+};
 
 /**
  * Stat Box Component
@@ -106,8 +126,8 @@ export const IncidentTag = ({ type, title, date, location }) => (
     <div className="flex flex-col mb-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
         <div className="flex items-center gap-2 mb-0.5">
             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm border ${type === 'Critical'
-                    ? 'text-red-600 bg-red-50 border-red-200'
-                    : 'text-green-600 bg-green-50 border-green-200'
+                ? 'text-red-600 bg-red-50 border-red-200'
+                : 'text-green-600 bg-green-50 border-green-200'
                 }`}>
                 {type}
             </span>

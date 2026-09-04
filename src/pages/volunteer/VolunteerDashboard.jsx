@@ -18,6 +18,13 @@ import IncidentFilters from "./IncidentFilters";
 import StatsCards from "./StatsCards";
 import MapComponent from "./MapComponent";
 
+const getApiUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:5000/api';
+    }
+    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+};
+
 export default function VolunteerDashboard() {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -37,7 +44,10 @@ export default function VolunteerDashboard() {
     const [showDispatchCard, setShowDispatchCard] = useState(false);
     const [dispatchAction, setDispatchAction] = useState(null);
     const [showOffDutyCard, setShowOffDutyCard] = useState(false);
-    const [isOnDuty, setIsOnDuty] = useState(true);
+    const [isOnDuty, setIsOnDuty] = useState(() => {
+        const saved = localStorage.getItem('offDutyStatus');
+        return saved !== 'true';  // If offDutyStatus is 'true', isOnDuty = false
+    });
     const [filterType, setFilterType] = useState('all');
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -1757,7 +1767,30 @@ export default function VolunteerDashboard() {
         if (!checked) {
             setShowOffDutyCard(true);
         } else {
+            localStorage.removeItem('offDutyStatus');
             setIsOnDuty(true);
+
+            // ✅ CALL BACKEND (USE CORRECT URL)
+            try {
+                const token = localStorage.getItem('token');
+                fetch(`${getApiUrl()}/volunteer/on-duty`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('✅ On Duty API Response:', data);
+                    })
+                    .catch(error => {
+                        console.error('❌ Failed to update on duty status:', error);
+                    });
+            } catch (error) {
+                console.error('Failed to update on duty status:', error);
+            }
+
             setConfirmModalData({
                 title: 'Back on Duty',
                 message: 'You are now back on duty! You will receive new dispatch requests.',
@@ -1771,8 +1804,31 @@ export default function VolunteerDashboard() {
     };
 
     const handleConfirmOffDuty = () => {
+        localStorage.setItem('offDutyStatus', 'true');
         setIsOnDuty(false);
         setShowOffDutyCard(false);
+
+        // ✅ CALL BACKEND (USE CORRECT URL)
+        try {
+            const token = localStorage.getItem('token');
+            fetch(`${getApiUrl()}/volunteer/off-duty`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('✅ Off Duty API Response:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Failed to update off duty status:', error);
+                });
+        } catch (error) {
+            console.error('Failed to update off duty status:', error);
+        }
+
         setConfirmModalData({
             title: 'Off Duty',
             message: 'You are now off duty. You will not receive new dispatch requests.',
