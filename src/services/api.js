@@ -484,7 +484,14 @@ export const authService = {
             return response.data;
         } catch (error) {
             console.error('❌ Google login error:', error);
-            return error.response?.data || {
+
+            // ✅ RETURN THE 403 DATA (WITH CODE) SO FRONTEND CAN HANDLE IT
+            if (error.response && error.response.data) {
+                console.log('🔴 Google login 403 data:', error.response.data);
+                return error.response.data;  // ✅ THIS IS KEY!
+            }
+
+            return {
                 success: false,
                 message: "Google authentication failed.",
                 code: error.response?.data?.code || null

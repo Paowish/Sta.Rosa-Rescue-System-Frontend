@@ -521,6 +521,33 @@ function OTPVerificationModal({ isOpen, onClose, userId, email, onVerified }) {
   );
 }
 
+
+/**
+ * Pending Approval Modal Component
+ * Displays when volunteer application is pending review
+ */
+function PendingApprovalModal({ isOpen, onClose, onLoginClick }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-800">Pending Approval</h3>
+          <p className="text-sm text-gray-600 mt-2">Your volunteer application is currently being reviewed.</p>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Close</button>
+          <button onClick={() => { onClose(); onLoginClick(); }} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">Try Again</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 /**
  * Signup Component
  * User registration page with role-based forms and Google OAuth
@@ -545,6 +572,7 @@ export default function Signup() {
   const [infoModalData, setInfoModalData] = useState({ title: '', message: '' });
   const [successMessage, setSuccessMessage] = useState("");
   const [legalType, setLegalType] = useState("terms");
+  const [showPendingModal, setShowPendingModal] = useState(false);
 
   // OTP Verification state
   const [pendingUserId, setPendingUserId] = useState(null);
@@ -585,11 +613,27 @@ export default function Signup() {
     try {
       const res = await authService.googleLogin(credentialResponse.credential);
 
+      console.log('🔵 Google login response:', res);  // Debug log
+
+      // ✅ IF 403 (PENDING APPROVAL) - SHOW PENDING MODAL
+      if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
+        console.log('🔴 PENDING APPROVAL - showing modal');
+        setShowPendingModal(true);
+        return;
+      }
+
+      // ✅ IF REJECTED
+      if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
+        setError("Your volunteer application has been rejected.");
+        setShowErrorModal(true);
+        return;
+      }
+
+      // ✅ IF SUCCESS
       if (res.success) {
         // ✅ CHECK IF USER IS PENDING APPROVAL
         if (res.user?.applicationStatus === 'pending' || res.user?.isApproved === false) {
-          setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
-          setShowSuccessModal(true);
+          setShowPendingModal(true);
           return;
         }
 
@@ -627,17 +671,7 @@ export default function Signup() {
         };
         navigate(roleRoutes[userToStore.role] || "/overview");
       } else {
-        // ✅ Handle backend errors
-        if (res.code === 'PENDING_APPROVAL' || res.message?.includes('pending approval')) {
-          setSuccessMessage("Your volunteer application is pending approval. Please wait for the rescue team to review your application.");
-          setShowSuccessModal(true);
-          return;
-        }
-        if (res.code === 'REJECTED' || res.message?.includes('rejected')) {
-          setError("Your volunteer application has been rejected.");
-          setShowErrorModal(true);
-          return;
-        }
+        // ✅ HANDLE OTHER ERRORS
         setError(res.message || "Google signup failed on the server.");
         setShowErrorModal(true);
       }
@@ -647,7 +681,6 @@ export default function Signup() {
       setShowErrorModal(true);
     }
   };
-
   /**
    * Validate email address format
    */
@@ -969,6 +1002,14 @@ export default function Signup() {
   };
 
   /**
+ * Handle login button click
+ */
+  const handleLoginClick = () => {
+    setShowSuccessModal(false);
+    navigate('/login');
+  };
+
+  /**
    * Handle signup submission
    */
   const handleSignup = async () => {
@@ -1104,15 +1145,6 @@ export default function Signup() {
     setShowSuccessModal(true);
   };
 
-
-
-  /**
-   * Handle login button click
-   */
-  const handleLoginClick = () => {
-    setShowSuccessModal(false);
-    navigate('/login');
-  };
 
   // Show full screen spinner when loading
   if (loading) {
@@ -1677,6 +1709,36 @@ export default function Signup() {
             </p>
           </form>
         </div>
+
+        {/* Modals */}
+        <PendingApprovalModal
+          isOpen={showPendingModal}
+          onClose={() => setShowPendingModal(false)}
+          onLoginClick={() => { setShowPendingModal(false); navigate('/login'); }}
+        />
+        <TermsModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={handleAcceptTerms}
+        />
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          message={successMessage}
+          showLoginButton={true}
+          onLoginClick={handleLoginClick}
+        />
+        <ErrorModal
+          isOpen={showErrorModal}
+          onClose={() => setShowErrorModal(false)}
+          errorMessage={error}
+        />
+        <InfoModal
+          isOpen={showInfoModal}
+          onClose={() => setShowInfoModal(false)}
+          title={infoModalData.title}
+          message={infoModalData.message}
+        />
 
         {/* Legal Policy Modal */}
         <LegalPolicyModal
