@@ -486,7 +486,7 @@ export default function Login() {
               <div className="w-full mb-5">
                 <button
                   onClick={handleGoogleClick}
-                  className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
+                  className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-120 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
                 >
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                     <path
