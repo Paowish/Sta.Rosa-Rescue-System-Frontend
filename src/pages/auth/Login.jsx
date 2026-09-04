@@ -479,19 +479,16 @@ export default function Login() {
               <h2 className="text-4xl font-semibold text-gray-800 mb-3">Login to your account</h2>
               <p className="text-gray-500 text-sm mb-8">Access the Central Luzon Emergency Response operations command platform.</p>
 
-              {/* Google Login Button - Custom Styled to Match Inputs */}
-              <div className="w-full mb-5">
-                <div className="w-full">
-                  <GoogleLogin
-                    theme="outline"
-                    size="large"
-                    text="signin_with"
-                    shape="rectangular"
-                    width="400"
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => console.log('Google Login Failed')}
-                  />
-                </div>
+              {/* Google Login Button */}
+              <div className="w-full mb-5 google-login-container">
+                <GoogleLogin
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => console.log('Google Login Failed')}
+                />
               </div>
 
               <div className="flex items-center gap-3 mb-5">

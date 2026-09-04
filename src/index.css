@@ -311,12 +311,31 @@ button {
     animation: fadeInContent 0.4s ease-out forwards;
 }
 
-/* Force Google button to match inputs in production */
-.google-login-container,
-.google-login-container>div,
-.google-login-container>div>div,
+/* 🔥 RESPONSIVE GOOGLE BUTTON - WORKS ON ALL DEVICES */
+.google-login-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.google-login-container>div {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.google-login-container>div>div {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 .google-login-container iframe {
     width: 100% !important;
     max-width: 100% !important;
-    min-width: 100% !important;
+    min-width: 0 !important;
+    height: 40px !important;
+}
+
+/* Ensure no overflow on mobile */
+.google-login-container * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
