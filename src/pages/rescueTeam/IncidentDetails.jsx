@@ -173,16 +173,27 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
     const loadAvailableVolunteers = async () => {
         setLoadingVolunteers(true);
         try {
+            // ✅ CHECK IF TOKEN EXISTS FIRST
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/volunteers/available', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await response.json();
-            if (result.success) {
-                setVolunteers(result.data);
+            if (!token) {
+                console.log('❌ No token found in localStorage');
+                setVolunteers([]);
+                return;
+            }
+
+            const response = await incidentService.getAvailableVolunteers();
+            console.log('✅ Volunteers loaded:', response);
+
+            if (response && response.success) {
+                setVolunteers(response.data || []);
+            } else {
+                console.log('❌ No volunteers in response');
+                setVolunteers([]);
             }
         } catch (error) {
-            console.error('Failed to load volunteers:', error);
+            console.error('❌ Failed to load volunteers:', error);
+            console.error('❌ Error details:', error.response?.data || error.message);
+            setVolunteers([]);
         } finally {
             setLoadingVolunteers(false);
         }

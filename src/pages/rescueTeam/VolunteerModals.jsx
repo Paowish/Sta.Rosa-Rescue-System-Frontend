@@ -1,4 +1,4 @@
-// src/components/modals/DispatchModal.jsx
+// src/components/modals/VolunteerModal.jsx
 import React, { useState, useEffect } from 'react';
 import { Icon } from "@iconify/react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -42,8 +42,8 @@ export const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, 
             <div className="bg-white rounded-xl shadow-2xl w-[420px] max-w-[90vw] p-6 flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-center mb-4">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${iconColor === 'text-green-500' ? 'bg-green-100' :
-                            iconColor === 'text-red-500' ? 'bg-red-100' :
-                                'bg-blue-100'
+                        iconColor === 'text-red-500' ? 'bg-red-100' :
+                            'bg-blue-100'
                         }`}>
                         {icon === 'success' ? <Icon icon="mdi:check-circle" className="w-8 h-8 text-green-500" /> :
                             icon === 'error' ? <Icon icon="mdi:close-circle" className="w-8 h-8 text-red-500" /> :
@@ -136,6 +136,9 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
     const [incidents, setIncidents] = useState([]);
     const [fetching, setFetching] = useState(true);
 
+    // ✅ Check if volunteer is off duty
+    const isOffDuty = volunteer?.availabilityStatus === 'off-duty' || volunteer?.isOnDuty === false;
+
     const getApiUrl = () => window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
     /**
@@ -168,6 +171,12 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
      * Handle dispatch action
      */
     const handleDispatch = async () => {
+        // ✅ Prevent dispatch if off duty
+        if (isOffDuty) {
+            alert('❌ Cannot dispatch volunteer while off duty.');
+            return;
+        }
+
         if (!selectedIncident) return alert('Please select an incident');
         setLoading(true);
         try {
@@ -246,8 +255,11 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                             <div>
                                 <h3 className="text-lg font-bold text-gray-800">{volunteer.name}</h3>
                                 <p className="text-xs text-gray-500 font-medium">{volunteer.role}</p>
-                                <div className="mt-1.5 inline-block bg-blue-50 border border-blue-200 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-sm">
-                                    • {volunteer.status || 'Available'}
+                                <div className={`mt-1.5 inline-block px-2 py-0.5 rounded-sm text-[10px] font-bold ${isOffDuty
+                                    ? 'bg-gray-200 border border-gray-300 text-gray-500'
+                                    : 'bg-blue-50 border border-blue-200 text-blue-600'
+                                    }`}>
+                                    • {isOffDuty ? 'Off Duty' : (volunteer.status || 'Available')}
                                 </div>
                             </div>
                         </div>
@@ -387,15 +399,15 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                                         key={incident._id}
                                         onClick={() => setSelectedIncident(incident._id)}
                                         className={`flex gap-3 group cursor-pointer p-3 rounded-lg transition-colors border ${selectedIncident === incident._id
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:bg-gray-50'
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-200 hover:bg-gray-50'
                                             }`}
                                     >
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${incident.severity === 'Critical' ? 'text-red-600 border-red-300 bg-red-50' :
-                                                        incident.severity === 'Medium' ? 'text-yellow-600 border-yellow-300 bg-yellow-50' :
-                                                            'text-green-600 border-green-300 bg-green-50'
+                                                    incident.severity === 'Medium' ? 'text-yellow-600 border-yellow-300 bg-yellow-50' :
+                                                        'text-green-600 border-green-300 bg-green-50'
                                                     }`}>
                                                     {incident.severity}
                                                 </span>
@@ -438,10 +450,13 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                         </button>
                         <button
                             onClick={handleDispatch}
-                            disabled={loading || !selectedIncident}
-                            className="flex-1 sm:flex-none bg-[#0081d6] hover:bg-[#006bb3] text-white text-sm font-medium py-2 px-6 rounded shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={loading || !selectedIncident || isOffDuty}
+                            className={`flex-1 sm:flex-none text-white text-sm font-medium py-2 px-6 rounded shadow-sm transition-colors ${isOffDuty
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-[#0081d6] hover:bg-[#006bb3]'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
-                            {loading ? 'Dispatching...' : 'Dispatch'}
+                            {isOffDuty ? 'Off Duty' : (loading ? 'Dispatching...' : 'Dispatch')}
                         </button>
                     </div>
                 </div>

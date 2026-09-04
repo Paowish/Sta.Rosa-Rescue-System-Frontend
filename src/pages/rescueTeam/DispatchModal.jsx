@@ -3,6 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { incidentService } from "../../services/api";
 
+
+
 /**
  * Dispatch Modal Component
  * Allows dispatching rescue teams or individual volunteers to incidents
@@ -33,6 +35,10 @@ export default function DispatchModal({
     const [activeTab, setActiveTab] = useState('rescue');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingTabChange, setPendingTabChange] = useState(null);
+
+    console.log('🎯 [MODAL] volunteers prop:', volunteers);
+    console.log('🎯 [MODAL] volunteers length:', volunteers?.length);
+    console.log('🎯 [MODAL] activeTab:', activeTab);
 
     /**
      * Fetch teams when modal opens
@@ -500,6 +506,8 @@ export default function DispatchModal({
                                 filteredVolunteers.map((volunteer) => {
                                     const isSelected = selectedIds.includes(volunteer._id);
                                     const fullAddress = getFullAddress(volunteer);
+                                    const isOffDuty = volunteer.availabilityStatus === 'off-duty' || volunteer.isOnDuty === false;
+                                    const certifications = volunteer.certifications || [];
 
                                     return (
                                         <div key={volunteer._id} className="flex items-start gap-4 py-4 border-b border-gray-200 hover:bg-gray-50/50 -mx-4 px-4">
@@ -517,19 +525,43 @@ export default function DispatchModal({
                                                 <div className="w-14 h-14 rounded-full bg-[#cbd5e1] border-2 border-white shadow-sm flex items-center justify-center text-gray-500 text-lg font-bold">
                                                     {volunteer.firstName?.charAt(0)}{volunteer.lastName?.charAt(0)}
                                                 </div>
-                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#2d7aff] rounded-full border border-white"></div>
+                                                <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border border-white ${isOffDuty ? 'bg-gray-500' : 'bg-[#2d7aff]'
+                                                    }`}></div>
                                             </div>
 
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="text-lg font-bold text-gray-900">{volunteer.firstName} {volunteer.lastName}</h3>
-                                                    <span className="text-[10px] font-semibold text-[#25d366] uppercase">Active</span>
+                                                    <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded border ${isOffDuty
+                                                        ? 'text-gray-600 bg-gray-100 border-gray-300'
+                                                        : 'text-[#25d366] bg-green-50 border-green-200'
+                                                        }`}>
+                                                        {isOffDuty ? 'Off Duty' : 'Active'}
+                                                    </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 font-medium">Volunteer Responder</p>
-                                                <div className="flex flex-wrap gap-2 mt-1.5">
-                                                    <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">BLS/CPR</span>
-                                                    <span className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">First Aid</span>
-                                                </div>
+                                                <p className="text-sm text-gray-600 font-medium">{volunteer.role || 'Volunteer'}</p>
+
+                                                {/* ✅ Certifications from database */}
+                                                {certifications.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 mt-1.5">
+                                                        {certifications.slice(0, 3).map((cert, idx) => {
+                                                            const certName = typeof cert === 'string' ? cert : (cert.name || cert.certification || cert.title || cert.type || 'Certified');
+                                                            return (
+                                                                <span key={idx} className="px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] text-[10px] font-bold rounded border border-[#bfdbfe]">
+                                                                    {certName}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-2 mt-1.5">
+                                                        <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-medium rounded border border-gray-200">
+                                                            No certifications
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* ✅ Location from database */}
                                                 <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-[#6b7280]">
                                                     <Icon icon="material-symbols:location-on" width={12} className="text-gray-800 flex-shrink-0" />
                                                     <span className="truncate">{fullAddress}</span>

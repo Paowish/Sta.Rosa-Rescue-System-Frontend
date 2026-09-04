@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from "@iconify/react";
-import notificationService from "../../services/notificationService";
+import { incidentService } from "../../services/api";
 
 /**
  * Stat Card Component
@@ -72,82 +72,73 @@ export default function Units() {
     const [selectedId, setSelectedId] = useState(null);
 
     // Statistics
-    const [stats] = useState({
-        total: 4,
-        available: 1,
-        deployed: 2,
-        standby: 1
+    const [stats, setStats] = useState({
+        total: 0,
+        available: 0,
+        deployed: 0,
+        standby: 0
     });
 
-    // Responders data
-    const [responders] = useState([
-        {
-            id: 1,
-            name: 'Team Alpha',
-            role: 'Search & Rescue',
-            specialties: ['First Aid', 'BLS/CPR', 'Water Rescue', 'USAR LVL 1'],
-            volunteerId: 'RES-001',
-            members: '6 Members',
-            teamLeader: 'Mark Chavez',
-            certifications: ['BLS/CPR', 'First Aid', 'Water Rescue', 'USAR LVL 1', 'Patient Triage'],
-            isAvailable: false,
-            schedule: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-            teamMembers: ['Mark Chavez', 'Juan Dela Cruz', 'Ramon Santos', 'Miguel Reyes', 'Andres Gomez', 'Pedro Lopez']
-        },
-        {
-            id: 2,
-            name: 'Team Beta',
-            role: 'Fire & Rescue',
-            specialties: ['First Aid', 'BLS/CPR', 'Fire Fighting', 'Hazmat'],
-            volunteerId: 'RES-002',
-            members: '6 Members',
-            teamLeader: 'James Reyes',
-            certifications: ['BLS/CPR', 'First Aid', 'Fire Fighting', 'Hazmat', 'Patient Triage'],
-            isAvailable: false,
-            schedule: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            teamMembers: ['James Reyes', 'Mark Cruz', 'Ramon Mendoza', 'Albert Santos', 'Philip Garcia', 'Luz Torres']
-        },
-        {
-            id: 3,
-            name: 'Team Charlie',
-            role: 'Mountain Rescue',
-            specialties: ['First Aid', 'BLS/CPR', 'Mountain Rescue', 'USAR LVL 2'],
-            volunteerId: 'RES-003',
-            members: '6 Members',
-            teamLeader: 'Albert Santos',
-            certifications: ['BLS/CPR', 'First Aid', 'Mountain Rescue', 'USAR LVL 2', 'Patient Triage'],
-            isAvailable: true,
-            schedule: ['Mon', 'Tue', 'Thu', 'Fri', 'Sun'],
-            teamMembers: ['Albert Santos', 'Jose Rizal', 'Manuel Dela Cruz', 'Ramon Cruz', 'Elena Gomez', 'Carlos Mendoza']
-        },
-        {
-            id: 4,
-            name: 'Team Delta',
-            role: 'K9 & Emergency',
-            specialties: ['BLS/CPR', 'K9 Rescue', 'Emergency Driving'],
-            volunteerId: 'RES-004',
-            members: '6 Members',
-            teamLeader: 'Ramon Cruz',
-            certifications: ['BLS/CPR', 'K9 Rescue', 'Emergency Driving', 'First Aid'],
-            isAvailable: false,
-            schedule: ['Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            teamMembers: ['Ramon Cruz', 'Maria Santos', 'Juan Dela Cruz', 'Ana Reyes', 'Pedro Lopez', 'Luz Gomez']
-        }
-    ]);
+    // ✅ Fetch teams from database
+    const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     /**
-     * Subscribe to notification service events
+     * Fetch teams from API
      */
-    useEffect(() => {
-        const unsubscribe = notificationService.addListener((data) => {
-            if (data.type === 'show') {
-                console.log('📢 New incident in Units!', data.notification);
-            } else if (data.type === 'dismiss') {
-                console.log('🔇 Notification dismissed globally');
+    const fetchTeams = async () => {
+        setLoading(true);
+        try {
+            const response = await incidentService.getTeams();
+            if (response && response.success) {
+                setTeams(response.data || []);
+
+                // Update stats based on team availability
+                const total = response.data?.length || 0;
+                const available = response.data?.filter(t => t.members?.some(m => m.isOnDuty !== false))?.length || 0;
+                const deployed = response.data?.filter(t => t.isAvailable === false)?.length || 0;
+                const standby = total - deployed - available;
+
+                setStats({
+                    total,
+                    available,
+                    deployed,
+                    standby
+                });
             }
-        });
-        return unsubscribe;
+        } catch (error) {
+            console.error("Failed to load teams:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load teams on mount
+    useEffect(() => {
+        fetchTeams();
     }, []);
+
+    /**
+     * Format team data from database
+     */
+    const formatTeam = (team) => {
+        return {
+            id: team._id,
+            name: team.name,
+            role: team.role,
+            specialties: team.specialties || [],
+            volunteerId: team.volunteerId,
+            members: team.members?.length || 0,
+            teamLeader: team.teamLeader ? `${team.teamLeader.firstName} ${team.teamLeader.lastName}` : 'N/A',
+            certifications: team.specialties || [],
+            isAvailable: team.members?.some(m => m.isOnDuty !== false) || false,
+            schedule: team.schedule || [],
+            teamMembers: team.members?.map(m => `${m.firstName} ${m.lastName}`) || []
+        };
+    };
+
+    // Map teams to responders format
+    const responders = teams.map(formatTeam);
 
     // Get selected responder
     const activeResponder = responders.find(r => r.id === selectedId);
@@ -157,8 +148,17 @@ export default function Units() {
      */
     const getMemberCount = (members) => {
         if (!members) return '0 Members';
+        if (Array.isArray(members)) return `${members.length} Members`;
         return members;
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#fafbfc] font-sans text-gray-800 flex items-center justify-center">
+                <div className="text-gray-500">Loading teams...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#fafbfc] font-sans text-gray-800 relative">
@@ -180,46 +180,50 @@ export default function Units() {
 
                     {/* Responder Grid */}
                     <div className="pl-6 pt-6">
-                        <div className="grid grid-cols-2 gap-5">
-                            {responders.map((r) => (
-                                <div
-                                    key={r.id}
-                                    onClick={() => setSelectedId(r.id)}
-                                    className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'
-                                        }`}
-                                >
-                                    <div className="p-5 pb-3">
-                                        {/* Team Info */}
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-12 h-12 rounded-full bg-[#f0f2f5] flex-shrink-0 flex items-center justify-center text-gray-500 border border-gray-200">
-                                                <Icon icon="mdi:account-group" className="w-6 h-6" />
+                        {responders.length === 0 ? (
+                            <div className="text-center py-10 text-gray-500">No teams found</div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-5">
+                                {responders.map((r) => (
+                                    <div
+                                        key={r.id}
+                                        onClick={() => setSelectedId(r.id)}
+                                        className={`bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 relative ${selectedId === r.id ? 'ring-2 ring-blue-500 shadow-blue-100' : 'shadow-sm'
+                                            }`}
+                                    >
+                                        <div className="p-5 pb-3">
+                                            {/* Team Info */}
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-12 h-12 rounded-full bg-[#f0f2f5] flex-shrink-0 flex items-center justify-center text-gray-500 border border-gray-200">
+                                                    <Icon icon="mdi:account-group" className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-[15px] text-gray-800">{r.name}</div>
+                                                    <div className="text-[12px] text-gray-500">{r.role}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="font-bold text-[15px] text-gray-800">{r.name}</div>
-                                                <div className="text-[12px] text-gray-500">{r.role}</div>
-                                            </div>
-                                        </div>
 
-                                        {/* Specialties */}
-                                        <div className="border-t border-gray-100 pt-3 mt-2">
-                                            <div className="text-[12px] font-medium text-gray-500 mb-1.5">Speciality</div>
-                                            <div className="flex flex-wrap">
-                                                {r.specialties.length > 0 ? (
-                                                    r.specialties.slice(0, 4).map(s => <Tag key={s} label={s} />)
-                                                ) : (
-                                                    <span className="text-xs text-gray-400">No specialties</span>
-                                                )}
+                                            {/* Specialties */}
+                                            <div className="border-t border-gray-100 pt-3 mt-2">
+                                                <div className="text-[12px] font-medium text-gray-500 mb-1.5">Speciality</div>
+                                                <div className="flex flex-wrap">
+                                                    {r.specialties.length > 0 ? (
+                                                        r.specialties.slice(0, 4).map(s => <Tag key={s} label={s} />)
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">No specialties</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* Schedule */}
-                                        <div className="mt-2 pt-2 border-t border-gray-100">
-                                            <ScheduleBar schedule={r.schedule} />
+                                            {/* Schedule */}
+                                            <div className="mt-2 pt-2 border-t border-gray-100">
+                                                <ScheduleBar schedule={r.schedule} />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 

@@ -44,8 +44,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                         <button
                             onClick={() => setSelectedOption('all')}
                             className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'all'
-                                    ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
-                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-start gap-3">
@@ -63,8 +63,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                         <button
                             onClick={() => setSelectedOption('active')}
                             className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'active'
-                                    ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
-                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-start gap-3">
@@ -82,8 +82,8 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                         <button
                             onClick={() => setSelectedOption('inactive')}
                             className={`p-4 border rounded-lg text-left transition-all ${selectedOption === 'inactive'
-                                    ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
-                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-start gap-3">
@@ -110,9 +110,7 @@ export default function ExportUserModal({ isOpen, onClose, onExport }) {
                             >
                                 <option value="all">- All Roles -</option>
                                 <option value="volunteer">Volunteer</option>
-                                <option value="rescuer">Rescuer</option>
                                 <option value="civilian">Civilian</option>
-                                <option value="admin">Admin</option>
                             </select>
                         </div>
                     </div>

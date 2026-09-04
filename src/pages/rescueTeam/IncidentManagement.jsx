@@ -49,6 +49,25 @@ export default function IncidentManagement() {
   const [dispatchSelectedIds, setDispatchSelectedIds] = useState([]);
   const [dispatchSuccess, setDispatchSuccess] = useState(null);
 
+  // ✅ NEW: Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    confirmColor: 'bg-red-600 hover:bg-red-700',
+    icon: 'warning',
+    onConfirm: null
+  });
+
+  // ✅ NEW: Notification modal state
+  const [notificationModal, setNotificationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success' // success, error, warning, info
+  });
+
   /**
    * Load data on component mount
    */
@@ -217,26 +236,64 @@ export default function IncidentManagement() {
   };
 
   /**
-   * Handle resolve incident
+   * ✅ Show notification modal
    */
-  const handleResolveIncident = async (incident) => {
+  const showNotification = (title, message, type = 'success') => {
+    setNotificationModal({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  /**
+   * ✅ Show confirmation modal
+   */
+  const showConfirmation = (title, message, onConfirm, confirmText = 'Confirm', confirmColor = 'bg-red-600 hover:bg-red-700') => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      confirmColor,
+      icon: 'warning',
+      onConfirm
+    });
+  };
+
+  /**
+   * ✅ Handle resolve incident (Modal-based)
+   */
+  const handleResolveIncident = (incident) => {
     if (incident.status !== 'Dispatched' && incident.status !== 'Active') {
-      alert('⚠️ This incident must be dispatched before it can be resolved.');
+      showNotification(
+        'Cannot Resolve',
+        'This incident must be dispatched before it can be resolved.',
+        'warning'
+      );
       return;
     }
 
-    if (window.confirm(`Mark incident ${incident.incidentId} as resolved?`)) {
-      try {
-        const response = await incidentService.resolveIncident(incident._id, "Resolved by team");
-        if (response && response.success) {
-          alert("Incident marked as resolved!");
-          setIsModalOpen(false);
-          loadIncidents();
+    showConfirmation(
+      'Resolve Incident',
+      `Are you sure you want to mark incident ${incident.incidentId} as resolved?`,
+      async () => {
+        try {
+          const response = await incidentService.resolveIncident(incident._id, "Resolved by team");
+          if (response && response.success) {
+            showNotification('Success', 'Incident marked as resolved successfully!');
+            setIsModalOpen(false);
+            loadIncidents();
+          } else {
+            showNotification('Error', 'Failed to resolve incident. Please try again.', 'error');
+          }
+        } catch (error) {
+          showNotification('Error', 'Failed to resolve incident: ' + error.message, 'error');
         }
-      } catch (error) {
-        alert("Failed to resolve incident: " + error.message);
-      }
-    }
+      },
+      'Yes, Resolve'
+    );
   };
 
   /**
@@ -251,16 +308,16 @@ export default function IncidentManagement() {
    */
   const handleDispatchSuccess = async (dispatchInfo) => {
     try {
-      console.log('🎯 [MANAGEMENT] handleDispatchSuccess CALLED!'); // ✅ ADD THIS!
-      console.log('🎯 [MANAGEMENT] RECEIVED dispatchInfo:', dispatchInfo); // ✅ ADD THIS!
-      console.log('🎯 [MANAGEMENT] teamName:', dispatchInfo?.teamName); // ✅ ADD THIS!
+      console.log('🎯 [MANAGEMENT] handleDispatchSuccess CALLED!');
+      console.log('🎯 [MANAGEMENT] RECEIVED dispatchInfo:', dispatchInfo);
+      console.log('🎯 [MANAGEMENT] teamName:', dispatchInfo?.teamName);
 
       const response = await incidentService.assignResponders(
         selectedIncident._id,
         dispatchInfo?.selectedIds || [],
         dispatchInfo?.teamName || null,
         dispatchNotes,
-        dispatchInfo?.dispatchType || 'volunteers'  // ✅ ADD THIS!
+        dispatchInfo?.dispatchType || 'volunteers'
       );
 
       if (response && response.success) {
@@ -292,9 +349,14 @@ export default function IncidentManagement() {
         });
 
         loadIncidents();
+
+        // ✅ Show notification instead of alert
+        showNotification('Success', 'Incident dispatched successfully!');
+      } else {
+        showNotification('Error', 'Failed to dispatch: ' + (response?.message || 'Unknown error'), 'error');
       }
     } catch (error) {
-      alert("Failed to dispatch: " + error.message);
+      showNotification('Error', 'Failed to dispatch: ' + error.message, 'error');
     }
   };
 
@@ -480,6 +542,105 @@ export default function IncidentManagement() {
         data={dispatchSuccess}
         onClose={() => setDispatchSuccess(null)}
       />
+
+      {/* ✅ Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Icon icon="material-symbols:warning" width={24} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">{confirmModal.title}</h3>
+              </div>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700">{confirmModal.message}</p>
+            </div>
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (confirmModal.onConfirm) {
+                    confirmModal.onConfirm();
+                  }
+                  setConfirmModal({ ...confirmModal, isOpen: false });
+                }}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors shadow-sm ${confirmModal.confirmColor}`}
+              >
+                {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Notification Modal */}
+      {notificationModal.isOpen && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className={`px-6 py-4 flex items-center gap-3 border-b ${notificationModal.type === 'success'
+              ? 'bg-green-50 border-green-200'
+              : notificationModal.type === 'error'
+                ? 'bg-red-50 border-red-200'
+                : notificationModal.type === 'warning'
+                  ? 'bg-yellow-50 border-yellow-200'
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notificationModal.type === 'success'
+                ? 'bg-green-100'
+                : notificationModal.type === 'error'
+                  ? 'bg-red-100'
+                  : notificationModal.type === 'warning'
+                    ? 'bg-yellow-100'
+                    : 'bg-blue-100'
+                }`}>
+                <Icon
+                  icon={
+                    notificationModal.type === 'success'
+                      ? 'material-symbols:check-circle'
+                      : notificationModal.type === 'error'
+                        ? 'material-symbols:error'
+                        : notificationModal.type === 'warning'
+                          ? 'material-symbols:warning'
+                          : 'material-symbols:info'
+                  }
+                  width={24}
+                  className={
+                    notificationModal.type === 'success'
+                      ? 'text-green-600'
+                      : notificationModal.type === 'error'
+                        ? 'text-red-600'
+                        : notificationModal.type === 'warning'
+                          ? 'text-yellow-600'
+                          : 'text-blue-600'
+                  }
+                />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">{notificationModal.title}</h3>
+              </div>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700">{notificationModal.message}</p>
+            </div>
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setNotificationModal({ ...notificationModal, isOpen: false })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Page Header */}
       <div className="mb-4">

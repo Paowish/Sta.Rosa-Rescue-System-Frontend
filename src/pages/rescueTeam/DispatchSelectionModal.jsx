@@ -221,7 +221,7 @@ export default function DispatchSelectionModal({
                                             </h3>
                                             <span className="text-[10px] font-semibold text-[#25d366] uppercase tracking-wide">Active</span>
                                         </div>
-                                        <p className="text-sm text-gray-600 font-medium">Volunteer Responder</p>
+                                        <p className="text-sm text-gray-600 font-medium">Volunteer</p>
 
                                         {/* Certifications */}
                                         <div className="flex flex-wrap gap-2 mt-1.5">

@@ -440,13 +440,6 @@ export default function SystemSettings() {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <button onClick={exportSettings} className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-2 rounded shadow-sm flex items-center gap-2 transition-colors">
-                        <Icon icon="mdi:export" className="w-4 h-4" /> Export
-                    </button>
-                    <label className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-2 rounded shadow-sm flex items-center gap-2 transition-colors cursor-pointer">
-                        <Icon icon="mdi:import" className="w-4 h-4" /> Import
-                        <input type="file" accept=".json" onChange={importSettings} className="hidden" />
-                    </label>
                     <button
                         onClick={saveAllSettings}
                         className="bg-[#0C7FDA] hover:bg-[#0b6eb5] text-white text-sm font-medium px-4 py-2 rounded shadow-sm flex items-center gap-2 transition-colors"

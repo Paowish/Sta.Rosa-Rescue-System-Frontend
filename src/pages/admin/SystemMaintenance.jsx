@@ -22,7 +22,7 @@ export default function SystemMaintenance() {
         frequency: 'Daily',
         time: '3:00 AM',
         retentionDays: 30,
-        storagePath: '/var/backups/whatatops',
+        storagePath: '/var/backups/MDRRMO',
         emailNotification: true
     });
 

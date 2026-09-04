@@ -597,6 +597,30 @@ export const incidentService = {
     },
 
     /**
+ * Get available volunteers
+ */
+    getAvailableVolunteers: async () => {
+        console.log('🎯 [API] Fetching available volunteers...');
+        const token = localStorage.getItem('token');
+        console.log('🎯 [API] Token exists:', !!token);
+
+        try {
+            // ✅ USE AXIOS INSTEAD OF FETCH!
+            const response = await axios.get(`${API_URL}/volunteers/available`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log('✅ [API] Volunteers response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ [API] Failed to fetch volunteers:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Get all teams from the database
      */
     getTeams: async () => {
