@@ -398,13 +398,6 @@ export default function IncidentDetailModal({ isOpen, onClose, incident, onDispa
                             </div>
                         )}
 
-                        {/* Sticky Footer - Overview Tab */}
-                        {activeTab === 'overview' && (
-                            <div className="shrink-0 bg-white p-4 border-t border-gray-200 flex justify-center gap-4">
-                                <button onClick={onClose} className="px-8 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors min-w-[120px]">Cancel</button>
-                                <button onClick={() => onDispatch(incident)} className="px-8 py-2 bg-[#1d4ed8] text-white text-sm font-medium rounded hover:bg-blue-800 transition-colors min-w-[120px]">Dispatch</button>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
