@@ -231,17 +231,22 @@ export default function DispatchModal({
 
         if (hasTeams) {
             const selectedTeam = getSelectedTeams()[0];
+            const teamMemberIds = getTeamMemberIds(selectedTeam);
+
+            // ✅ Use teamMemberIds if selectedIds is empty
+            const idsToDispatch = selectedIds.length > 0 ? selectedIds : teamMemberIds;
+
             onDispatch({
                 type: 'team',
-                dispatchType: 'team',  // ✅ ADD THIS!
+                dispatchType: 'team',
                 teamName: selectedTeam?.name || 'Rescue Team',
-                selectedIds: selectedIds,
-                count: selectedIds.length
+                selectedIds: idsToDispatch,
+                count: idsToDispatch.length
             });
         } else {
             onDispatch({
                 type: 'volunteers',
-                dispatchType: 'volunteers',  // ✅ ADD THIS!
+                dispatchType: 'volunteers',
                 teamName: null,
                 selectedIds: selectedIds,
                 count: selectedIds.length

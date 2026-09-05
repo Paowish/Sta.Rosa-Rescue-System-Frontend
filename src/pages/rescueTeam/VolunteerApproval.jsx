@@ -55,6 +55,8 @@ export default function VolunteerApproval() {
     icon: 'success', iconColor: 'text-green-500', onConfirm: null, action: null
   });
   const [pendingApplicant, setPendingApplicant] = useState(null);
+  // ✅ State for volunteer incidents
+  const [volunteerIncidents, setVolunteerIncidents] = useState([]);
 
   // Refs for loading and refresh
   const isLoadingRef = useRef(false);
@@ -362,7 +364,36 @@ export default function VolunteerApproval() {
   const handleDispatchComplete = () => {
     loadAllVolunteers(true);
   };
+  /**
+   * ✅ Fetch volunteer incidents when a volunteer is selected
+   */
+  useEffect(() => {
+    if (selectedRosterId && activeVolunteer) {
+      fetchVolunteerIncidents(selectedRosterId);
+    }
+  }, [selectedRosterId, activeVolunteer]);
 
+  const fetchVolunteerIncidents = async (volunteerId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/incidents/volunteer/${volunteerId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setVolunteerIncidents(data.data || []);
+      } else {
+        setVolunteerIncidents([]);
+      }
+    } catch (error) {
+      console.error('Error fetching volunteer incidents:', error);
+      setVolunteerIncidents([]);
+    }
+  };
   /**
    * Handle accept click
    */
@@ -736,13 +767,47 @@ export default function VolunteerApproval() {
                 <SectionHeader title="Profile" />
                 <DetailRow label="Volunteer ID" value={activeVolunteer.appId} />
                 <DetailRow label="Contact" value={activeVolunteer.details?.contact || 'N/A'} />
-                <DetailRow label="Current Assignment" value={activeVolunteer.status === 'accepted' ? 'Active' : 'N/A'} />
+                <DetailRow
+                  label="Current Assignment"
+                  value={
+                    volunteerIncidents && volunteerIncidents.some(inc =>
+                      ['Pending', 'Active', 'Dispatched', 'En Route', 'On Scene'].includes(inc.status)
+                    )
+                      ? volunteerIncidents.find(inc =>
+                        ['Pending', 'Active', 'Dispatched', 'En Route', 'On Scene'].includes(inc.status)
+                      )?.incidentId || 'Active'
+                      : 'None'
+                  }
+                />
 
                 <SectionHeader title="Recent Incidents" />
                 <div className="p-6 space-y-4 border-b border-gray-200">
-                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
-                    <p className="text-xs text-gray-500 font-medium">No recent incidents assigned.</p>
-                  </div>
+                  {volunteerIncidents && volunteerIncidents.length > 0 ? (
+                    volunteerIncidents.slice(0, 3).map((incident, idx) => (
+                      <div key={incident._id || idx} className="border border-gray-200 rounded-md p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${incident.status === 'Active' || incident.status === 'Dispatched'
+                            ? 'text-red-600 bg-red-50 border-red-200'
+                            : incident.status === 'Pending'
+                              ? 'text-yellow-600 bg-yellow-50 border-yellow-200'
+                              : 'text-green-600 bg-green-50 border-green-200'
+                            }`}>
+                            {incident.status || 'Pending'}
+                          </span>
+                          <span className="text-[10px] text-gray-500">{incident.incidentId}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-gray-700">{incident.type}</div>
+                        <div className="text-[10px] text-gray-500 flex justify-between mt-1">
+                          <span>• {incident.location?.address?.split(',')[0] || 'Unknown'}</span>
+                          <span>• {new Date(incident.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center">
+                      <p className="text-xs text-gray-500 font-medium">No recent incidents assigned.</p>
+                    </div>
+                  )}
                 </div>
 
                 <SectionHeader title="Certification and Skills" />

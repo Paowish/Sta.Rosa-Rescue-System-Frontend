@@ -613,6 +613,16 @@ export const incidentService = {
                 }
             });
             console.log('✅ [API] Volunteers response:', response.data);
+
+            // ✅ Add id and name fields to each volunteer
+            if (response.data?.success && Array.isArray(response.data.data)) {
+                response.data.data = response.data.data.map(v => ({
+                    ...v,
+                    id: v._id || v.id,  // ✅ Ensure id exists
+                    name: `${v.firstName} ${v.lastName}`.trim()  // ✅ Ensure name exists
+                }));
+            }
+
             return response.data;
         } catch (error) {
             console.error('❌ [API] Failed to fetch volunteers:', error);

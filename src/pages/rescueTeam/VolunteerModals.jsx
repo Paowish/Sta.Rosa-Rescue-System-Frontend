@@ -135,6 +135,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
     const [loading, setLoading] = useState(false);
     const [incidents, setIncidents] = useState([]);
     const [fetching, setFetching] = useState(true);
+    const [recentIncidents, setRecentIncidents] = useState([]);
 
     // ✅ Check if volunteer is off duty
     const isOffDuty = volunteer?.availabilityStatus === 'off-duty' || volunteer?.isOnDuty === false;
@@ -142,12 +143,14 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
     const getApiUrl = () => window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
 
     /**
-     * Fetch active incidents on mount
+     * Fetch active incidents and volunteer's assigned incidents on mount
      */
     useEffect(() => {
         const fetchIncidents = async () => {
             try {
                 const token = localStorage.getItem('token');
+
+                // Fetch available incidents
                 const response = await fetch(`${getApiUrl()}/incidents`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -158,6 +161,20 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                     );
                     setIncidents(activeIncidents);
                 }
+
+                // ✅ Fetch volunteer's assigned incidents
+                const volunteerId = volunteer?.id || volunteer?._id || volunteer?.userId;
+                console.log('🔍 Using volunteer ID:', volunteerId);
+
+                if (volunteerId) {
+                    const incidentResponse = await fetch(`${getApiUrl()}/incidents/volunteer/${volunteerId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const incidentData = await incidentResponse.json();
+                    if (incidentData.success) {
+                        setRecentIncidents(incidentData.data || []);
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching incidents:', error);
             } finally {
@@ -165,7 +182,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
             }
         };
         fetchIncidents();
-    }, []);
+    }, [volunteer?.id, volunteer?._id, volunteer?.userId]);
 
     /**
      * Handle dispatch action
@@ -181,6 +198,9 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
+            const volunteerId = volunteer?._id || volunteer?.id;
+            const volunteerName = `${volunteer.firstName} ${volunteer.lastName}`.trim();
+
             const response = await fetch(`${getApiUrl()}/incidents/${selectedIncident}/assign`, {
                 method: 'PUT',
                 headers: {
@@ -188,14 +208,14 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    responderIds: [volunteer.id],
-                    teamName: volunteer.name,
-                    dispatchNotes: `Dispatched to ${volunteer.name}`
+                    responderIds: [volunteerId],
+                    teamName: volunteerName,
+                    dispatchNotes: `Dispatched to ${volunteerName}`
                 })
             });
             const data = await response.json();
             if (data.success) {
-                alert(`✅ ${volunteer.name} dispatched!`);
+                alert(`✅ ${volunteerName} dispatched!`);
                 onDispatch();
                 onClose();
             } else {
@@ -212,11 +232,44 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
      * Calculate years active
      */
     const getYearsActive = () => {
-        if (!volunteer.createdAt) return '1 Year';
+        if (!volunteer.createdAt) return volunteer.yearsOfExperience || '0';
         const start = new Date(volunteer.createdAt);
         const now = new Date();
         const years = now.getFullYear() - start.getFullYear();
         return years > 0 ? `${years} Years` : 'New';
+    };
+
+    /**
+     * Get volunteer certifications
+     */
+    const getCertifications = () => {
+        const certs = volunteer.certifications || volunteer.skills || volunteer.credentials || [];
+
+        if (Array.isArray(certs)) {
+            if (certs.length > 0 && typeof certs[0] === 'string') {
+                return certs.slice(0, 8);
+            }
+            if (certs.length > 0 && typeof certs[0] === 'object') {
+                return certs.slice(0, 8).map(c =>
+                    c.name || c.certification || c.title || c.type || 'Certified'
+                );
+            }
+        }
+        return [];
+    };
+
+    /**
+     * Get volunteer phone
+     */
+    const getPhone = () => {
+        return volunteer.phoneNumber || volunteer.phone || volunteer.details?.contact || 'N/A';
+    };
+
+    /**
+     * Get volunteer ID
+     */
+    const getVolunteerId = () => {
+        return volunteer.appId || volunteer.volunteerId || volunteer._id?.toString().slice(-6) || 'N/A';
     };
 
     // Default map center (Santa Rosa, Nueva Ecija)
@@ -253,7 +306,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800">{volunteer.name}</h3>
+                                <h3 className="text-lg font-bold text-gray-800">{volunteer.firstName} {volunteer.lastName}</h3>
                                 <p className="text-xs text-gray-500 font-medium">{volunteer.role}</p>
                                 <div className={`mt-1.5 inline-block px-2 py-0.5 rounded-sm text-[10px] font-bold ${isOffDuty
                                     ? 'bg-gray-200 border border-gray-300 text-gray-500'
@@ -272,11 +325,11 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                             <div className="bg-white divide-y divide-gray-100">
                                 <div className="flex justify-between py-2.5 px-6">
                                     <span className="text-gray-500 font-medium">Volunteer ID</span>
-                                    <span className="text-gray-800 font-semibold">{volunteer.appId || 'N/A'}</span>
+                                    <span className="text-gray-800 font-semibold">{getVolunteerId()}</span>
                                 </div>
                                 <div className="flex justify-between py-2.5 px-6 bg-[#f7f8fa]">
                                     <span className="text-gray-500 font-medium">Contact</span>
-                                    <span className="text-gray-800 font-semibold">{volunteer.details?.contact || 'N/A'}</span>
+                                    <span className="text-gray-800 font-semibold">{getPhone()}</span>
                                 </div>
                                 <div className="flex justify-between py-2.5 px-6">
                                     <span className="text-gray-500 font-medium">Years Active</span>
@@ -290,33 +343,53 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                                 </div>
                             </div>
 
-                            {/* Recent Incidents */}
+                            {/* Recent Incidents - ✅ Now Fetched from Database */}
                             <div className="bg-[#e5e9ee] py-2 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[11px] uppercase tracking-wider">
                                 Recent Incidents
                             </div>
                             <div className="bg-white p-5 space-y-3">
-                                <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-red-600 bg-red-50 border-red-200">Active</span>
-                                        <span className="text-[10px] text-gray-500">Pending Dispatch</span>
+                                {recentIncidents && recentIncidents.length > 0 ? (
+                                    recentIncidents.slice(0, 3).map((incident, idx) => (
+                                        <div key={incident._id || idx} className="flex flex-col gap-1 border-b border-gray-100 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${incident.status === 'Active' || incident.status === 'Dispatched' ? 'text-red-600 bg-red-50 border-red-200' :
+                                                    incident.status === 'Pending' ? 'text-yellow-600 bg-yellow-50 border-yellow-200' :
+                                                        'text-green-600 bg-green-50 border-green-200'
+                                                    }`}>
+                                                    {incident.status || 'Pending'}
+                                                </span>
+                                                <span className="text-[10px] text-gray-500">{incident.incidentId}</span>
+                                            </div>
+                                            <div className="text-xs font-semibold text-gray-700">{incident.type}</div>
+                                            <div className="text-[10px] text-gray-500 flex justify-between">
+                                                <span>• {incident.location?.address?.split(',')[0] || 'Unknown'}</span>
+                                                <span>• {new Date(incident.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="flex flex-col gap-1 border-b border-gray-100 pb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-gray-500 bg-gray-50 border-gray-200">N/A</span>
+                                            <span className="text-[10px] text-gray-500">No Recent Assignment</span>
+                                        </div>
+                                        <div className="text-[10px] text-gray-500 flex justify-between border-b border-gray-100 pb-1.5">
+                                            <span>• Stand By</span>
+                                            <span>• No Active Dispatch</span>
+                                        </div>
                                     </div>
-                                    <div className="text-xs font-semibold text-gray-700">No Recent Assignment</div>
-                                    <div className="text-[10px] text-gray-500 flex justify-between border-b border-gray-100 pb-1.5">
-                                        <span>• N/A</span>
-                                        <span>• Stand By</span>
-                                    </div>
-                                </div>
+                                )}
                             </div>
 
-                            {/* Certifications */}
+                            {/* Certifications - ✅ Use volunteer.certifications */}
                             <div className="bg-[#e5e9ee] py-2 px-6 font-semibold text-gray-600 border-y border-gray-200 text-[11px] uppercase tracking-wider">
                                 Certification and Skills
                             </div>
                             <div className="bg-white p-5 flex flex-wrap gap-1.5">
-                                {volunteer.details?.skills?.length > 0 ? (
-                                    volunteer.details.skills.slice(0, 8).map((s, idx) => (
+                                {getCertifications().length > 0 ? (
+                                    getCertifications().slice(0, 8).map((cert, idx) => (
                                         <span key={idx} className="bg-blue-50 border border-blue-200 text-blue-600 px-2 py-1 rounded text-[10px] font-medium">
-                                            {s}
+                                            {cert}
                                         </span>
                                     ))
                                 ) : (
@@ -442,7 +515,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
                 {/* Footer */}
                 <div className="border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-center bg-white gap-4 shrink-0">
                     <p className="text-sm text-gray-500">
-                        Assigning <span className="font-bold text-gray-800">{volunteer.name}</span> to {selectedIncident ? 'selected incident' : 'select an incident above'}
+                        Assigning <span className="font-bold text-gray-800">{volunteer.firstName} {volunteer.lastName}</span>
                     </p>
                     <div className="flex gap-3 w-full sm:w-auto">
                         <button onClick={onClose} className="flex-1 sm:flex-none bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 text-sm font-medium py-2 px-6 rounded">
