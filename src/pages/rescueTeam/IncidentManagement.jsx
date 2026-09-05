@@ -1,6 +1,7 @@
 // src/pages/rescueTeam/IncidentManagement.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { incidentService } from "../../services/api";
 import { Icon } from "@iconify/react";
 import DispatchModal from "./DispatchModal";
@@ -543,8 +544,8 @@ export default function IncidentManagement() {
         onClose={() => setDispatchSuccess(null)}
       />
 
-      {/* ✅ Confirmation Modal */}
-      {confirmModal.isOpen && (
+      {/* ✅ Confirmation Modal - Using createPortal */}
+      {confirmModal.isOpen && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="bg-red-50 border-b border-red-200 px-6 py-4 flex items-center gap-3">
@@ -578,11 +579,12 @@ export default function IncidentManagement() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ✅ Notification Modal */}
-      {notificationModal.isOpen && (
+      {/* ✅ Notification Modal - Using createPortal */}
+      {notificationModal.isOpen && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className={`px-6 py-4 flex items-center gap-3 border-b ${notificationModal.type === 'success'
@@ -639,7 +641,8 @@ export default function IncidentManagement() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Page Header */}
