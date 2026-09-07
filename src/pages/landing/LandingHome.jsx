@@ -159,8 +159,8 @@ export default function LandingHome() {
 
                     {/* Main Headline */}
                     <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
-                        Mabilis pa sa <br />
-                        <span className="text-[#E63946]">Alas Kwatro</span>
+                        Your Report. <br />
+                        <span className="text-[#E63946]">Our Cue.</span>
                     </h1>
 
                     <p className="text-gray-600 text-lg mb-8 leading-relaxed max-w-lg">
