@@ -43,7 +43,7 @@ export default function SystemMaintenance() {
             const token = localStorage.getItem('token');
 
             // Load system logs
-            const logsResponse = await fetch(`${API_URL}/admin/system-logs', {
+            const logsResponse = await fetch(`${API_URL}/admin/system-logs`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -55,7 +55,7 @@ export default function SystemMaintenance() {
             }
 
             // Load backups
-            const backupsResponse = await fetch(`${API_URL}/admin/backups', {
+            const backupsResponse = await fetch(`${API_URL}/admin/backups`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -205,7 +205,7 @@ export default function SystemMaintenance() {
             setSuccessMessage("Starting backup...");
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${API_URL}/admin/backup-now', {
+            const response = await fetch(`${API_URL}/admin/backup-now`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -305,7 +305,7 @@ export default function SystemMaintenance() {
         try {
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${API_URL}/admin/backup-schedule', {
+            const response = await fetch(`${API_URL}/admin/backup-schedule`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

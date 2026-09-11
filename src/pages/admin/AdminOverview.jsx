@@ -112,7 +112,7 @@ export default function AdminOverview() {
             const token = localStorage.getItem('token');
 
             // Fetch incidents
-            const incidentResponse = await fetch(`${API_URL}/incidents', {
+            const incidentResponse = await fetch(`${API_URL}/incidents`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const incidentData = await incidentResponse.json();
@@ -127,7 +127,7 @@ export default function AdminOverview() {
             }
 
             // Fetch pending volunteer requests
-            const requestsResponse = await fetch(`${API_URL}/admin/pending-volunteers', {
+            const requestsResponse = await fetch(`${API_URL}/admin/pending-volunteers`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const requestsData = await requestsResponse.json();

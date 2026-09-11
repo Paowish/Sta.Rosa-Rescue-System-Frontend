@@ -194,7 +194,7 @@ export default function DashboardLayout({ children }) {
   const loadPendingVolunteerCount = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/volunteers/applications?status=pending', {
+      const response = await fetch(`${API_URL}/volunteers/applications?status=pending`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();

@@ -42,7 +42,7 @@ export default function IncidentReports() {
             setError(null);
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${API_URL}/incidents', {
+            const response = await fetch(`${API_URL}/incidents`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
