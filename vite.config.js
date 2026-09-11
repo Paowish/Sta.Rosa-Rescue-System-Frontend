@@ -15,7 +15,7 @@ export default defineConfig({
     ],
     proxy: {
       '/api': {
-        target: 'https://sta-rosa-rescue-system-backend.onrender.com',
+        target: 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com',
         changeOrigin: true,
         secure: false,
         ws: true
