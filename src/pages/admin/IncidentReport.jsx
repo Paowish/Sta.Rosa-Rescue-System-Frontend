@@ -2,7 +2,6 @@ import { API_URL } from "../../services/api";
 import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import * as XLSX from 'xlsx';
 import ExportIncidentModal from "./ExportIncidentModal";
 
@@ -11,32 +10,22 @@ import ExportIncidentModal from "./ExportIncidentModal";
  * Displays and manages all incident reports with filtering and export capabilities
  */
 export default function IncidentReports() {
-    // State for incidents data
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
-    // State for filters
     const [searchTerm, setSearchTerm] = useState("");
     const [periodFilter, setPeriodFilter] = useState("All Time");
     const [statusFilter, setStatusFilter] = useState("All Time");
 
-    // State for modals
-    const [selectedIncident, setSelectedIncident] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
 
-    /**
-     * Load incidents on component mount
-     */
     useEffect(() => {
         loadIncidents();
     }, []);
 
-    /**
-     * Fetch incidents from API
-     */
     const loadIncidents = async () => {
         try {
             setLoading(true);
@@ -65,9 +54,6 @@ export default function IncidentReports() {
         }
     };
 
-    /**
-     * Get status color classes based on incident status
-     */
     const getStatusColor = (status) => {
         switch (status) {
             case "Resolved": return "bg-[#D5FFE5] border border-[#15803D] text-[#15803D]";
@@ -78,9 +64,6 @@ export default function IncidentReports() {
         }
     };
 
-    /**
-     * Get display text for incident status
-     */
     const getStatusDisplay = (status) => {
         switch (status) {
             case "Resolved": return "SOLVED";
@@ -91,88 +74,182 @@ export default function IncidentReports() {
     };
 
     /**
-     * Close incident details modal
+     * Export incidents to Excel
+     * @param {string} option - 'all' | 'type' | 'barangay' | 'date'
+     * @param {string} dateFilter
+     * @param {string} statusFilter
+     * @param {string} barangayFilter
+     * @param {string} typeFilter
      */
-    const handleCloseModal = () => {
-        setShowDetailsModal(false);
-        setSelectedIncident(null);
-    };
+    const handleExportIncidents = (option, dateFilter, statusFilter, barangayFilter, typeFilter) => {
+        let dataToExport = [...incidents];
 
-    /**
-     * Export incidents to Excel with applied filters
-     */
-    const handleExportIncidents = (option, barangay, status) => {
-        // Start with currently filtered incidents
-        let dataToExport = [...filteredIncidents];
+        // Apply incident type filter
+        if (typeFilter && typeFilter !== 'all') {
+            dataToExport = dataToExport.filter(inc =>
+                inc.type?.toLowerCase() === typeFilter.toLowerCase()
+            );
+        }
 
         // Apply barangay filter
-        if (barangay !== 'all') {
-            dataToExport = dataToExport.filter(inc => inc.location?.barangay === barangay);
+        if (barangayFilter && barangayFilter !== 'all') {
+            dataToExport = dataToExport.filter(inc =>
+                inc.location?.barangay?.toLowerCase() === barangayFilter.toLowerCase()
+            );
         }
 
         // Apply status filter
-        if (status !== 'all') {
-            dataToExport = dataToExport.filter(inc => inc.status === status);
+        if (statusFilter && statusFilter !== 'all') {
+            dataToExport = dataToExport.filter(inc => inc.status === statusFilter);
         }
 
-        // Apply option filter (All, Active, Inactive)
-        if (option === 'active') {
-            dataToExport = dataToExport.filter(inc =>
-                inc.status !== 'Resolved' && inc.status !== 'Closed'
-            );
-        } else if (option === 'inactive') {
-            dataToExport = dataToExport.filter(inc =>
-                inc.status === 'Resolved' || inc.status === 'Closed'
-            );
+        // Apply date range filter
+        if (dateFilter && dateFilter !== 'all') {
+            const now = new Date();
+            dataToExport = dataToExport.filter(inc => {
+                const d = new Date(inc.reportedAt || inc.createdAt);
+                switch (dateFilter) {
+                    case 'today': return d.toDateString() === now.toDateString();
+                    case 'week': {
+                        const w = new Date(now); w.setDate(w.getDate() - 7);
+                        return d >= w;
+                    }
+                    case 'month': return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                    case 'year': return d.getFullYear() === now.getFullYear();
+                    default: return true;
+                }
+            });
         }
 
-        // Stop silently if no data to export
         if (dataToExport.length === 0) {
+            setError("No incidents match your filters. Nothing to export.");
+            setTimeout(() => setError(null), 5000);
             return;
         }
 
-        // Proceed with export
         try {
             setSuccessMessage("Preparing export...");
 
-            const exportData = dataToExport.map(incident => ({
-                'Incident ID': incident.incidentId || 'N/A',
-                'Type': incident.type || 'N/A',
-                'Barangay': incident.location?.barangay || 'N/A',
-                'Location': incident.location?.address || 'Unknown',
-                'Reported Date': incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : 'N/A',
-                'Reported Time': incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : 'N/A',
-                'Resolved Date': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString() : '-',
-                'Resolved Time': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleTimeString() : '-',
-                'Status': getStatusDisplay(incident.status),
-                'Assigned Team': incident.assignedTeam || 'Unassigned',
-                'Victims Affected': incident.victimsAffected || incident.victims || 0,
-                'Description': incident.description || 'N/A'
-            }));
+            let exportData;
 
-            // Create workbook and worksheet
+            if (option === 'date') {
+                // ─── DATE PRIORITY EXPORT ───
+                // Sort incidents by reportedAt ascending (oldest to newest)
+                const sorted = [...dataToExport].sort((a, b) => {
+                    const dateA = new Date(a.reportedAt || a.createdAt);
+                    const dateB = new Date(b.reportedAt || b.createdAt);
+                    return dateA - dateB;
+                });
+
+                // Group by date string (YYYY-MM-DD)
+                const grouped = {};
+                sorted.forEach(incident => {
+                    const reportedDate = incident.reportedAt || incident.createdAt;
+                    const d = new Date(reportedDate);
+                    const dateKey = d.toISOString().split('T')[0];
+                    if (!grouped[dateKey]) grouped[dateKey] = [];
+                    grouped[dateKey].push(incident);
+                });
+
+                // Flatten with date header rows
+                exportData = [];
+                Object.keys(grouped).sort().forEach(dateKey => {
+                    const dateObj = new Date(dateKey + 'T00:00:00');
+                    const formattedDate = dateObj.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+
+                    // Header row for the date group
+                    exportData.push({
+                        'Incident ID': `📅 ${formattedDate} (${grouped[dateKey].length} incidents)`,
+                        'Type': '',
+                        'Barangay': '',
+                        'Location': '',
+                        'Reported Date': '',
+                        'Reported Time': '',
+                        'Resolved Date': '',
+                        'Resolved Time': '',
+                        'Status': '',
+                        'Assigned Team': '',
+                        'Victims Affected': '',
+                        'Description': ''
+                    });
+
+                    // Individual incidents of the day
+                    grouped[dateKey].forEach(incident => {
+                        exportData.push({
+                            'Incident ID': incident.incidentId || 'N/A',
+                            'Type': incident.type || 'N/A',
+                            'Barangay': incident.location?.barangay || 'N/A',
+                            'Location': incident.location?.address || 'Unknown',
+                            'Reported Date': incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : 'N/A',
+                            'Reported Time': incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : 'N/A',
+                            'Resolved Date': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString() : '-',
+                            'Resolved Time': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleTimeString() : '-',
+                            'Status': incident.status?.toUpperCase() || 'UNKNOWN',
+                            'Assigned Team': incident.assignedTeam || incident.teamName || 'Unassigned',
+                            'Victims Affected': incident.victimsAffected || incident.victims || 0,
+                            'Description': incident.description || 'N/A'
+                        });
+                    });
+
+                    // Empty separator row
+                    exportData.push({
+                        'Incident ID': '',
+                        'Type': '',
+                        'Barangay': '',
+                        'Location': '',
+                        'Reported Date': '',
+                        'Reported Time': '',
+                        'Resolved Date': '',
+                        'Resolved Time': '',
+                        'Status': '',
+                        'Assigned Team': '',
+                        'Victims Affected': '',
+                        'Description': ''
+                    });
+                });
+            } else {
+                // ─── STANDARD EXPORT ───
+                exportData = dataToExport.map(incident => ({
+                    'Incident ID': incident.incidentId || 'N/A',
+                    'Type': incident.type || 'N/A',
+                    'Barangay': incident.location?.barangay || 'N/A',
+                    'Location': incident.location?.address || 'Unknown',
+                    'Reported Date': incident.reportedAt ? new Date(incident.reportedAt).toLocaleDateString() : 'N/A',
+                    'Reported Time': incident.reportedAt ? new Date(incident.reportedAt).toLocaleTimeString() : 'N/A',
+                    'Resolved Date': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString() : '-',
+                    'Resolved Time': incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleTimeString() : '-',
+                    'Status': incident.status?.toUpperCase() || 'UNKNOWN',
+                    'Assigned Team': incident.assignedTeam || incident.teamName || 'Unassigned',
+                    'Victims Affected': incident.victimsAffected || incident.victims || 0,
+                    'Description': incident.description || 'N/A'
+                }));
+            }
+
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(exportData);
 
-            // Set column widths
-            const colWidths = [
+            ws['!cols'] = [
                 { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 30 },
                 { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-                { wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 40 }
+                { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 40 }
             ];
-            ws['!cols'] = colWidths;
 
             XLSX.utils.book_append_sheet(wb, ws, 'Incidents');
 
-            // Generate filename with timestamp
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-            const filename = `Incident_Report_${dateStr}_${timeStr}.xlsx`;
+            const prefix = option === 'date' ? 'Incident_Report_By_Date' : 'Incident_Report';
+            const filename = `${prefix}_${dateStr}_${timeStr}.xlsx`;
 
             XLSX.writeFile(wb, filename);
 
-            setSuccessMessage(`Export completed successfully! File saved as ${filename}`);
+            setSuccessMessage(`Export completed! ${dataToExport.length} incident(s) saved as ${filename}`);
             setTimeout(() => setSuccessMessage(null), 5000);
         } catch (error) {
             console.error("Export failed:", error);
@@ -181,13 +258,9 @@ export default function IncidentReports() {
         }
     };
 
-    /**
-     * Filter incidents based on search, status, and period
-     */
     const filterIncidents = () => {
         let filtered = [...incidents];
 
-        // Apply search filter
         if (searchTerm) {
             filtered = filtered.filter(incident =>
                 (incident.incidentId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,7 +270,6 @@ export default function IncidentReports() {
             );
         }
 
-        // Apply status filter
         if (statusFilter !== "All Time") {
             filtered = filtered.filter(incident => {
                 const displayStatus = getStatusDisplay(incident.status);
@@ -205,7 +277,6 @@ export default function IncidentReports() {
             });
         }
 
-        // Apply period filter
         if (periodFilter !== "All Time") {
             const now = new Date();
             filtered = filtered.filter(incident => {
@@ -233,7 +304,6 @@ export default function IncidentReports() {
 
     const filteredIncidents = filterIncidents();
 
-    // Render loading state
     if (loading) {
         return (
             <AdminLayout>
@@ -248,7 +318,6 @@ export default function IncidentReports() {
     return (
         <AdminLayout>
             <div className="flex-1 overflow-y-auto p-6 bg-[#FAFAFF]">
-                {/* Page Header */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3">
                         <Icon icon="ic:outline-emergency" className="w-8 h-8 text-[#1f6b75]" />
@@ -259,7 +328,6 @@ export default function IncidentReports() {
                     </div>
                 </div>
 
-                {/* Success Message */}
                 {successMessage && (
                     <div className="mb-4 p-3 bg-[#D5FFE5] border border-[#15803D] rounded-lg text-[#15803D] flex items-center gap-2">
                         <Icon icon="mdi:check-circle" className="w-5 h-5" />
@@ -270,7 +338,6 @@ export default function IncidentReports() {
                     </div>
                 )}
 
-                {/* Error Message */}
                 {error && (
                     <div className="mb-4 p-3 bg-[#FDE6EA] border border-[#DC2626] rounded-lg text-[#DC2626] flex items-center gap-2">
                         <Icon icon="mdi:alert-circle" className="w-5 h-5" />
@@ -281,9 +348,7 @@ export default function IncidentReports() {
                     </div>
                 )}
 
-                {/* Search and Filters */}
                 <div className="flex flex-wrap items-center gap-4 mb-6">
-                    {/* Search Input */}
                     <div className="relative w-[250px]">
                         <input
                             type="text"
@@ -295,7 +360,6 @@ export default function IncidentReports() {
                         <Icon icon="material-symbols:search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     </div>
 
-                    {/* Period Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Period</span>
                         <div className="relative">
@@ -314,7 +378,6 @@ export default function IncidentReports() {
                         </div>
                     </div>
 
-                    {/* Status Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Status</span>
                         <div className="relative">
@@ -332,7 +395,6 @@ export default function IncidentReports() {
                         </div>
                     </div>
 
-                    {/* Refresh Button */}
                     <button
                         onClick={loadIncidents}
                         className="flex items-center gap-2 px-4 py-2 border border-[#D3D2DE] rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
@@ -341,7 +403,6 @@ export default function IncidentReports() {
                         Refresh
                     </button>
 
-                    {/* Export Button */}
                     <button
                         onClick={() => setShowExportModal(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-[#1f6b75] text-white rounded-lg text-sm font-medium hover:bg-[#165a63] transition ml-auto"
@@ -351,7 +412,6 @@ export default function IncidentReports() {
                     </button>
                 </div>
 
-                {/* Incidents Table */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -383,7 +443,7 @@ export default function IncidentReports() {
                                                 {incident.resolvedAt ? new Date(incident.resolvedAt).toLocaleDateString() : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-[#000000] whitespace-nowrap max-w-[150px] truncate">
-                                                {incident.assignedTeam || 'Unassigned'}
+                                                {incident.assignedTeam || incident.teamName || 'Unassigned'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-[#000000] whitespace-nowrap">{incident.victimsAffected || incident.victims || 0}</td>
                                             <td className="px-4 py-3 whitespace-nowrap">
@@ -406,7 +466,6 @@ export default function IncidentReports() {
                         </table>
                     </div>
 
-                    {/* Table Footer */}
                     {incidents.length > 0 && (
                         <div className="px-4 py-3 bg-gray-50 border-t text-sm text-gray-500 flex justify-between items-center">
                             <span>
@@ -420,46 +479,11 @@ export default function IncidentReports() {
                 </div>
             </div>
 
-            {/* Incident Details Modal */}
-            {showDetailsModal && selectedIncident && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-lg shadow-xl w-[700px] max-h-[90vh] overflow-y-auto">
-                        <div className="p-4 border-b border-[#1f6b75] border-t-8 flex justify-between items-center rounded-t-lg">
-                            <h2 className="text-lg font-semibold text-[#262D31] flex items-center gap-2">
-                                <Icon icon="ic:outline-emergency" className="w-6 h-6 text-[#1f6b75]" />
-                                Incident Details - {selectedIncident.incidentId || 'N/A'}
-                            </h2>
-                            <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 transition">
-                                <Icon icon="mdi:close" className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            {/* Details content would go here */}
-                        </div>
-                        <div className="flex justify-end gap-3 p-4 border-t bg-gray-50 rounded-b-lg">
-                            <button
-                                onClick={() => {
-                                    handleCloseModal();
-                                }}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center gap-2"
-                            >
-                                <Icon icon="uil:export" className="w-4 h-4" />
-                                Export This Incident
-                            </button>
-                            <button onClick={handleCloseModal} className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Export Incident Modal */}
             <ExportIncidentModal
                 isOpen={showExportModal}
                 onClose={() => setShowExportModal(false)}
                 onExport={handleExportIncidents}
-                incidents={filteredIncidents}
+                incidents={incidents}
             />
         </AdminLayout>
     );
