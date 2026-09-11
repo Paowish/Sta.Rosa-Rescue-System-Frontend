@@ -817,10 +817,20 @@ export default function TrackReports() {
                                                 <p className="text-xs sm:text-sm font-medium text-gray-700 mb-3">Activity Timeline</p>
                                                 <div className="space-y-4 relative pl-4 border-l-2 border-gray-200 ml-2">
                                                     <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-red-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700">Incident reported by {incident.reporterName || "Juan Dela Cruz"} via mobile app.</p><p className="text-[10px] text-gray-400 mt-0.5">{formatDateTime(incident.reportedAt)}</p></div>
-                                                    <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-orange-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700">Report received and accepted by Rescue Team</p><p className="text-[10px] text-gray-400 mt-0.5">{formatDateTime(incident.updatedAt)}</p></div>
+                                                    <div className="relative">
+                                                        <div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-orange-300 border-2 border-white"></div>
+                                                        <p className="text-xs sm:text-sm text-gray-700">
+                                                            Report received and accepted by {
+                                                                incident.dispatchType === 'team' || incident.teamName
+                                                                    ? (incident.teamName || 'Rescue Team')
+                                                                    : (incident.responder?.name || incident.responderName || 'Volunteer')
+                                                            }
+                                                        </p>
+                                                        <p className="text-[10px] text-gray-400 mt-0.5">{formatDateTime(incident.updatedAt)}</p>
+                                                    </div>
                                                     {isDispatched && <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-blue-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700">🚗 Responder dispatched to your location</p><p className="text-[10px] text-gray-400 mt-0.5">Responder is en route</p></div>}
                                                     {isOnScene && <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-yellow-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700">📍 Responder on scene - Assessment in progress</p><p className="text-[10px] text-gray-400 mt-0.5">On site</p></div>}
-                                                    {isResolved && <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-green-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700">✅ Incident resolved</p><p className="text-[10px] text-gray-400 mt-0.5">Closed</p></div>}
+                                                    {isResolved && <div className="relative"><div className="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full bg-green-300 border-2 border-white"></div><p className="text-xs sm:text-sm text-gray-700"> Incident resolved</p><p className="text-[10px] text-gray-400 mt-0.5">Closed</p></div>}
                                                 </div>
                                             </div>
                                         </div>
