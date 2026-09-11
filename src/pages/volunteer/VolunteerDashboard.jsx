@@ -228,7 +228,7 @@ export default function VolunteerDashboard() {
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             const volunteerName = `${user.firstName} ${user.lastName}`.trim() || 'Volunteer';
 
-            const response = await fetch(`/api/incidents/${incident._id || incident.id}/status`, {
+            const response = await fetch(`${API_URL}/incidents/${incident._id || incident.id}/status`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -499,7 +499,7 @@ export default function VolunteerDashboard() {
 
             const incidentId = incident._id || incident.id;
 
-            const response = await fetch(`/api/incidents/${incidentId}/resolve`, {
+            const response = await fetch(`${API_URL}/incidents/${incidentId}/resolve`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -596,7 +596,7 @@ export default function VolunteerDashboard() {
 
             const incidentId = incident._id || incident.id;
 
-            const response = await fetch(`/api/incidents/${incidentId}/resolve`, {
+            const response = await fetch(`${API_URL}/incidents/${incidentId}/resolve`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1076,7 +1076,7 @@ export default function VolunteerDashboard() {
         try {
             const token = localStorage.getItem('token');
             // ✅ CHANGE THIS TO HIT YOUR NEW BACKEND ROUTE
-            const response = await fetch('/api/volunteer/profile', {
+            const response = await fetch(`${API_URL}/volunteer/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1163,7 +1163,7 @@ export default function VolunteerDashboard() {
         setChangingPassword(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/auth/change-password', {
+            const response = await fetch(`${API_URL}/auth/change-password', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
@@ -1203,7 +1203,7 @@ export default function VolunteerDashboard() {
         formData.append('profileImage', file);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/auth/upload-profile-image', {
+            const response = await fetch(`${API_URL}/auth/upload-profile-image', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -1252,7 +1252,7 @@ export default function VolunteerDashboard() {
     const loadActiveDispatch = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/volunteer/active-dispatch', {
+            const response = await fetch(`${API_URL}/volunteer/active-dispatch', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -1560,7 +1560,7 @@ export default function VolunteerDashboard() {
                 setActionedIncidents(updatedActioned);
                 localStorage.setItem('volunteerActionedIncidents', JSON.stringify(updatedActioned));
 
-                const response = await fetch(`/api/incidents/${incidentId}/accept`, {
+                const response = await fetch(`${API_URL}/incidents/${incidentId}/accept`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1698,7 +1698,7 @@ export default function VolunteerDashboard() {
                 setActionedIncidents(updatedActioned);
                 localStorage.setItem('volunteerActionedIncidents', JSON.stringify(updatedActioned));
 
-                const response = await fetch(`/api/incidents/${incidentId}/decline`, {
+                const response = await fetch(`${API_URL}/incidents/${incidentId}/decline`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ volunteerId: user.id })

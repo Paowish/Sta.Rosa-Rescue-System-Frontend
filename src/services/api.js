@@ -855,3 +855,4 @@ export const notificationService = {
 // ============================================================================
 
 export default api;
+export { API_URL, getApiUrl };

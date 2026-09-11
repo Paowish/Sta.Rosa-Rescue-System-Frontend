@@ -40,7 +40,7 @@ export default function DispatchSelectionModal({
         setLoadingVolunteers(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/volunteers/available', {
+            const response = await fetch(`${API_URL}/volunteers/available', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const result = await response.json();
@@ -84,7 +84,7 @@ export default function DispatchSelectionModal({
         setIsDispatching(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/incidents/${incidentId}/dispatch`, {
+            const response = await fetch(`${API_URL}/incidents/${incidentId}/dispatch`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

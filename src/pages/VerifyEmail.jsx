@@ -10,7 +10,7 @@ export default function VerifyEmail() {
     useEffect(() => {
         const verifyEmail = async () => {
             try {
-                const response = await fetch(`/api/auth/verify-email/${token}`);
+                const response = await fetch(`${API_URL}/auth/verify-email/${token}`);
                 const result = await response.json();
 
                 if (response.ok && result.success) {

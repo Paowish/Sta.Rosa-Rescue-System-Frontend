@@ -56,7 +56,7 @@ export default function SystemSettings() {
             setLoading(true);
             const token = localStorage.getItem('token');
 
-            const response = await fetch('/api/admin/settings', {
+            const response = await fetch(`${API_URL}/admin/settings', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -92,7 +92,7 @@ export default function SystemSettings() {
             setSuccessMessage(null);
 
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/admin/settings', {
+            const response = await fetch(`${API_URL}/admin/settings', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

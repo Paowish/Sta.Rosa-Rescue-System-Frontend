@@ -112,7 +112,7 @@ export default function AdminOverview() {
             const token = localStorage.getItem('token');
 
             // Fetch incidents
-            const incidentResponse = await fetch('/api/incidents', {
+            const incidentResponse = await fetch(`${API_URL}/incidents', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const incidentData = await incidentResponse.json();
@@ -127,7 +127,7 @@ export default function AdminOverview() {
             }
 
             // Fetch pending volunteer requests
-            const requestsResponse = await fetch('/api/admin/pending-volunteers', {
+            const requestsResponse = await fetch(`${API_URL}/admin/pending-volunteers', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const requestsData = await requestsResponse.json();
@@ -177,7 +177,7 @@ export default function AdminOverview() {
     const confirmAcceptRequest = async (userId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/admin/approve-volunteer/${userId}`, {
+            const response = await fetch(`${API_URL}/admin/approve-volunteer/${userId}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -203,7 +203,7 @@ export default function AdminOverview() {
     const confirmDeclineRequest = async (userId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`/api/admin/reject-volunteer/${userId}`, {
+            const response = await fetch(`${API_URL}/admin/reject-volunteer/${userId}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

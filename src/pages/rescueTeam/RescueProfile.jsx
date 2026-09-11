@@ -345,7 +345,7 @@ export default function RescueProfile() {
         setChangingPassword(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/auth/change-password', {
+            const response = await fetch(`${API_URL}/auth/change-password', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -409,7 +409,7 @@ export default function RescueProfile() {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/auth/upload-profile-image', {
+            const response = await fetch(`${API_URL}/auth/upload-profile-image', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

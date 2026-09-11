@@ -326,7 +326,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
         try {
             const token = localStorage.getItem('token');
-            await fetch(`/api/incidents/${incident._id || incident.id}/refer-police`, {
+            await fetch(`${API_URL}/incidents/${incident._id || incident.id}/refer-police`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -351,7 +351,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
 
         try {
             const token = localStorage.getItem('token');
-            await fetch(`/api/incidents/${incident._id || incident.id}/refer-fire`, {
+            await fetch(`${API_URL}/incidents/${incident._id || incident.id}/refer-fire`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -383,7 +383,7 @@ export default function IncidentDetails({ data, onClose, onDispatch, onResolve, 
         if (window.confirm(`Are you sure you want to mark this incident as Resolved?`)) {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`/api/incidents/${incident._id || incident.id}/resolve`, {
+                const response = await fetch(`${API_URL}/incidents/${incident._id || incident.id}/resolve`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
