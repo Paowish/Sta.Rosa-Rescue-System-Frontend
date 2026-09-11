@@ -65,7 +65,7 @@ const getApiUrl = () => {
     }
 
     // Production - use absolute Render URL
-    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+    return 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com/api';
 };
 
 const API_URL = getApiUrl();
