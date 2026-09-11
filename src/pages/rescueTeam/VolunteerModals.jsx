@@ -140,7 +140,7 @@ export const DispatchModal = ({ volunteer, onClose, onDispatch }) => {
     // ✅ Check if volunteer is off duty
     const isOffDuty = volunteer?.availabilityStatus === 'off-duty' || volunteer?.isOnDuty === false;
 
-    const getApiUrl = () => window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
+    const getApiUrl = () => window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com/api';
 
     /**
      * Fetch active incidents and volunteer's assigned incidents on mount

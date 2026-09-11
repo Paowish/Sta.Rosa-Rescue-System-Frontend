@@ -122,7 +122,7 @@ export default function GuestReport() {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://localhost:5000/api';
         }
-        return '/api';
+        return 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com/api';
     };
 
     const handleSubmitFinal = async () => {

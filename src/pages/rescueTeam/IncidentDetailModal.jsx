@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Icon } from "@iconify/react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { getApiUrl } from "../../services/api";
 import 'leaflet/dist/leaflet.css';
 
 // Leaflet setup
@@ -102,7 +103,7 @@ export default function IncidentDetailModal({ isOpen, onClose, incident, onDispa
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
-            const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
+            const apiUrl = getApiUrl();
 
             const response = await fetch(`${apiUrl}/incidents/${incident._id}/report`, {
                 method: 'PUT',

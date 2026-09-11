@@ -185,11 +185,11 @@ export default function SystemSettings() {
 
             switch (dangerAction) {
                 case 'clear_records':
-                    endpoint = '/api/admin/clear-incidents';
+                    endpoint = `${API_URL}/admin/clear-incidents`;
                     successMsg = 'All incident records cleared successfully!';
                     break;
                 case 'clear_accounts':
-                    endpoint = '/api/admin/clear-non-admin-accounts';
+                    endpoint = `${API_URL}/admin/clear-non-admin-accounts`;
                     successMsg = 'All non-admin accounts deleted successfully!';
                     break;
                 default:
