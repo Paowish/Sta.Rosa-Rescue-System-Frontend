@@ -22,7 +22,7 @@ const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5000/api';
     }
-    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+    return 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com/api';
 };
 
 export default function VolunteerDashboard() {
@@ -409,7 +409,7 @@ export default function VolunteerDashboard() {
                     socketUrl = 'http://localhost:5000';
                 } else {
                     // ✅ CHANGE THIS TO YOUR ACTUAL BACKEND URL
-                    socketUrl = 'https://sta-rosa-rescue-system-backend.onrender.com';
+                    socketUrl = 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com';
                 }
 
                 console.log('🔌 Socket URL:', socketUrl);

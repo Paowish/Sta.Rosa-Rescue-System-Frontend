@@ -9,7 +9,7 @@ const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'http://localhost:5000/api';
     }
-    return 'https://sta-rosa-rescue-system-backend.onrender.com/api';
+    return 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com/api';
 };
 
 // ✅ Helper: Format time ago

@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { incidentService } from "../../services/api";
+
 
 /**
  * Status Badge Component

@@ -272,7 +272,7 @@ export default function DashboardLayout({ children }) {
       if (token && user._id) {
         const socketUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
           ? 'http://localhost:5000'
-          : 'https://sta-rosa-rescue-system-backend.onrender.com';
+          : 'https://sta-rosa-rescue-system-backend-7zbj.onrender.com';
 
         socketRef.current = io(socketUrl, {
           auth: { token },
