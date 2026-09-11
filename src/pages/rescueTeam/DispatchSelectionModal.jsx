@@ -1,3 +1,4 @@
+import { API_URL } from "../../services/api";
 // src/pages/rescueTeam/DispatchSelectionModal.jsx
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";

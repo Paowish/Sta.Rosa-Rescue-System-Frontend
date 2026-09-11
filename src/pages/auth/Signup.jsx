@@ -1,3 +1,4 @@
+import { API_URL } from "../../services/api";
 // src/pages/Signup.jsx
 import { useState, useRef, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";

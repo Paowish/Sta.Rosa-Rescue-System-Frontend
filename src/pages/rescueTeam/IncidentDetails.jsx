@@ -1,3 +1,4 @@
+import { API_URL } from "../../services/api";
 // src/pages/rescueTeam/IncidentDetails.jsx
 import { useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";

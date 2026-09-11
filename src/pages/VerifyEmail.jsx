@@ -1,3 +1,4 @@
+import { API_URL } from "../services/api";
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
