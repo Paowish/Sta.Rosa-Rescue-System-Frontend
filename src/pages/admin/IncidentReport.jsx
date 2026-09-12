@@ -107,7 +107,24 @@ export default function IncidentReports() {
         if (dateFilter && dateFilter !== 'all') {
             const now = new Date();
             dataToExport = dataToExport.filter(inc => {
-                const d = new Date(inc.reportedAt || inc.createdAt);
+                const dateVal = inc.reportedAt || inc.createdAt;
+                if (!dateVal) return false;
+                const d = new Date(dateVal);
+                if (isNaN(d.getTime())) return false;
+
+                // Handle custom date range object
+                if (typeof dateFilter === 'object' && dateFilter !== null) {
+                    if (dateFilter.startDate) {
+                        const start = new Date(dateFilter.startDate + 'T00:00:00');
+                        if (d < start) return false;
+                    }
+                    if (dateFilter.endDate) {
+                        const end = new Date(dateFilter.endDate + 'T23:59:59');
+                        if (d > end) return false;
+                    }
+                    return true;
+                }
+
                 switch (dateFilter) {
                     case 'today': return d.toDateString() === now.toDateString();
                     case 'week': {
