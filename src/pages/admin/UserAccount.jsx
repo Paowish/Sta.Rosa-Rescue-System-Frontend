@@ -354,7 +354,7 @@ export default function UserAccount() {
                 {/* Page Header */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-[#262D31] flex items-center gap-2">
-                        <Icon icon="mdi:account-group" className="w-7 h-7 text-[#262D31]" />
+                        <Icon icon="material-symbols:id-card" className="w-7 h-7 text-[#262D31]" />
                         User Account
                     </h1>
                     <p className="text-gray-500 text-sm">Manage all registered accounts across all roles</p>

@@ -277,7 +277,7 @@ export default function AdminLayout({ children }) {
                                 to="/admin/useraccounts"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="ic:baseline-emergency" className="w-5 h-5" />
+                                <Icon icon="material-symbols:id-card" className="w-5 h-5" />
                                 User Accounts
                             </NavLink>
 
@@ -285,7 +285,7 @@ export default function AdminLayout({ children }) {
                                 to="/admin/incidentreports"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="material-symbols:group" className="w-5 h-5" />
+                                <Icon icon="ic:baseline-emergency" className="w-5 h-5" />
                                 Incident Reports
                             </NavLink>
 
@@ -293,7 +293,7 @@ export default function AdminLayout({ children }) {
                                 to="/admin/systemmaintenance"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="material-symbols:groups" className="w-5 h-5" />
+                                <Icon icon="mdi:wrench" className="w-5 h-5" />
                                 System Maintenance
                             </NavLink>
 
@@ -301,7 +301,7 @@ export default function AdminLayout({ children }) {
                                 to="/admin/systemsettings"
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                             >
-                                <Icon icon="material-symbols:account-circle" className="w-5 h-5" />
+                                <Icon icon="material-symbols:settings" className="w-5 h-5" />
                                 System Settings
                             </NavLink>
 
