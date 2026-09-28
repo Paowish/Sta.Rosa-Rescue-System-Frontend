@@ -68,6 +68,14 @@ export default function PublicLayout() {
         }
     };
 
+    /**
+     * Scroll to top of the page (Home)
+     */
+    const scrollToHome = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setActiveSection('');
+    };
+
     return (
         <div className="min-h-screen bg-[#F5F7FA] flex flex-col font-sans">
             {/* Sticky Navigation Bar */}
@@ -84,6 +92,13 @@ export default function PublicLayout() {
 
                 {/* Navigation Links */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
+                    <button
+                        onClick={scrollToHome}
+                        className={`hover:text-blue-600 transition-colors pb-1 border-b-2 ${activeSection === '' ? 'border-blue-600 text-blue-600' : 'border-transparent'
+                            }`}
+                    >
+                        HOME
+                    </button>
                     <button
                         onClick={() => scrollToSection('how-it-works')}
                         className={`hover:text-blue-600 transition-colors pb-1 border-b-2 ${activeSection === 'how-it-works' ? 'border-blue-600 text-blue-600' : 'border-transparent'
