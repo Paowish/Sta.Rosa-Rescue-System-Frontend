@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import AdminLayout from "./AdminLayout";
 import { useState, useEffect } from "react";
 import * as XLSX from 'xlsx';
+import { createPortal } from "react-dom";
 
 /**
  * System Maintenance Component
@@ -562,119 +563,123 @@ export default function SystemMaintenance() {
             </div>
 
             {/* Configure Schedule Modal */}
-            {isScheduleModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-lg shadow-2xl w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
-                        {/* Top Blue Border */}
-                        <div className="h-1.5 w-full bg-[#3b82f6]"></div>
+            {isScheduleModalOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm overflow-y-auto">
+                    {/* Centering Wrapper */}
+                    <div className="min-h-full flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg shadow-2xl w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+                            {/* Top Blue Border */}
+                            <div className="h-1.5 w-full bg-[#3b82f6]"></div>
 
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-[20px] font-bold text-gray-800">Configure Backup Schedule</h3>
-                            <button
-                                onClick={() => {
-                                    setIsScheduleModalOpen(false);
-                                    setError(null);
-                                    setSuccessMessage(null);
-                                }}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                <Icon icon="mdi:close" className="w-6 h-6" />
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-5">
-                            {/* Backup Frequency */}
-                            <div>
-                                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Frequency</label>
-                                <div className="relative">
-                                    <select
-                                        value={scheduleData.frequency}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, frequency: e.target.value })}
-                                        className="w-full appearance-none border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    >
-                                        <option>Daily</option>
-                                        <option>Weekly</option>
-                                        <option>Monthly</option>
-                                    </select>
-                                    <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                </div>
+                            {/* Modal Header */}
+                            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+                                <h3 className="text-[20px] font-bold text-gray-800">Configure Backup Schedule</h3>
+                                <button
+                                    onClick={() => {
+                                        setIsScheduleModalOpen(false);
+                                        setError(null);
+                                        setSuccessMessage(null);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <Icon icon="mdi:close" className="w-6 h-6" />
+                                </button>
                             </div>
 
-                            {/* Backup Time */}
-                            <div>
-                                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Time</label>
-                                <div className="relative">
+                            {/* Modal Body */}
+                            <div className="p-6 space-y-5">
+                                {/* Backup Frequency */}
+                                <div>
+                                    <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Frequency</label>
+                                    <div className="relative">
+                                        <select
+                                            value={scheduleData.frequency}
+                                            onChange={(e) => setScheduleData({ ...scheduleData, frequency: e.target.value })}
+                                            className="w-full appearance-none border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        >
+                                            <option>Daily</option>
+                                            <option>Weekly</option>
+                                            <option>Monthly</option>
+                                        </select>
+                                        <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                {/* Backup Time */}
+                                <div>
+                                    <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Time</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={scheduleData.time}
+                                            onChange={(e) => setScheduleData({ ...scheduleData, time: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            placeholder="e.g., 3:00 AM"
+                                        />
+                                        <Icon icon="mdi:clock-outline" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                {/* Retention Period */}
+                                <div>
+                                    <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Retention Period (Days)</label>
+                                    <input
+                                        type="number"
+                                        value={scheduleData.retentionDays}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, retentionDays: parseInt(e.target.value) || 0 })}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        min="1"
+                                        max="365"
+                                    />
+                                </div>
+
+                                {/* Backup Storage Path */}
+                                <div>
+                                    <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Storage Path</label>
                                     <input
                                         type="text"
-                                        value={scheduleData.time}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, time: e.target.value })}
+                                        value={scheduleData.storagePath}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, storagePath: e.target.value })}
                                         className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        placeholder="e.g., 3:00 AM"
                                     />
-                                    <Icon icon="mdi:clock-outline" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none" />
+                                </div>
+
+                                {/* Email Notification Toggle */}
+                                <div className="flex items-start justify-between pt-2">
+                                    <div>
+                                        <label className="block text-[14px] font-medium text-gray-700">Email Notification on Backup</label>
+                                        <p className="text-[13px] text-gray-500 mt-0.5">Notify admin on completion</p>
+                                    </div>
+                                    <ToggleSwitch
+                                        checked={scheduleData.emailNotification}
+                                        onChange={() => setScheduleData({ ...scheduleData, emailNotification: !scheduleData.emailNotification })}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Retention Period */}
-                            <div>
-                                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Retention Period (Days)</label>
-                                <input
-                                    type="number"
-                                    value={scheduleData.retentionDays}
-                                    onChange={(e) => setScheduleData({ ...scheduleData, retentionDays: parseInt(e.target.value) || 0 })}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    min="1"
-                                    max="365"
-                                />
+                            {/* Modal Footer */}
+                            <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
+                                <button
+                                    onClick={() => {
+                                        setIsScheduleModalOpen(false);
+                                        setError(null);
+                                        setSuccessMessage(null);
+                                    }}
+                                    className="px-5 py-1.5 text-[14px] font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveSchedule}
+                                    className="px-6 py-1.5 text-[14px] font-medium text-white bg-[#0C7FDA] rounded hover:bg-[#0b6eb5] transition-colors shadow-sm"
+                                >
+                                    Save Schedule
+                                </button>
                             </div>
-
-                            {/* Backup Storage Path */}
-                            <div>
-                                <label className="block text-[14px] font-medium text-gray-700 mb-1.5">Backup Storage Path</label>
-                                <input
-                                    type="text"
-                                    value={scheduleData.storagePath}
-                                    onChange={(e) => setScheduleData({ ...scheduleData, storagePath: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Email Notification Toggle */}
-                            <div className="flex items-start justify-between pt-2">
-                                <div>
-                                    <label className="block text-[14px] font-medium text-gray-700">Email Notification on Backup</label>
-                                    <p className="text-[13px] text-gray-500 mt-0.5">Notify admin on completion</p>
-                                </div>
-                                <ToggleSwitch
-                                    checked={scheduleData.emailNotification}
-                                    onChange={() => setScheduleData({ ...scheduleData, emailNotification: !scheduleData.emailNotification })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
-                            <button
-                                onClick={() => {
-                                    setIsScheduleModalOpen(false);
-                                    setError(null);
-                                    setSuccessMessage(null);
-                                }}
-                                className="px-5 py-1.5 text-[14px] font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSaveSchedule}
-                                className="px-6 py-1.5 text-[14px] font-medium text-white bg-[#0C7FDA] rounded hover:bg-[#0b6eb5] transition-colors shadow-sm"
-                            >
-                                Save Schedule
-                            </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </AdminLayout>
     );
