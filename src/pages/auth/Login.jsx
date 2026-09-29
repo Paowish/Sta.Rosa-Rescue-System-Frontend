@@ -452,7 +452,7 @@ export default function Login() {
           <div className="flex items-center gap-3 mb-8">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">Rescue Team</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">iRespond</h1>
             </Link>
           </div>
 

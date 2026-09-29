@@ -1412,17 +1412,17 @@ export default function VolunteerDashboard() {
     }, []);
 
     const handleLogoutClick = () => setShowLogoutModal(true);
-    const handleConfirmLogout = () => {
+    const handleConfirmLogout = async () => {
         setShowLogoutModal(false);
         setIsLoggingOut(true);
-        setTimeout(() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('profileImage');
+        try {
+            await authService.logout();
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
             if (socketRef.current) socketRef.current.disconnect();
-            navigate('/login');
-        }, 2000);
+            setTimeout(() => navigate('/login'), 500);
+        }
     };
     const handleCancelLogout = () => setShowLogoutModal(false);
 
@@ -1937,7 +1937,7 @@ export default function VolunteerDashboard() {
                     <button onClick={handleLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
                         <img src="/logo.png" className="w-8 h-8" alt="logo" />
                         <div className="block text-left"> {/* Changed from hidden sm:block to block */}
-                            <h1 className="font-semibold text-sm">Volunteer</h1>
+                            <h1 className="font-semibold text-sm">iRespond</h1>
                             <p className="text-[9px] opacity-70">Municipality of Santa Rosa</p>
                         </div>
                     </button>

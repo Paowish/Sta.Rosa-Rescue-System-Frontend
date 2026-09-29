@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import NotificationBell from "./NotificationBell";
+import { authService } from "../../services/api";
 
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
@@ -8,13 +9,15 @@ export default function DashboardLayout({ children }) {
   /**
    * Handle user logout - clear local storage and redirect to login
    */
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userRole');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      navigate('/login');
+    }
   };
-
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Top Navigation Bar */}

@@ -112,16 +112,12 @@ export default function CivilianDashboard({ children }) {
     setIsLoggingOut(true);
 
     try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('profileImage');
-
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      navigate('/login');
+      await authService.logout();
     } catch (error) {
       console.error("Logout error:", error);
-      setIsLoggingOut(false);
+    } finally {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      navigate('/login');
     }
   };
 
@@ -201,7 +197,7 @@ export default function CivilianDashboard({ children }) {
           >
             <img src="/logo.png" className="w-9 h-9 sm:w-10 sm:h-10" alt="logo" />
             <div className="justify-center text-left">
-              <h1 className="font-semibold text-base sm:text-lg">Civilian</h1>
+              <h1 className="font-semibold text-base sm:text-lg">iRespond</h1>
               <p className="text-[10px] sm:text-xs opacity-70">Municipality of Santa Rosa</p>
             </div>
           </button>

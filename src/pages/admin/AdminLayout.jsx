@@ -1,4 +1,5 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { authService } from "../../services/api";
 import { Icon } from "@iconify/react";
 import { useState, useEffect } from "react";
 import EditProfile from "../../pages/civilian/EditProfile";
@@ -148,19 +149,12 @@ export default function AdminLayout({ children }) {
         setIsLoggingOut(true);
 
         try {
-            // Clear localStorage
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('profileImage');
-
-            // Brief delay for cleanup
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            navigate('/login');
+            await authService.logout();
         } catch (error) {
             console.error("Logout error:", error);
-            setIsLoggingOut(false);
+        } finally {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            navigate('/login');
         }
     };
 
@@ -218,7 +212,7 @@ export default function AdminLayout({ children }) {
                 <NavLink to="/admin/overview" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
                     <img src="/logo.png" className="w-10 h-10" alt="logo" />
                     <div>
-                        <h1 className="font-semibold text-lg tracking-tight">System Admin</h1>
+                        <h1 className="font-semibold text-lg tracking-tight">iRespond</h1>
                         <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
                     </div>
                 </NavLink>

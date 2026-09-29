@@ -542,13 +542,30 @@ export const authService = {
     },
 
     /**
-     * Logout
+     * Logout — calls backend to log the event, then clears session
      */
-    logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userRole');
-        console.log('✅ Logged out');
+    logout: async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('✅ Backend logout logged');
+            }
+        } catch (error) {
+            console.error('⚠️ Backend logout failed (clearing local session anyway):', error);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('profileImage');
+            console.log('✅ Logged out');
+        }
     }
 };
 

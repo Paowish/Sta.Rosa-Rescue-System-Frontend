@@ -7,6 +7,7 @@ import notificationService from "../../services/notificationService";
 import { incidentService, notificationService as apiNotificationService } from "../../services/api";
 import IncidentDetails from "../../pages/rescueTeam/IncidentDetails";
 import io from 'socket.io-client';
+import { authService } from "../../services/api";
 
 /**
  * Professional Page Transition Component - Slide from Left
@@ -427,19 +428,12 @@ export default function DashboardLayout({ children }) {
     setIsLoggingOut(true);
 
     try {
-      // Clear localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('profileImage');
-
-      // Brief delay for cleanup
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      navigate('/login');
+      await authService.logout();
     } catch (error) {
       console.error("Logout error:", error);
-      setIsLoggingOut(false);
+    } finally {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      navigate('/login');
     }
   };
 
@@ -533,7 +527,7 @@ export default function DashboardLayout({ children }) {
         <NavLink to="/dashboard" className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity">
           <img src="/logo.png" className="w-10 h-10" alt="logo" />
           <div>
-            <h1 className="font-semibold text-lg tracking-tight">Rescue Team</h1>
+            <h1 className="font-semibold text-lg tracking-tight">iRespond</h1>
             <p className="text-xs opacity-80">Municipality of Santa Rosa</p>
           </div>
         </NavLink>
