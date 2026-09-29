@@ -1202,7 +1202,7 @@ export default function Signup() {
             <Link to="/login" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="logo" className="h-10 w-10 object-cover" />
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1E252B]">
-                Rescue Team
+                iRespond
               </h1>
             </Link>
           </div>
