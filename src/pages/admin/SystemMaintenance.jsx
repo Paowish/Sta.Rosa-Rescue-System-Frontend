@@ -106,7 +106,7 @@ export default function SystemMaintenance() {
 
     const filteredLogs = getFilteredLogs();
 
-    // ✅ Preview: first 3 logs / first 3 backups when collapsed
+    // Preview: first 3 logs / first 3 backups when collapsed
     const PREVIEW_COUNT = 3;
     const visibleLogs = isLogsExpanded ? filteredLogs : filteredLogs.slice(0, PREVIEW_COUNT);
     const visibleBackups = isBackupsExpanded ? backups : backups.slice(0, PREVIEW_COUNT);
@@ -300,9 +300,10 @@ export default function SystemMaintenance() {
 
                 {/* ══════════════════════════════════════════════════
                     SYSTEM ACTIVITY LOGS — Collapsible (3 preview)
+                    Filter/Export/Refresh ALWAYS visible
                 ══════════════════════════════════════════════════ */}
                 <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-                    {/* Header (clickable to toggle) */}
+                    {/* Header */}
                     <div className="p-4 border-b bg-[#EAE9F9] flex flex-wrap items-center justify-between gap-4">
                         <div
                             onClick={() => setIsLogsExpanded(!isLogsExpanded)}
@@ -320,38 +321,39 @@ export default function SystemMaintenance() {
                             </span>
                         </div>
 
-                        {/* Controls — only when expanded */}
-                        {isLogsExpanded && (
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="relative">
-                                    <select
-                                        value={periodFilter}
-                                        onChange={(e) => setPeriodFilter(e.target.value)}
-                                        className="appearance-none border border-[#D3D2DE] rounded-lg px-4 py-2 pr-8 text-sm font-light bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
-                                    >
-                                        <option>All Time</option>
-                                        <option>Today</option>
-                                        <option>This Week</option>
-                                        <option>This Month</option>
-                                        <option>This Year</option>
-                                    </select>
-                                    <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                                </div>
-                                <button
-                                    onClick={handleExportLogs}
-                                    className="flex items-center gap-2 px-4 py-2 bg-[#15803D] text-white rounded-lg text-sm font-medium hover:bg-[#166534] transition"
+                        {/* Controls — ALWAYS visible (both collapsed and expanded) */}
+                        <div
+                            className="flex flex-wrap items-center gap-3"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="relative">
+                                <select
+                                    value={periodFilter}
+                                    onChange={(e) => setPeriodFilter(e.target.value)}
+                                    className="appearance-none border border-[#D3D2DE] rounded-lg px-4 py-2 pr-8 text-sm font-light bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                                 >
-                                    <Icon icon="uil:export" className="w-4 h-4" />
-                                    Export
-                                </button>
-                                <button
-                                    onClick={loadData}
-                                    className="flex items-center gap-2 px-4 py-2 border border-[#D3D2DE] rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
-                                >
-                                    <Icon icon="mdi:refresh" className="w-4 h-4" />
-                                </button>
+                                    <option>All Time</option>
+                                    <option>Today</option>
+                                    <option>This Week</option>
+                                    <option>This Month</option>
+                                    <option>This Year</option>
+                                </select>
+                                <Icon icon="mdi:chevron-down" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                             </div>
-                        )}
+                            <button
+                                onClick={handleExportLogs}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#15803D] text-white rounded-lg text-sm font-medium hover:bg-[#166534] transition"
+                            >
+                                <Icon icon="uil:export" className="w-4 h-4" />
+                                Export
+                            </button>
+                            <button
+                                onClick={loadData}
+                                className="flex items-center gap-2 px-4 py-2 border border-[#D3D2DE] rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+                            >
+                                <Icon icon="mdi:refresh" className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Table — shows 3 rows when collapsed, all when expanded */}
@@ -416,6 +418,7 @@ export default function SystemMaintenance() {
 
                 {/* ══════════════════════════════════════════════════
                     BACKUP AND RESTORE — Collapsible (3 preview)
+                    Export/Backup Now ALWAYS visible
                 ══════════════════════════════════════════════════ */}
                 <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
                     {/* Header (clickable to toggle) */}
@@ -436,8 +439,11 @@ export default function SystemMaintenance() {
                             </span>
                         </div>
 
-                        {/* Action buttons — always visible */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        {/* Action buttons — ALWAYS visible */}
+                        <div
+                            className="flex flex-wrap items-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <button
                                 onClick={handleExportBackups}
                                 className="flex items-center gap-2 px-3 py-2 border border-[#15803D] text-[#15803D] rounded-lg text-sm font-medium hover:bg-[#15803D] hover:text-white transition"

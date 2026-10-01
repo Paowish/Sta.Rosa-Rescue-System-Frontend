@@ -344,39 +344,37 @@ export default function VolunteerDashboard() {
         }
     }, []);
 
-    // Apply filter to incidents
+    // Apply filter to incidents — searches by Incident ID/type/title AND Location
     const applyFilter = useCallback((incidentList) => {
         if (!incidentList) incidentList = incidents;
+
+        // If no search term → show all
         if (!searchTerm || searchTerm.trim() === "") {
             setFilteredIncidents(incidentList);
             return;
         }
 
         const searchLower = searchTerm.toLowerCase().trim();
+
         const filtered = incidentList.filter(incident => {
-            const searchableFields = [
-                incident.incidentId,
+            // ✅ Fields that represent the INCIDENT (ID, title, type)
+            const incidentFields = [
+                incident.id,          // e.g. "INC-2026-001"
+                incident._id,
+                incident.title,       // e.g. "Vehicular Accident"
                 incident.type,
-                incident.location?.address,
-                incident.location?.barangay,
-                incident.location?.city,
-                incident.reporterName,
-                incident.reporterNumber,
-                incident.status,
-                incident.severity,
-                incident.description,
-                incident.responder?.name,
-                incident.responderName
             ];
 
-            if (incident.assignedTo && Array.isArray(incident.assignedTo)) {
-                incident.assignedTo.forEach(assignment => {
-                    if (assignment.name) searchableFields.push(assignment.name);
-                    if (assignment.responder?.name) searchableFields.push(assignment.responder.name);
-                });
-            }
+            // ✅ Fields that represent the LOCATION
+            const locationFields = [
+                incident.location,        // full address string
+                incident.shortLocation,   // first part of address
+            ];
 
-            return searchableFields.some(field =>
+            // Combine and check
+            const allFields = [...incidentFields, ...locationFields];
+
+            return allFields.some(field =>
                 field && String(field).toLowerCase().includes(searchLower)
             );
         });
@@ -384,7 +382,7 @@ export default function VolunteerDashboard() {
         setFilteredIncidents(filtered);
     }, [searchTerm, incidents]);
 
-    // Filter when search changes
+    // Filter when search changes (150ms debounce)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             applyFilter(incidents);

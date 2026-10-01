@@ -820,11 +820,11 @@ export default function VolunteerApproval() {
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 flex gap-3">
+              {/* <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 flex gap-3">
                 <button onClick={handleDispatchClick} className="flex-1 bg-[#e60000] hover:bg-[#cc0000] text-white text-[13px] font-medium py-2 rounded">
                   Dispatch
                 </button>
-              </div>
+              </div> */}
             </div>
           )}
           {activeTab === 'applicant' && !activeApplicant && (
